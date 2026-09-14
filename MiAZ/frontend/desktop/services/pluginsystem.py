@@ -64,6 +64,28 @@ def format_load_failure_banner(failures: dict) -> str:
     return '; '.join(parts)
 
 
+def format_plugin_info_value(value) -> str:
+    """One line of text for any value a plugin declaration can hold.
+
+    The info dialog shows every key of the declaration and used to pass the
+    value straight to Gtk.Label.new, which takes a string. MenuEntries is a
+    list of tuples and Operations a list of dicts, so the dialog raised
+    TypeError and never opened for the seventeen bundled plugins that declare
+    menu entries.
+    """
+    if value is None:
+        return ''
+    if isinstance(value, str):
+        return value
+    if isinstance(value, dict):
+        return ', '.join(f'{key}={format_plugin_info_value(item)}'
+                         for key, item in value.items())
+    if isinstance(value, (list, tuple)):
+        return ', '.join(format_plugin_info_value(item) for item in value
+                         if format_plugin_info_value(item))
+    return str(value)
+
+
 class PluginMenuRegistry:
     """What each plugin contributed to the shared menus.
 

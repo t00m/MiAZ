@@ -614,3 +614,56 @@ def test_undo_all_for_an_unknown_plugin_does_nothing():
     app = FakeActionApp()
     ps.PluginActionRegistry().undo_all('Nobody', app)
     assert app.actions == set()
+
+
+# format_plugin_info_value
+#
+# The info dialog shows every key a plugin declares. Two of them are not
+# strings, and Gtk.Label.new raises on anything else, so the dialog failed to
+# open for the seventeen bundled plugins that declare menu entries.
+
+def test_a_string_value_is_returned_as_it_stands():
+    assert ps.format_plugin_info_value('MiAZOCR') == 'MiAZOCR'
+
+
+def test_menu_entries_read_as_their_labels_and_shortcuts():
+    entries = [('set', 'Set periodicity', []),
+               ('manage', 'Manage periodicity', ['<Control>p'])]
+    assert ps.format_plugin_info_value(entries) == (
+        'set, Set periodicity, manage, Manage periodicity, <Control>p')
+
+
+def test_an_operation_reads_as_its_keys_and_values():
+    operations = [{'name': 'ocr', 'run': 'run_ocr'}]
+    assert ps.format_plugin_info_value(operations) == 'name=ocr, run=run_ocr'
+
+
+def test_a_number_is_not_a_crash():
+    assert ps.format_plugin_info_value(3) == '3'
+
+
+def test_nothing_reads_as_nothing():
+    assert ps.format_plugin_info_value(None) == ''
+    assert ps.format_plugin_info_value([]) == ''
+
+
+def test_every_bundled_plugin_declaration_formats_to_a_string():
+    """The dialog walks the index, so every value it can hold has to work."""
+    import ast
+    import glob
+    import os
+    from MiAZ.backend.util import SafeDictExtractor
+
+    checked = 0
+    for module in sorted(glob.glob(os.path.join('data', 'resources', 'plugins',
+                                                '*', '*.py'))):
+        extractor = SafeDictExtractor('plugin_info')
+        with open(module, encoding='utf-8') as handler:
+            extractor.visit(ast.parse(handler.read(), filename=module))
+        if not extractor.result:
+            continue
+        checked += 1
+        for key, value in extractor.result.items():
+            assert isinstance(ps.format_plugin_info_value(value), str), \
+                f'{module}: {key}'
+    assert checked >= 20

@@ -10,6 +10,7 @@ from gi.repository import Adw
 from gi.repository import GLib
 from gi.repository import GObject
 from gi.repository import Gtk
+from gi.repository import Pango
 
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.util import humanize_value
@@ -24,7 +25,8 @@ from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewRepo
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewPlugin
 from MiAZ.frontend.desktop.services.dialogs import MiAZDialogAddRepo
 from MiAZ.frontend.desktop.services.pluginsystem import (
-    format_load_failure_banner, plugin_version as pluginsystem_version)
+    format_load_failure_banner, format_plugin_info_value,
+    plugin_version as pluginsystem_version)
 
 
 class MiAZConfigView(MiAZSelector):
@@ -1038,10 +1040,16 @@ class MiAZPlugins(MiAZConfigView):
         group.set_title(_('Data Sheet'))
         page.add(group)
 
-        # Add plugin info as key/value rows
+        # Add plugin info as key/value rows. Every value goes through the
+        # formatter: MenuEntries and Operations are lists, and a label takes
+        # a string. Ellipsised rather than wrapped, because a long Operations
+        # line would otherwise decide how wide the dialog is.
         for key in plugin_info:
             row = Adw.ActionRow(title=f'<b>{_(key)}</b>')
-            label = Gtk.Label.new(plugin_info[key])
+            label = Gtk.Label.new(format_plugin_info_value(plugin_info[key]))
+            label.set_ellipsize(Pango.EllipsizeMode.MIDDLE)
+            label.set_max_width_chars(48)
+            label.set_tooltip_text(format_plugin_info_value(plugin_info[key]))
             row.add_suffix(label)
             group.add(row)
         dialog.set_presentation_mode(Adw.DialogPresentationMode.BOTTOM_SHEET)
