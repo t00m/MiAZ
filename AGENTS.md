@@ -523,7 +523,7 @@ Both rename paths use it. The single rename (`widgets/rename.py`) prefills the d
 
 `util.check_zip_members(names, install_dir)` is the one place that decides whether an archive may be unpacked. It raises `RuntimeError` for any member that would land outside `install_dir`. It is a **module-level** function, not a method, so callers without the app object can reach it: `backend/notes.py` builds its own `ZipFile` and has no service registry.
 
-Three callers, and there must not be a fourth that skips it: `util.unzip` (which every `util.unzip` caller inherits), `pluginsystem.install_plugin` (goes through `util.unzip`, **not** `extractall`), and the notes restore.
+Three callers, and there must not be a fourth that skips it: `util.unzip` (which every `util.unzip` caller inherits), the plugin ZIP import in `MiAZPlugins._on_item_available_add_response` (which goes through `util.unzip`, **not** `extractall`), and the notes restore.
 
 Note what this check is and is not. CPython's `zipfile` already strips `..` and leading separators, so a member named `../evil` is quietly rewritten to sit inside the target rather than escaping: nothing gets out today. The check exists so that case is refused out loud instead of silently relocating a file, and so the guard is already in place if extraction ever moves to `tarfile`, which sanitises nothing. Do not describe it as fixing a live traversal escape.
 

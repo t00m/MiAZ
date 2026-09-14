@@ -777,3 +777,19 @@ def test_a_plugin_file_naming_a_missing_module_is_refused():
 
 def test_an_empty_archive_is_refused():
     assert ps.validate_plugin_archive(_build_zip_archive({})) is not None
+
+
+def test_the_dead_plugin_install_paths_are_gone():
+    """Both assumed a flat LPATH/PLUGINS/<module>.plugin layout.
+
+    Everything else globs <plugins>/*/*.py and <plugins>/*/*.plugin, so a
+    plugin installed the way these installed one was never indexed. The live
+    path is MiAZPlugins._on_item_available_add_response.
+    """
+    assert not hasattr(ps.MiAZPluginSystem, 'import_plugin')
+    assert not hasattr(ps.MiAZPluginSystem, 'remove_plugin')
+
+
+def test_the_engine_rescan_is_still_there():
+    """Task 5 gave it a caller: the ZIP import has to tell the engine."""
+    assert hasattr(ps.MiAZPluginSystem, 'rescan_plugins')

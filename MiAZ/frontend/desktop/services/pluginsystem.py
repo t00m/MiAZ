@@ -12,7 +12,6 @@ import os
 import glob
 import json
 import shutil
-import zipfile
 from gettext import gettext as _, ngettext
 
 import gi
@@ -1038,72 +1037,6 @@ class MiAZPluginSystem(MiAZPluginCore):
         srvrepo = self.app.get_service('repo')
         # Only the per-repository half. What is on disk has not changed.
         srvrepo.connect('repository-switched', self._on_repository_switched)
-
-    def import_plugin(self, plugin_path):
-        """
-        Import plugin in the user space.
-        "A plugin zip file is valid if:
-        - Contains at least 2 files
-          - Their names are identical
-          - Extensions are .plugin and .py
-          - Their names are the same than the plugin name
-        - Optionally, a directory named resources
-          - with a subdirectory with the same name as the plugin
-
-        Eg.:
-        hello.zip
-        ├── hello.plugin
-        ├── hello.py
-        └── resources
-            └── hello
-                └── css
-                    └── noprint.css
-        """
-        utils = self.app.get_service('util')
-        plugin_name, plugin_ext = utils.filename_details(plugin_path)
-        plugin_code = f"{plugin_name}.py"
-        plugin_meta = f"{plugin_name}.plugin"
-        # Read the listing under 'with': an archive that fails validation used
-        # to be left open.
-        with zipfile.ZipFile(plugin_path) as azip:
-            names = azip.namelist()
-        valid = plugin_code in names and plugin_meta in names
-
-        if valid:
-            ENV = self.app.get_env()
-            # Through util.unzip, not extractall: that is where the "stay
-            # inside the target directory" check lives, and this is the same
-            # untrusted archive the plugin settings import handles.
-            utils.unzip(plugin_path, ENV['LPATH']['PLUGINS'])
-            self.engine.rescan_plugins()
-            config = self.app.get_config('Plugin')
-            config.add_available(key=plugin_name)
-            plugin_fname = os.path.basename(plugin_path)
-            self.log.debug(f"Plugin '{plugin_fname}' added to '{ENV['LPATH']['PLUGINS']}'")
-        # ~ self.emit('plugins-updated')
-        return valid
-
-    def remove_plugin(self, plugin: Peas.PluginInfo):
-        """Remove plugin for user space plugins"""
-        config = self.app.get_config('Plugin')
-        module = plugin.get_module_name()
-        if not config.exists_used(module):
-            self.log.debug(f"Plugin '{module}' is not being used and will be deleted")
-            utils = self.app.get_service('util')
-            ENV = self.app.get_env()
-            self.unload_plugin(plugin)
-            plugin_head = os.path.join(ENV['LPATH']['PLUGINS'], f'{module}.plugin')
-            plugin_body = os.path.join(ENV['LPATH']['PLUGINS'], f'{module}.py')
-            os.unlink(plugin_head)
-            os.unlink(plugin_body)
-            plugin_res = os.path.join(ENV['LPATH']['PLUGINS'], 'resources', module)
-            if os.path.exists(plugin_res):
-                utils.directory_remove(plugin_res)
-            config.remove_available(key=module)
-            return True
-        else:
-            self.log.warning(f"Plugin {module} can't be deleted because it is still in use")
-            return False
 
     def rescan_plugins(self):
         try:

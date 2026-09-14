@@ -9,7 +9,6 @@ import zipfile
 from gettext import gettext as _
 from gi.repository import Adw
 from gi.repository import GLib
-from gi.repository import GObject
 from gi.repository import Gtk
 from gi.repository import Pango
 
@@ -528,9 +527,6 @@ class MiAZPurposes(MiAZConfigView):
 class MiAZPlugins(MiAZConfigView):
     """Manage plugins from Repo Settings."""
     __gtype_name__ = 'MiAZPlugins'
-    __gsignals__ = {
-        'plugins-downloaded': (GObject.SignalFlags.RUN_LAST, None, ()),
-    }
     current = None
 
     def __init__(self, app):
@@ -834,14 +830,6 @@ class MiAZPlugins(MiAZConfigView):
         else:
             body = _('{title} {desc}  not removed from de list of available {item_types}').format(title=i_title, desc=item_dsc, item_types=item_type.__title_plural__.lower())
             self.srvdlg.show_toast(body)
-
-    def update_user_plugins(self):
-        plugin_system = self.app.get_service('plugin-system')
-        plugin_system.rescan_plugins()
-        self.update_views()
-
-    def plugins_updated(self, *args):
-        self._update_view_available()
 
     def _setup_view_finish(self):
         # Setup Available and Used Column Views

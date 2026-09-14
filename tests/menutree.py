@@ -6,6 +6,10 @@ Shared by the UI tests that compare what the menus held before and after a
 plugin was unloaded.
 """
 
+# Not a test module. pytest 9 collects every module in the tests package, and
+# menu_actions' first parameter reads as a fixture request without this.
+__test__ = False
+
 
 def menu_actions(menu, seen=None, keep=None):
     """Every action reachable from `menu`, submenus and sections included.
