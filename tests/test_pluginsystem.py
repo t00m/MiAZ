@@ -793,3 +793,14 @@ def test_the_dead_plugin_install_paths_are_gone():
 def test_the_engine_rescan_is_still_there():
     """Task 5 gave it a caller: the ZIP import has to tell the engine."""
     assert hasattr(ps.MiAZPluginSystem, 'rescan_plugins')
+
+
+def test_a_plugin_helper_is_a_usable_gobject(dirs):
+    """It inherits GObject.GObject, so it has to be initialised as one.
+
+    Without the chained constructor the Python attributes work and every
+    GObject API raises, which makes the base class decorative and the first
+    signal added to it a puzzle.
+    """
+    helper = ps.MiAZPlugin(FakeApp(make_env(*dirs)))
+    assert helper.connect('notify', lambda *a: None) is not None

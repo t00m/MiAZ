@@ -393,6 +393,9 @@ class MiAZPlugin(GObject.GObject):
     _started = False
 
     def __init__(self, app):
+        # This is a GObject, so it has to be initialised as one. Without this
+        # the Python attributes work and every GObject API raises.
+        super().__init__()
         self.app = app
         self.log = MiAZLog('MiAZPlugin')
         self.util = self.app.get_service('util')
