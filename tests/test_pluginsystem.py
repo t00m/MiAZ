@@ -667,3 +667,67 @@ def test_every_bundled_plugin_declaration_formats_to_a_string():
             assert isinstance(ps.format_plugin_info_value(value), str), \
                 f'{module}: {key}'
     assert checked >= 20
+
+
+# Importing a plugin from a ZIP
+#
+# The handler used to extract anything it was given and then guess the plugin
+# directory from namelist()[0], which is a file whenever the archive lists a
+# file before its parent directory.
+
+HELLO_ARCHIVE = ['hello/', 'hello/hello.py', 'hello/hello.plugin']
+HELLO_NO_DIR_ENTRY = ['hello/hello.py', 'hello/hello.plugin']
+HELLO_FILE_FIRST = ['hello/hello.py', 'hello/', 'hello/hello.plugin']
+
+
+def test_the_archive_root_is_the_single_top_level_directory():
+    assert ps.plugin_archive_root(HELLO_ARCHIVE) == 'hello'
+
+
+def test_the_root_is_found_without_an_explicit_directory_entry():
+    assert ps.plugin_archive_root(HELLO_NO_DIR_ENTRY) == 'hello'
+
+
+def test_the_root_does_not_depend_on_the_order_of_the_listing():
+    assert ps.plugin_archive_root(HELLO_FILE_FIRST) == 'hello'
+
+
+def test_two_top_level_directories_are_no_root():
+    assert ps.plugin_archive_root(['a/x.py', 'b/y.py']) == ''
+
+
+def test_a_flat_archive_is_no_root():
+    assert ps.plugin_archive_root(['hello.py', 'hello.plugin']) == ''
+
+
+def test_a_plugin_archive_passes_validation():
+    assert ps.validate_plugin_archive(HELLO_ARCHIVE) is None
+    assert ps.validate_plugin_archive(HELLO_NO_DIR_ENTRY) is None
+
+
+def test_an_archive_with_resources_still_passes():
+    names = HELLO_ARCHIVE + ['hello/resources/', 'hello/resources/css/x.css']
+    assert ps.validate_plugin_archive(names) is None
+
+
+def test_a_flat_archive_is_refused():
+    """Discovery globs <plugins>/*/*.py, so a flat plugin is never found."""
+    problem = ps.validate_plugin_archive(['hello.py', 'hello.plugin'])
+    assert problem is not None
+    assert 'directory' in problem
+
+
+def test_an_archive_without_a_definition_is_refused():
+    problem = ps.validate_plugin_archive(['hello/', 'hello/hello.py'])
+    assert problem is not None
+    assert 'hello' in problem
+
+
+def test_an_archive_whose_names_do_not_match_is_refused():
+    problem = ps.validate_plugin_archive(['hello/', 'hello/code.py',
+                                          'hello/meta.plugin'])
+    assert problem is not None
+
+
+def test_an_empty_archive_is_refused():
+    assert ps.validate_plugin_archive([]) is not None

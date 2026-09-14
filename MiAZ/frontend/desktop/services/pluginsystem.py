@@ -86,6 +86,48 @@ def format_plugin_info_value(value) -> str:
     return str(value)
 
 
+def plugin_archive_root(names) -> str:
+    """The single top-level directory an archive unpacks into, or ''.
+
+    A plugin lives in a directory of its own: both search paths are globbed as
+    <plugins>/*/*.py, so a plugin extracted flat is never found again. The
+    directory used to be read off names[0], which is a file whenever the writer
+    listed a file before its parent, and most writers do.
+    """
+    roots = set()
+    for name in names or []:
+        head = name.replace('\\', '/').lstrip('/').split('/', 1)[0]
+        if head and head not in ('.', '..'):
+            roots.add(head)
+    return roots.pop() if len(roots) == 1 else ''
+
+
+def validate_plugin_archive(names):
+    """Why this archive is not a plugin, or None when it is.
+
+    A plugin archive holds one directory and, directly inside it, a
+    <module>.py beside a <module>.plugin of the same name. Asking before
+    extracting is what keeps an unrelated ZIP out of the user plugin
+    directory.
+    """
+    root = plugin_archive_root(names)
+    if not root:
+        return 'the archive does not hold a single top-level directory'
+    modules, definitions = set(), set()
+    for name in names:
+        parts = name.replace('\\', '/').lstrip('/').split('/')
+        if len(parts) != 2 or parts[0] != root or not parts[1]:
+            continue
+        stem, _dot, extension = parts[1].rpartition('.')
+        if extension == 'py':
+            modules.add(stem)
+        elif extension == 'plugin':
+            definitions.add(stem)
+    if not modules & definitions:
+        return f"'{root}' holds no <module>.py beside a <module>.plugin"
+    return None
+
+
 class PluginMenuRegistry:
     """What each plugin contributed to the shared menus.
 

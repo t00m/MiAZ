@@ -5,6 +5,7 @@
 
 import os
 import glob
+import zipfile
 from gettext import gettext as _
 from gi.repository import Adw
 from gi.repository import GLib
@@ -26,6 +27,7 @@ from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewPlugin
 from MiAZ.frontend.desktop.services.dialogs import MiAZDialogAddRepo
 from MiAZ.frontend.desktop.services.pluginsystem import (
     format_load_failure_banner, format_plugin_info_value,
+    plugin_archive_root, validate_plugin_archive,
     plugin_version as pluginsystem_version)
 
 
@@ -738,12 +740,30 @@ class MiAZPlugins(MiAZConfigView):
             pluginsystem = self.app.get_service('plugin-system')
             filepath = dialog.open_finish(result)
             plugin_file = filepath.get_path()
-            zip_archive = util.unzip(plugin_file, ENV['LPATH']['PLUGINS'])
+
+            # Read the listing and check it before anything lands on disk.
+            with zipfile.ZipFile(plugin_file) as archive:
+                names = archive.namelist()
+            problem = validate_plugin_archive(names)
+            if problem is not None:
+                raise ValueError(
+                    _('not a plugin archive: {problem}').format(problem=problem))
+
+            # Through util.unzip, not extractall: that is where the "stay
+            # inside the target directory" check lives.
+            util.unzip(plugin_file, ENV['LPATH']['PLUGINS'])
+
+            # The engine has to be told, or the plugin is listed as available
+            # and cannot be enabled until the next start: get_plugin_info
+            # returns None and the enable gives up.
+            pluginsystem.rescan_plugins()
             pluginsystem.create_plugin_index()
+
             self.searchentry.set_text('')
             self.searchentry.activate()
-            plugin_dirname = zip_archive.namelist()[0]
-            plugin_path = glob.glob(os.path.join(ENV['LPATH']['PLUGINS'], plugin_dirname, '*.plugin'))[0]
+            plugin_dirname = plugin_archive_root(names)
+            plugin_path = glob.glob(os.path.join(ENV['LPATH']['PLUGINS'],
+                                                 plugin_dirname, '*.plugin'))[0]
             plugin_info = pluginsystem.get_plugin_attributes(plugin_path)
             plugin_name = plugin_info['Name']
             plugin_version = pluginsystem_version(plugin_info,
@@ -919,7 +939,16 @@ class MiAZPlugins(MiAZConfigView):
         plugin_module = plugin_info['Module']
         plugin = plugin_manager.get_plugin_info(plugin_module)
         if plugin is None:
+            # On disk and in the index, but the engine has not seen it. The
+            # import path rescans now, so this is a plugin dropped into the
+            # directory by hand while MiAZ was running.
             self.log.error(f"Plugin '{plugin_id}' could not be resolved by the engine")
+            self.srvdlg.show_error(
+                title=_('Cannot enable plugin'),
+                body=_('<b>{plugin}</b> is on disk but the plugin engine has '
+                       'not seen it. Restart MiAZ and try again.').format(
+                           plugin=plugin_id),
+                parent=self)
             return False
         if not plugin_manager.is_plugin_loaded(plugin):
             if not plugin_manager.load_plugin(plugin):
