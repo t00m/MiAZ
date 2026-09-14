@@ -700,34 +700,80 @@ def test_a_flat_archive_is_no_root():
     assert ps.plugin_archive_root(['hello.py', 'hello.plugin']) == ''
 
 
+def _build_zip_archive(entries):
+    """An open zipfile.ZipFile whose members are `entries` (name -> text).
+
+    validate_plugin_archive reads a .plugin member's bytes to find its
+    Module= key, so a plain name list is not enough to exercise it: this
+    builds a real in-memory archive, the same object the handler gets from
+    zipfile.ZipFile(plugin_file).
+    """
+    import io
+    import zipfile as zipfile_module
+    buffer = io.BytesIO()
+    with zipfile_module.ZipFile(buffer, 'w') as writer:
+        for name, content in entries.items():
+            writer.writestr(name, content)
+    buffer.seek(0)
+    return zipfile_module.ZipFile(buffer)
+
+
+HELLO_PLUGIN_ENTRIES = {
+    'hello/hello.py': '# hello\n',
+    'hello/hello.plugin': 'Module=hello\nName=Hello\n',
+}
+
+# MiAZContacts is a real bundled plugin: its directory, its module
+# (contactbook) and its .plugin file (miazcontacts.plugin) all have
+# different names. A stem match between the .py and the .plugin file is not
+# the rule discovery uses; only the Module= key inside the .plugin file is.
+CONTACTS_PLUGIN_ENTRIES = {
+    'MiAZContacts/contactbook.py': '# contacts\n',
+    'MiAZContacts/miazcontacts.plugin': 'Module=contactbook\nName=Contacts\n',
+}
+
+
 def test_a_plugin_archive_passes_validation():
-    assert ps.validate_plugin_archive(HELLO_ARCHIVE) is None
-    assert ps.validate_plugin_archive(HELLO_NO_DIR_ENTRY) is None
+    assert ps.validate_plugin_archive(
+        _build_zip_archive(HELLO_PLUGIN_ENTRIES)) is None
+
+
+def test_a_mismatched_stem_archive_still_passes_validation():
+    """The directory, the module and the .plugin stem may all differ."""
+    assert ps.validate_plugin_archive(
+        _build_zip_archive(CONTACTS_PLUGIN_ENTRIES)) is None
 
 
 def test_an_archive_with_resources_still_passes():
-    names = HELLO_ARCHIVE + ['hello/resources/', 'hello/resources/css/x.css']
-    assert ps.validate_plugin_archive(names) is None
+    entries = dict(HELLO_PLUGIN_ENTRIES)
+    entries['hello/resources/css/x.css'] = 'body {}'
+    assert ps.validate_plugin_archive(_build_zip_archive(entries)) is None
 
 
 def test_a_flat_archive_is_refused():
     """Discovery globs <plugins>/*/*.py, so a flat plugin is never found."""
-    problem = ps.validate_plugin_archive(['hello.py', 'hello.plugin'])
+    entries = {'hello.py': '# hello\n', 'hello.plugin': 'Module=hello\n'}
+    problem = ps.validate_plugin_archive(_build_zip_archive(entries))
     assert problem is not None
     assert 'directory' in problem
 
 
 def test_an_archive_without_a_definition_is_refused():
-    problem = ps.validate_plugin_archive(['hello/', 'hello/hello.py'])
+    entries = {'hello/hello.py': '# hello\n'}
+    problem = ps.validate_plugin_archive(_build_zip_archive(entries))
     assert problem is not None
     assert 'hello' in problem
 
 
-def test_an_archive_whose_names_do_not_match_is_refused():
-    problem = ps.validate_plugin_archive(['hello/', 'hello/code.py',
-                                          'hello/meta.plugin'])
+def test_a_plugin_file_naming_a_missing_module_is_refused():
+    entries = {
+        'hello/hello.py': '# hello\n',
+        'hello/hello.plugin': 'Module=missing\nName=Hello\n',
+    }
+    problem = ps.validate_plugin_archive(_build_zip_archive(entries))
     assert problem is not None
+    assert 'missing' in problem
 
 
 def test_an_empty_archive_is_refused():
-    assert ps.validate_plugin_archive([]) is not None
+    assert ps.validate_plugin_archive(_build_zip_archive({})) is not None

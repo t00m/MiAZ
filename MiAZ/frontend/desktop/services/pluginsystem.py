@@ -102,30 +102,73 @@ def plugin_archive_root(names) -> str:
     return roots.pop() if len(roots) == 1 else ''
 
 
-def validate_plugin_archive(names):
+def _archive_root_member(name, root):
+    """The path of `name` relative to `root`, or None outside the root.
+
+    Only entries directly inside the root directory count: a plugin's own
+    .py and .plugin files live there, not in a resources/ subdirectory.
+    """
+    parts = name.replace('\\', '/').lstrip('/').split('/')
+    if len(parts) != 2 or parts[0] != root or not parts[1]:
+        return None
+    return parts[1]
+
+
+def _plugin_declared_module(text):
+    """The value of the first Module= line in a .plugin file's text, or None.
+
+    Parsed with the same tolerance MiAZ.backend.plugins._read_command_keys
+    uses for the same file: split on the first '=', strip both sides.
+    """
+    for line in text.splitlines():
+        line = line.strip()
+        if '=' not in line:
+            continue
+        key, value = line.split('=', 1)
+        if key.strip() == 'Module':
+            return value.strip()
+    return None
+
+
+def validate_plugin_archive(archive):
     """Why this archive is not a plugin, or None when it is.
 
-    A plugin archive holds one directory and, directly inside it, a
-    <module>.py beside a <module>.plugin of the same name. Asking before
-    extracting is what keeps an unrelated ZIP out of the user plugin
-    directory.
+    A plugin's directory is named after the plugin, not after its module, so
+    a name match between the .py and the .plugin file is not the rule
+    discovery uses: MiAZContacts, MiAZDoctor, MiAZInsights and MiAZRelated
+    are four bundled plugins whose directory, module and .plugin stem are all
+    different. Discovery instead trusts the .plugin file's Module= key, so
+    this reads that key out of the archive before anything is extracted:
+    the archive is a plugin when its root directory holds a .plugin file
+    whose Module= value names a <value>.py file in that same directory.
+
+    `archive` is an open zipfile.ZipFile, because the .plugin member has to
+    be read to find its Module= key.
     """
+    names = archive.namelist()
     root = plugin_archive_root(names)
     if not root:
-        return 'the archive does not hold a single top-level directory'
-    modules, definitions = set(), set()
-    for name in names:
-        parts = name.replace('\\', '/').lstrip('/').split('/')
-        if len(parts) != 2 or parts[0] != root or not parts[1]:
+        return _('the archive does not hold a single top-level directory')
+    plugin_files = [name for name in names
+                    if (_archive_root_member(name, root) or '').endswith('.plugin')]
+    if not plugin_files:
+        return _("'{root}' holds no .plugin file").format(root=root)
+    missing_module = None
+    for plugin_file in plugin_files:
+        try:
+            text = archive.read(plugin_file).decode('utf-8')
+        except (KeyError, UnicodeDecodeError):
             continue
-        stem, _dot, extension = parts[1].rpartition('.')
-        if extension == 'py':
-            modules.add(stem)
-        elif extension == 'plugin':
-            definitions.add(stem)
-    if not modules & definitions:
-        return f"'{root}' holds no <module>.py beside a <module>.plugin"
-    return None
+        module = _plugin_declared_module(text)
+        if not module:
+            continue
+        if f'{root}/{module}.py' in names:
+            return None
+        missing_module = module
+    if missing_module is not None:
+        return _("the .plugin file names module {module} but {module}.py "
+                 "is not there").format(module=missing_module)
+    return _("'{root}' holds no .plugin file declaring a Module").format(root=root)
 
 
 class PluginMenuRegistry:

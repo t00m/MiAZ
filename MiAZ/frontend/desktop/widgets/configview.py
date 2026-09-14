@@ -744,7 +744,7 @@ class MiAZPlugins(MiAZConfigView):
             # Read the listing and check it before anything lands on disk.
             with zipfile.ZipFile(plugin_file) as archive:
                 names = archive.namelist()
-            problem = validate_plugin_archive(names)
+                problem = validate_plugin_archive(archive)
             if problem is not None:
                 raise ValueError(
                     _('not a plugin archive: {problem}').format(problem=problem))
@@ -753,11 +753,13 @@ class MiAZPlugins(MiAZConfigView):
             # inside the target directory" check lives.
             util.unzip(plugin_file, ENV['LPATH']['PLUGINS'])
 
-            # The engine has to be told, or the plugin is listed as available
-            # and cannot be enabled until the next start: get_plugin_info
-            # returns None and the enable gives up.
-            pluginsystem.rescan_plugins()
+            # create_plugin_index reads the filesystem directly and emits
+            # nothing, so it runs first. rescan_plugins emits
+            # plugins-updated to synchronous handlers, which must see the
+            # index and the available list already written, not the engine
+            # telling them about a plugin the index does not know about yet.
             pluginsystem.create_plugin_index()
+            pluginsystem.rescan_plugins()
 
             self.searchentry.set_text('')
             self.searchentry.activate()
