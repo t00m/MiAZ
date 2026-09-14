@@ -77,11 +77,10 @@ def main():
             handler.write(text)
         print(f'written: {target}')
 
-    if args.check and stale:
+    if args.check:
         print(f'{stale} definition(s) do not match their module')
-        return 1
-    if not args.check:
-        print(f'{stale} definition(s) updated')
+        return 1 if stale else 0
+    print(f'{stale} definition(s) updated')
     return 0
 
 
