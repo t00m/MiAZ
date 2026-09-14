@@ -18,7 +18,7 @@ from MiAZ.frontend.desktop.services.pluginsystem import MiAZExtension, MiAZPlugi
 plugin_info = {
     'Module':      'importfromzip',
     'Name':        'MiAZImportFromZip',
-    'Loader':      'Python3',
+    'Loader':      'python',
     'Description': _('Import documents from a ZIP file'),
     'Authors':     'Tomás Vírseda <tomasvirseda@gmail.com>',
     'Copyright':   'Copyright © 2026 Tomás Vírseda',

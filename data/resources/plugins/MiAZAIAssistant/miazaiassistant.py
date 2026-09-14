@@ -23,7 +23,7 @@ from miazai.ui.dialog import register_suggest_items, unregister_suggest_items
 plugin_info = {
     'Module':      'miazaiassistant',
     'Name':        'MiAZAIAssistant',
-    'Loader':      'Python3',
+    'Loader':      'python',
     'Description': _('Suggest filename fields from document content using an AI provider'),
     'Authors':     'Tomás Vírseda <tomasvirseda@gmail.com>',
     'Copyright':   'Copyright © 2026 Tomás Vírseda',

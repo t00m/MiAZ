@@ -16,7 +16,7 @@ from MiAZ.frontend.desktop.services.pluginsystem import MiAZExtension, MiAZPlugi
 plugin_info = {
         'Module':        'export2text',
         'Name':          'MiAZExport2Text',
-        'Loader':        'Python3',
+        'Loader':        'python',
         'Description':   _('Export to text editor'),
         'Authors':       'Tomás Vírseda <tomasvirseda@gmail.com>',
         'Copyright':     'Copyright © 2025 Tomás Vírseda',

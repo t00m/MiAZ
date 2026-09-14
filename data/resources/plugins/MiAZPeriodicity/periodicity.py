@@ -22,7 +22,7 @@ from MiAZ.frontend.desktop.services.pluginsystem import MiAZExtension, MiAZPlugi
 plugin_info = {
         'Module':        'periodicity',
         'Name':          'MiAZPeriodicity',
-        'Loader':        'Python3',
+        'Loader':        'python',
         'Description':   _('Set document periodicity'),
         'Authors':       'Tomás Vírseda <tomasvirseda@gmail.com>',
         'Copyright':     'Copyright © 2025 Tomás Vírseda',

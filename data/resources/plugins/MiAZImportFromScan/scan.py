@@ -36,7 +36,7 @@ _DESKTOP_SEARCH_PATTERNS = [
 plugin_info = {
         'Module':        'scan',
         'Name':          'MiAZImportFromScan',
-        'Loader':        'Python3',
+        'Loader':        'python',
         'Description':   _('Import document from scanner'),
         'Authors':       'Tomás Vírseda <tomasvirseda@gmail.com>',
         'Copyright':     'Copyright © 2025 Tomás Vírseda',

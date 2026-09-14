@@ -20,7 +20,7 @@ from MiAZ.frontend.desktop.widgets.pills import item_fields
 plugin_info = {
         'Module':        'export2dir',
         'Name':          'MiAZExport2Dir',
-        'Loader':        'Python3',
+        'Loader':        'python',
         'Description':   _('Export to directory'),
         'Authors':       'Tomás Vírseda <tomasvirseda@gmail.com>',
         'Copyright':     'Copyright © 2025 Tomás Vírseda',

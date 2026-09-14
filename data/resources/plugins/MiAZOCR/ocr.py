@@ -30,7 +30,7 @@ from MiAZ.backend.tasks import run_on_main
 plugin_info = {
         'Module':        'ocr',
         'Name':          'MiAZOCR',
-        'Loader':        'Python3',
+        'Loader':        'python',
         'Description':   _('Extract text from PDF documents with OCR and save it as a note'),
         'Authors':       'Tomás Vírseda <tomasvirseda@gmail.com>',
         'Copyright':     'Copyright © 2026 Tomás Vírseda',

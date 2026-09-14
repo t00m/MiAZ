@@ -19,7 +19,7 @@ from MiAZ.backend.models import Purpose, SentBy, SentTo
 plugin_info = {
         'Module':        'export2zip',
         'Name':          'MiAZExport2Zip',
-        'Loader':        'Python3',
+        'Loader':        'python',
         'Description':   _('Compress documents into a ZIP file'),
         'Authors':       'Tomás Vírseda <tomasvirseda@gmail.com>',
         'Copyright':     'Copyright © 2025 Tomás Vírseda',

@@ -173,6 +173,33 @@ def normalise_menu_entries(entries) -> list:
     return normalised
 
 
+def plugin_definition_text(plugin_info: dict) -> str:
+    """The .plugin file contents for one declaration.
+
+    Keys keep the order the module writes them in, so the generated file reads
+    like the dictionary it came from. MenuEntries and Operations have no INI
+    shape of their own, so each entry becomes one key named after its id:
+    MenuEntry-<id> and Command-<name>. A menu entry's shortcuts follow its
+    label after a '|', comma separated, which is how
+    tests/test_plugin_menu_entries.py reads them back.
+    """
+    lines = ['[Plugin]']
+    for key, value in plugin_info.items():
+        if key == 'MenuEntries':
+            for entry_id, label, shortcuts in normalise_menu_entries(value):
+                keys = '|' + ','.join(shortcuts) if shortcuts else ''
+                lines.append(f'MenuEntry-{entry_id}={label}{keys}')
+        elif key == 'Operations':
+            for operation in value or []:
+                name = operation.get('name')
+                if not name:
+                    continue
+                lines.append(f"{COMMAND_PREFIX}{name}={operation.get('help', '')}")
+        else:
+            lines.append(f'{key}={value}')
+    return '\n'.join(lines) + '\n'
+
+
 def get_plugin_attributes(plugin_file: str) -> dict:
     """Read a .plugin file into a dict. No engine, no import, no toolkit."""
     from gettext import gettext as _

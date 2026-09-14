@@ -29,7 +29,7 @@ from MiAZ.frontend.desktop.services.pluginsystem import MiAZExtension, MiAZPlugi
 plugin_info = {
     'Module':      'autoscan',
     'Name':        'MiAZAutoScan',
-    'Loader':      'Python3',
+    'Loader':      'python',
     'Description': _('Scan documents in background and import them directly into the repository'),
     'Authors':     'Tomas Virseda <tomasvirseda@gmail.com>',
     'Copyright':   'Copyright \u00a9 2026 Tomas Virseda',

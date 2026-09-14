@@ -19,7 +19,7 @@ from MiAZ.frontend.desktop.services.pluginsystem import MiAZExtension, MiAZPlugi
 plugin_info = {
     'Module':        'miazhistory',
     'Name':          'MiAZHistory',
-    'Loader':        'Python3',
+    'Loader':        'python',
     'Description':   _('Undo and redo changes in this repository'),
     'Authors':       'Tomás Vírseda <tomasvirseda@gmail.com>',
     'Copyright':     'Copyright © 2026 Tomás Vírseda',
