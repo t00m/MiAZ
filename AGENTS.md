@@ -411,6 +411,22 @@ It did not always. The rebuild used to clear every loaded plugin's `started` fla
 
 **Contributions are refused once the plugin is unloaded.** `MiAZPlugin.is_active()` goes false before `do_deactivate` runs, and every contribution helper (menu entry, submenu, workspace page, sidebar widget, header bar widget, sidebar dropdown, document tab) returns early when it is false. Background work that finishes late cannot add UI for a plugin that is gone: `MiAZAutoScan` builds its source menu when the scanner answers, which can easily be after the user disabled it.
 
+**A plugin may say which plugins it needs.** `Dependencies` is a comma separated list of
+plugin `Name` values, written in both `plugin_info` and the `.plugin` file like every
+other key:
+
+```python
+'Dependencies':  'MiAZPeriodicity, MiAZProjectMgt',
+```
+
+Enabling a plugin whose dependencies are installed but disabled asks first and then
+enables the chain, dependencies before dependants. A dependency that is not installed is
+named and the enable is refused. Disabling a plugin another enabled plugin needs is
+refused and the dependants are named. The resolution itself is four pure functions in
+`services/pluginsystem.py` (`parse_dependencies`, `resolve_required_chain`,
+`chain_contains`, `find_dependents`), covered by `tests/test_pluginsystem.py`. No bundled
+plugin declares dependencies today; the key exists for out-of-tree plugins.
+
 **A plugin that registers a service must take it away.** `app.set_service(name, None)` removes it, and `set_service` replaces rather than ignoring, which it used to do. `MiAZProjectMgt` registers `Projects`; its `do_deactivate` calls `dispose()` on it (disconnecting the file signals it took) and then removes it. Leaving it registered meant a disabled plugin's service kept reacting to every file change, and, because it holds the path to one repository's `projects.json`, kept writing to the repository the user had switched away from.
 
 **Verifying it**: `tests/ui/test_ui_plugin_cycle.py` loads, unloads and reloads every plugin twice and compares pages, menu entries, sidebar and header bar contents and rename tabs. `tests/ui/test_ui_plugin_signals.py` counts the handlers on every long-lived emitter around a cycle, which is the only way to see a handler that was never disconnected. `PYTHONPATH=. python scripts/devel/check_plugin_ui.py [PluginName ...]` remains for looking at one plugin by hand.

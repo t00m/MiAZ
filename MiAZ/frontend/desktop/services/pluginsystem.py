@@ -170,6 +170,79 @@ def validate_plugin_archive(archive):
     return _("'{root}' holds no .plugin file declaring a Module").format(root=root)
 
 
+def parse_dependencies(plugin_info) -> list:
+    """The plugin Names one plugin declares it needs.
+
+    Written as a comma separated string in the Dependencies key. A .plugin file
+    has no way to write a list, and both halves of a declaration have to say
+    the same thing, so the module writes it the same way.
+    """
+    if not plugin_info:
+        return []
+    raw = plugin_info.get('Dependencies', '') or ''
+    return [name.strip() for name in raw.split(',') if name.strip()]
+
+
+def resolve_required_chain(plugin_id, all_plugins, is_enabled):
+    """(to_enable, missing) for one plugin.
+
+    Post-order depth first, so a dependency always lands before the plugin that
+    needs it. `to_enable` holds installed but disabled dependencies in the order
+    they have to be enabled; `missing` holds names no installed plugin answers
+    to. `is_enabled` takes a plugin Name and says whether this repository has it
+    enabled already.
+
+    A cycle is walked once and then left alone: refusing to resolve it would
+    make the plugin unusable, and the enable itself is idempotent.
+    """
+    to_enable, missing, done, visiting = [], [], set(), set()
+
+    def visit(pid):
+        for dep in parse_dependencies(all_plugins.get(pid)):
+            if dep in done or dep in visiting:
+                continue
+            if dep not in all_plugins:
+                if dep not in missing:
+                    missing.append(dep)
+                done.add(dep)
+                continue
+            visiting.add(dep)
+            visit(dep)
+            visiting.discard(dep)
+            done.add(dep)
+            if not is_enabled(dep) and dep not in to_enable:
+                to_enable.append(dep)
+
+    visiting.add(plugin_id)
+    visit(plugin_id)
+    return to_enable, missing
+
+
+def chain_contains(plugin_id, target_id, all_plugins) -> bool:
+    """Whether target_id is anywhere in plugin_id's dependency chain."""
+    visited = set()
+    pending = list(parse_dependencies(all_plugins.get(plugin_id)))
+    while pending:
+        dep = pending.pop(0)
+        if dep in visited:
+            continue
+        visited.add(dep)
+        if dep == target_id:
+            return True
+        pending.extend(parse_dependencies(all_plugins.get(dep)))
+    return False
+
+
+def find_dependents(plugin_id, all_plugins, enabled) -> list:
+    """The enabled plugins whose chain reaches plugin_id.
+
+    Disabling one of these would leave a plugin running without something it
+    said it needs, so the settings view refuses and names them.
+    """
+    return [name for name in enabled
+            if name != plugin_id and chain_contains(name, plugin_id, all_plugins)]
+
+
 class PluginMenuRegistry:
     """What each plugin contributed to the shared menus.
 

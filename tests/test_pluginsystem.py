@@ -804,3 +804,93 @@ def test_a_plugin_helper_is_a_usable_gobject(dirs):
     """
     helper = ps.MiAZPlugin(FakeApp(make_env(*dirs)))
     assert helper.connect('notify', lambda *a: None) is not None
+
+
+# Plugin dependencies
+#
+# A plugin names the plugins it needs in a Dependencies key, comma separated
+# because a .plugin file has no way to write a list and both declarations have
+# to say the same thing. Enabling one offers to enable its chain; disabling one
+# other enabled plugins need is refused.
+
+INDEX = {
+    'Leaf': {'Name': 'Leaf'},
+    'Middle': {'Name': 'Middle', 'Dependencies': 'Leaf'},
+    'Top': {'Name': 'Top', 'Dependencies': 'Middle'},
+    'Wide': {'Name': 'Wide', 'Dependencies': 'Leaf, Middle'},
+    'Lonely': {'Name': 'Lonely', 'Dependencies': ''},
+    'Broken': {'Name': 'Broken', 'Dependencies': 'Ghost'},
+    'LoopA': {'Name': 'LoopA', 'Dependencies': 'LoopB'},
+    'LoopB': {'Name': 'LoopB', 'Dependencies': 'LoopA'},
+}
+
+
+def nothing_enabled(_name):
+    return False
+
+
+def test_a_plugin_declaring_nothing_needs_nothing():
+    assert ps.parse_dependencies(INDEX['Leaf']) == []
+    assert ps.parse_dependencies(INDEX['Lonely']) == []
+    assert ps.parse_dependencies(None) == []
+
+
+def test_dependencies_are_read_off_a_comma_separated_string():
+    assert ps.parse_dependencies(INDEX['Wide']) == ['Leaf', 'Middle']
+
+
+def test_surrounding_space_is_not_part_of_a_name():
+    assert ps.parse_dependencies({'Dependencies': ' Leaf ,  Middle '}) \
+        == ['Leaf', 'Middle']
+
+
+def test_a_chain_puts_the_dependency_before_the_plugin_that_needs_it():
+    to_enable, missing = ps.resolve_required_chain('Top', INDEX, nothing_enabled)
+    assert to_enable == ['Leaf', 'Middle']
+    assert missing == []
+
+
+def test_the_plugin_itself_is_not_in_its_own_chain():
+    to_enable, _missing = ps.resolve_required_chain('Top', INDEX, nothing_enabled)
+    assert 'Top' not in to_enable
+
+
+def test_an_already_enabled_dependency_is_left_out():
+    to_enable, _missing = ps.resolve_required_chain(
+        'Top', INDEX, lambda name: name == 'Leaf')
+    assert to_enable == ['Middle']
+
+
+def test_a_dependency_that_is_not_installed_is_reported_as_missing():
+    to_enable, missing = ps.resolve_required_chain('Broken', INDEX, nothing_enabled)
+    assert to_enable == []
+    assert missing == ['Ghost']
+
+
+def test_a_cycle_does_not_hang_the_resolver():
+    to_enable, missing = ps.resolve_required_chain('LoopA', INDEX, nothing_enabled)
+    assert to_enable == ['LoopB']
+    assert missing == []
+
+
+def test_a_dependency_named_twice_is_enabled_once():
+    to_enable, _missing = ps.resolve_required_chain('Wide', INDEX, nothing_enabled)
+    assert to_enable == ['Leaf', 'Middle']
+
+
+def test_a_chain_contains_what_it_reaches():
+    assert ps.chain_contains('Top', 'Leaf', INDEX) is True
+    assert ps.chain_contains('Top', 'Middle', INDEX) is True
+    assert ps.chain_contains('Leaf', 'Top', INDEX) is False
+
+
+def test_the_plugins_that_would_break_are_named():
+    assert ps.find_dependents('Leaf', INDEX, ['Top', 'Lonely']) == ['Top']
+
+
+def test_a_plugin_nothing_needs_has_no_dependents():
+    assert ps.find_dependents('Lonely', INDEX, ['Top', 'Wide']) == []
+
+
+def test_a_plugin_is_not_its_own_dependent():
+    assert 'LoopA' not in ps.find_dependents('LoopA', INDEX, ['LoopA', 'LoopB'])

@@ -25,8 +25,8 @@ from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewRepo
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewPlugin
 from MiAZ.frontend.desktop.services.dialogs import MiAZDialogAddRepo
 from MiAZ.frontend.desktop.services.pluginsystem import (
-    format_load_failure_banner, format_plugin_info_value,
-    plugin_archive_root, validate_plugin_archive,
+    find_dependents, format_load_failure_banner, format_plugin_info_value,
+    plugin_archive_root, resolve_required_chain, validate_plugin_archive,
     plugin_version as pluginsystem_version)
 
 
@@ -847,76 +847,6 @@ class MiAZPlugins(MiAZConfigView):
         except Exception:
             return {}
 
-    def _parse_dependencies(self, plugin_info):
-        """Return the list of plugin Names declared as dependencies.
-
-        Dependencies are stored as a comma-separated string in the
-        `Dependencies` key of the plugin_info dict. Missing or empty means
-        no dependencies.
-        """
-        if plugin_info is None:
-            return []
-        raw = plugin_info.get('Dependencies', '')
-        return [dep.strip() for dep in raw.split(',') if dep.strip()]
-
-    def _resolve_required_chain(self, plugin_id, all_plugins):
-        """Resolve the full dependency chain for `plugin_id`.
-
-        Post-order depth-first walk so a dependency always lands before the
-        plugin that needs it. Returns a tuple (to_enable, missing) where:
-        - to_enable: topologically ordered list of installed-but-disabled
-          dependency Names (dependencies first).
-        - missing: list of dependency Names not present in the index.
-        """
-        to_enable = []
-        missing = []
-        done = set()
-        visiting = set()
-
-        def visit(pid):
-            for dep in self._parse_dependencies(all_plugins.get(pid)):
-                if dep in done or dep in visiting:
-                    continue
-                if dep not in all_plugins:
-                    if dep not in missing:
-                        missing.append(dep)
-                    done.add(dep)
-                    continue
-                visiting.add(dep)
-                visit(dep)
-                visiting.discard(dep)
-                done.add(dep)
-                if not self.config.exists_used(dep) and dep not in to_enable:
-                    to_enable.append(dep)
-
-        visiting.add(plugin_id)
-        visit(plugin_id)
-        return to_enable, missing
-
-    def _find_dependents(self, plugin_id, all_plugins):
-        """Return enabled plugin Names whose dependency chain needs `plugin_id`."""
-        dependents = []
-        for enabled_id in self.config.load_used():
-            if enabled_id == plugin_id:
-                continue
-            if self._chain_contains(enabled_id, plugin_id, all_plugins):
-                dependents.append(enabled_id)
-        return dependents
-
-    def _chain_contains(self, plugin_id, target_id, all_plugins):
-        """Return True if `target_id` is anywhere in `plugin_id`'s dependency chain."""
-        visited = set()
-        pending = list(self._parse_dependencies(all_plugins.get(plugin_id)))
-        while pending:
-            dep = pending.pop(0)
-            if dep in visited:
-                continue
-            visited.add(dep)
-            if dep == target_id:
-                return True
-            pending.extend(self._parse_dependencies(all_plugins.get(dep)))
-        return False
-
     def _enable_single(self, plugin_id, all_plugins):
         """Load and record a single plugin as enabled. Returns True on success."""
         plugin_manager = self.app.get_service('plugin-system')
@@ -966,7 +896,8 @@ class MiAZPlugins(MiAZConfigView):
             return
 
         # Warn and block: refuse to disable a plugin other enabled plugins need
-        dependents = self._find_dependents(selected_plugin.id, all_plugins)
+        dependents = find_dependents(selected_plugin.id, all_plugins,
+                                     self.config.load_used())
         if dependents:
             title = _('Cannot disable plugin')
             body = _("Plugin <b>{plugin}</b> is required by the following enabled "
@@ -999,7 +930,8 @@ class MiAZPlugins(MiAZConfigView):
             self.log.error(f"Plugin '{selected_plugin.id}' not found in plugin index")
             return
 
-        to_enable, missing = self._resolve_required_chain(selected_plugin.id, all_plugins)
+        to_enable, missing = resolve_required_chain(
+            selected_plugin.id, all_plugins, self.config.exists_used)
 
         if missing:
             title = _('Missing plugin dependencies')
