@@ -41,6 +41,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **The package verifier failed every release that does not carry a build counter.** Its last check compares the version of the rpm with the version of the deb, and it put them in the same shape by appending `+build.<rpm release>` to the rpm one. That only matches a deb whose own version holds `+build.N`, which was true while `meson.build` said `0.2.0+build.8` and stopped being true in 0.3.0, where the version names the release and the counter is the Debian revision. So 0.3.0 verified as "same release version, different build: rpm 0.3.0+build.1, deb 0.3.0", with the packages themselves in perfect agreement. Both versions are now taken apart into a version and a build number and compared piece by piece, which reads either spelling. Checked against the 0.3.0 packages: 31 passed, 0 failed.
 - **`RELEASING.md` step 7 says how to publish, rather than that you should.** It said "upload `dist/` to the GitHub release for the tag" and left the reader to work out the rest. It now carries the two pushes that put the tag on GitHub and the `gh release create` line that makes the release from `releases/X.Y.Z.md` with the rpm, the deb, the AppImage and `INSTALL.txt` attached, which is what 0.3.0 was published with. It also says why the src.rpm stays out, and that the rpm is unsigned and the page should say so.
 - `RELEASING.md` said `build_all.sh` produces a Flatpak. It stopped: the sandbox cannot reach `ocrmypdf` or `scanimage`, so the step is skipped unless `MIAZ_ALLOW_FLATPAK=1` says otherwise. The document now says that, points at the per-format logs in `dist/logs/`, and says that the build runs the verifier with `--no-container`, so the container checks are only made by running step 6 on its own.
+- Plugins now take their application actions and keyboard shortcuts with them when they unload. `<Control>p` went on firing MiAZProjectMgt's handler after the plugin was disabled, against a service its own teardown had already removed.
+- Plugins now drop their widget registry keys when they unload, so the next activation cannot find a detached widget and decide it has nothing to do.
+- The plugin info dialog opens for every plugin. It passed list-valued declaration keys (`MenuEntries`, `Operations`) to a label and raised, so it never opened for the seventeen bundled plugins that declare menu entries.
+- A plugin imported from a ZIP can be enabled without restarting. The engine is told about it now, the archive is checked before anything is written, and the plugin directory is read from the whole listing instead of its first entry.
+- Enabling a plugin the engine cannot resolve says so instead of failing silently.
+- `.plugin` files are generated from the module declaration again, so the two halves of a plugin's declaration cannot drift. `scripts/devel/create_plugin_definitions.py` had not been able to write a single current file. Four `.plugin` files were also renamed to match their module: `miazcontacts.plugin` became `contactbook.plugin`, and likewise for MiAZDoctor, MiAZInsights and MiAZRelated.
+- Every plugin declares the loader the engine actually enables (`python`, not `Python3`).
+- `MiAZPlugin` initialises the GObject it inherits from.
+- Reading a `.plugin` file no longer runs author names and URLs through gettext.
+- The author name lost its accents in two plugin modules, MiAZAutoScan and MiAZColumnVisibility, and was corrected at source.
+- The OCR run reports its counts once instead of one toast per document.
+- The plugin cycle UI test walks menu trees without losing siblings to recycled object ids, which had been failing eleven of fifteen cases and could have hidden a real leak.
+
+### Added
+
+- `Dependencies` is a documented and tested plugin declaration key: a comma separated list of plugin names, resolved when a plugin is enabled and checked when one is disabled.
+
+### Removed
+
+- The unused flat-layout plugin install paths (`import_plugin`, `remove_plugin`) and the dead rescan wrappers, including the `plugins-downloaded` signal that was never emitted.
 
 ## [0.3.0] - 2026-09-12
 
