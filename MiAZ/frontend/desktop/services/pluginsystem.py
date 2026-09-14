@@ -21,7 +21,7 @@ from gi.repository import GObject, Gtk, Peas
 
 from MiAZ.backend.log import MiAZLog
 # The frontend-neutral half lives in the backend so the console frontend can
-# use it too. Re-exported here because 21 plugins and the desktop app import
+# use it too. Re-exported here because 20 plugins and the desktop app import
 # these names from this module, and because _activate_plugin_instance matches
 # a plugin's class with issubclass against the very same MiAZExtension: two
 # definitions of it would mean no plugin ever activates.
@@ -809,10 +809,16 @@ class MiAZPlugin(GObject.GObject):
     def install_menu_submenu(self, title: str, menu):
         """Add a submenu of this plugin's own items to its menu entry.
 
-        The plugins that offer several actions (assign, unassign, manage) build
-        a Gio.Menu and hang it under their entry. Going through here records it
-        like a single item does, so a menu rebuild restores it without calling
-        startup() again.
+        No bundled plugin uses this any more. MiAZProjectMgt and MiAZPeriodicity
+        did, each hanging a submenu named after the plugin inside the entry
+        already named after the plugin, so reaching Assign meant Projects, then
+        Project, then Assign. Both declare three MenuEntries instead now, which
+        is what tests/ui/test_ui_plugin_menus.py enforces.
+
+        It stays for an out-of-tree plugin whose actions really do belong one
+        level deeper. Going through here records the submenu like a single item
+        is recorded, so a menu rebuild restores it without calling startup()
+        again.
         """
         if not self.is_active():
             return None
@@ -870,6 +876,9 @@ class MiAZPlugin(GObject.GObject):
         nothing to clean up in do_deactivate and nothing to re-adopt on the way
         back. A plugin that would rather manage the stack itself still can:
         workspace.get_stack() hands over the real Adw.ViewStack.
+
+        No bundled plugin adds a page today. MiAZNotes did, and became core in
+        0.3. This stays as the way an out-of-tree plugin adds one.
         """
         if not self.is_active():
             return

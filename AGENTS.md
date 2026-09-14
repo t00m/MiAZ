@@ -92,7 +92,7 @@ MiAZ/
 │                 (no searchbar.py: search is a registered 'searchentry' widget)
 ├── data/
 │   └── resources/
-│       ├── plugins/              ← Built-in Peas plugins (21 with .plugin metadata)
+│       ├── plugins/              ← Built-in Peas plugins (20 with .plugin metadata)
 │       ├── icons/                ← App icons (scalable + flag SVGs)
 │       ├── conf/                 ← 6 default config JSON files (countries, extensions,
 │       │                            groups, languages, people, purposes)
