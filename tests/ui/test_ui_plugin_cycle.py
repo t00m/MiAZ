@@ -14,9 +14,10 @@ visibility crash reached a release.
 
 import gi
 gi.require_version('Gtk', '4.0')
-from gi.repository import Gio
 
 import pytest
+
+from tests.menutree import menu_actions
 
 
 def children(widget):
@@ -30,30 +31,6 @@ def children(widget):
     return count
 
 
-def menu_actions(menu, seen=None):
-    """Every action reachable from a Gio.Menu, submenus and sections included.
-
-    `seen` guards against walking the same submenu twice: the plugin submenus
-    are linked from more than one root, so without it the same entry is
-    reported several times and a real duplicate cannot be told apart.
-    """
-    if seen is None:
-        seen = set()
-    if menu is None or id(menu) in seen:
-        return []
-    seen.add(id(menu))
-    found = []
-    for position in range(menu.get_n_items()):
-        value = menu.get_item_attribute_value(position, 'action', None)
-        if value is not None:
-            found.append(value.get_string())
-        for link in (Gio.MENU_LINK_SUBMENU, Gio.MENU_LINK_SECTION):
-            child = menu.get_item_link(position, link)
-            if child is not None:
-                found.extend(menu_actions(child, seen))
-    return found
-
-
 def snapshot(driver):
     """Everything shared that a plugin can touch."""
     stack = driver.workspace.get_stack()
@@ -65,12 +42,12 @@ def snapshot(driver):
             pages.append(page.get_name())
         child = child.get_next_sibling()
 
-    seen = set()
+    seen, keep = set(), []
     actions = []
     for key in ('workspace-menu-selection', 'workspace-menu-single',
                 'workspace-plugins-section', 'window-menu-app',
                 'headerbar-add-menu'):
-        actions.extend(menu_actions(driver.widget(key), seen))
+        actions.extend(menu_actions(driver.widget(key), seen, keep))
 
     tabs = driver.service('document-tabs')
     return {
