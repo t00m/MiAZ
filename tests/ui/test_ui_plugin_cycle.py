@@ -206,3 +206,33 @@ def test_a_plugin_takes_its_actions_and_shortcuts_with_it(miaz):
 
     for name in PROJECT_ACTIONS:
         assert app.lookup_action(name) is not None, f'{name} did not come back'
+
+
+def test_a_plugin_takes_its_widget_keys_with_it(miaz):
+    """A key left pointing at a detached widget is the trap register_widget
+    was written for: the next activation finds the old one and does nothing."""
+    system = miaz.service('plugin-system')
+    info = find(system, 'MiAZProjectMgt')
+    assert info is not None
+
+    if not system.is_plugin_loaded(info):
+        assert system.load_plugin(info)
+        miaz.pump(0.4)
+
+    keys = ('plugin-MiAZProjectMgt',
+            'plugin-menuitem-MiAZProjectMgt',
+            'plugin-menuitem-MiAZProjectMgt-assign')
+    for key in keys:
+        assert miaz.widget(key) is not None, f'{key} was never registered'
+
+    system.unload_plugin(info)
+    miaz.pump(0.4)
+    try:
+        for key in keys:
+            assert miaz.widget(key) is None, f'{key} outlived the plugin'
+    finally:
+        assert system.load_plugin(info)
+        miaz.pump(0.4)
+
+    for key in keys:
+        assert miaz.widget(key) is not None, f'{key} did not come back'

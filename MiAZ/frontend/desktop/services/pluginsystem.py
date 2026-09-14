@@ -418,7 +418,11 @@ class MiAZPlugin(GObject.GObject):
         self.name = self.info['Name']
         self.desc = self.info['Description']
         self.poid = f'plugin-{self.name}'
-        self.app.add_widget(self.poid, plugin_object)
+        # Through the helper, so the key is dropped on unload. The header bar
+        # Add menu reads this key to find an Import plugin, and a key still
+        # pointing at a plugin that is gone is what register_widget exists to
+        # prevent.
+        self._register_widget_key(self.poid, plugin_object)
 
         problem = validate_category(self.info.get('Category', ''),
                                     self.info.get('Subcategory', ''))
@@ -572,8 +576,8 @@ class MiAZPlugin(GObject.GObject):
         # The Add menu mirrors one item per Import plugin, and reads it under
         # the canonical key, so the first entry answers to both names.
         if items:
-            self.app.add_widget(self.get_menu_item_name(),
-                                next(iter(items.values())))
+            self._register_widget_key(self.get_menu_item_name(),
+                                      next(iter(items.values())))
         return items
 
     def menu_item_loaded(self):
@@ -718,8 +722,9 @@ class MiAZPlugin(GObject.GObject):
         if menuitem is not None:
             subcategory_submenu.append_item(menuitem)
             # Register the item under its key so other layers (the UI) can
-            # reuse it without the plugin system knowing about any widget.
-            self.app.add_widget(name or self.get_menu_item_name(), menuitem)
+            # reuse it without the plugin system knowing about any widget, and
+            # drop the key again when this plugin unloads.
+            self._register_widget_key(name or self.get_menu_item_name(), menuitem)
             # And record it, so a menu rebuild can put it back without running
             # this plugin's startup() again.
             self._menu_registry().record(self.name, category, subcategory,
