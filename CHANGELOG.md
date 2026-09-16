@@ -6,7 +6,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [Unreleased]
+## [0.4.0] - Unreleased
+
+### Added
+
+- `scripts/devel/fsprobe.py` counts what each interaction costs on a remote repository, without needing a remote one. It patches `os.stat`, `os.lstat`, `os.scandir`, `os.listdir` and `builtins.open`, counts calls and bytes per scenario against the headless `MiAZConsoleApp`, ignores anything outside the repository directory, and projects a wall time for a link of a given round trip time and bandwidth. Patching `os.stat` alone catches `os.path.exists`, `isfile`, `isdir` and `getsize`, which all reach it through `genericpath`.
+
+  It also charges what helper processes read. `pdftoppm` reads its input outside Python, which is most of the traffic a thumbnail costs, so every repository file handed to `subprocess.run` is charged at its full size. That is an upper bound, since rendering page one of a linearised PDF may read less.
+
+  Run against FVM-test (1322 documents, 1055 MB), it says the listing and the index cost one directory enumeration and no bytes at all, and it found the two defects below.
+
+### Fixed
+
+- **A thumbnail already rendered still read the whole document to find itself.** Rendered images are named after the content digest of the document, so a renamed document keeps its image, which matters because renaming is what MiAZ does most. But `thumbnail_for` computed that digest, reading every byte, *before* checking whether the image it names was already on disk. A warm cache cost exactly as much reading as a cold one. Local storage hid it: a screen of 24 grid cells took 1.51s cold and 0.09s warm, because the page cache absorbed the reads.
+
+  The digest is now computed once per version of a document and remembered against its identity, `(st_dev, st_ino, st_size, st_mtime_ns)`, in an `index.json` beside the rendered images. A rename changes none of those four, so the image still resolves; an edit changes the last two, so a fresh one is rendered. The device and inode are part of the key because a repository synchronised with rclone or rsync carries second-precision modification times, which leaves size and mtime alone too weak to tell two documents apart.
+
+  Measured on FVM-test, a warm screen of grid cells went from 29.3 MB read to zero, and a warm preview walk from 12.8 MB to zero. A document whose bytes change without its size or modification time changing now keeps the old image, which is the trade every thumbnailer makes.
+
+- **The console shell built its configuration before registering the `util` service.** `MiAZConfig.setup()` writes a missing configuration file through `util.json_save`, and `save_data` logs the failure rather than raising it, so a first run with no `~/.MiAZ` wrote none of its configuration files and said so only as four `'NoneType' object has no attribute 'json_save'` lines in the log. The desktop shell has always registered `util` first. `MiAZConsoleApp.__init__` now does the same.
 
 ## [0.3.1] - 2026-09-14
 

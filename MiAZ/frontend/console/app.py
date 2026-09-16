@@ -36,9 +36,13 @@ class MiAZConsoleApp(GObject.GObject):
         self._env = env
         self._services = {}
         self._config = {}
+        # util comes first: MiAZConfig.setup() writes a missing configuration
+        # file through util.json_save, and save_data logs the failure instead
+        # of raising, so building a config without util wrote nothing quietly.
+        # The desktop shell has always registered util before its configs.
+        self.set_service('util', MiAZUtil(self))
         self._config['App'] = MiAZConfigApp(self)
         self._config['Repository'] = MiAZConfigRepositories(self)
-        self.set_service('util', MiAZUtil(self))
         self.set_service('repo', MiAZRepository(self))
 
     def get_env(self):
