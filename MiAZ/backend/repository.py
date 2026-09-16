@@ -27,6 +27,8 @@ class MiAZRepository(GObject.GObject):
     __gtype_name__ = 'MiAZRepository'
     __gsignals__ = {
         'repository-switched': (GObject.SignalFlags.RUN_LAST, None, ()),
+        # Carries the new value so a handler does not have to ask again.
+        'remote-changed': (GObject.SignalFlags.RUN_LAST, None, (bool,)),
     }
     def __init__(self, app):
         super().__init__()
@@ -54,6 +56,38 @@ class MiAZRepository(GObject.GObject):
     def conf(self):
         """Repository configuration directory"""
         return self.get('dir_conf')
+
+    @property
+    def remote(self):
+        """Whether this machine reaches this repository over a slow link.
+
+        Set by the user in repository settings and never guessed. GIO reports
+        an rclone mount as local, so detection cannot be trusted to decide
+        anything. A repository opened by bare path is never remote: there is
+        no registered entry to carry the flag.
+        """
+        repo_id = self.get_active_id()
+        if not repo_id:
+            return False
+        return self.config['Repository'].get_remote(repo_id, used=True)
+
+    def set_remote(self, value: bool) -> None:
+        """Mark the repository in use as remote, or stop doing so.
+
+        Emits 'remote-changed' only on a real change: the handlers rebuild the
+        workspace toolbar, which is not worth doing for a switch that was
+        already where it is.
+        """
+        repo_id = self.get_active_id()
+        if not repo_id:
+            self.log.warning("No registered repository in use; remote flag not set")
+            return
+        value = bool(value)
+        if self.config['Repository'].get_remote(repo_id, used=True) == value:
+            return
+        self.config['Repository'].set_remote(repo_id, value, used=True)
+        self.log.info(f"Repository '{repo_id}' remote flag set to {value}")
+        self.emit('remote-changed', value)
 
     def validate(self, path: str) -> bool:
         if not path:
