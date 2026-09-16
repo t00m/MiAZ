@@ -1,3 +1,9 @@
+miaz (0.4.0-1) unstable; urgency=medium
+
+  * New release. See CHANGELOG.md for details.
+
+ -- Tomás Vírseda <tomasvirseda@gmail.com>  Wed, 16 Sep 2026 16:35:11 +0200
+
 miaz (0.3.1-1) unstable; urgency=medium
 
   * Switching a plugin off takes its keyboard shortcuts with it. Ctrl+P went on running MiAZProjectMgt's assign action after the plugin was disabled, against a service that was already gone

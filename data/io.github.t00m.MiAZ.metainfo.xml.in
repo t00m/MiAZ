@@ -67,6 +67,11 @@
     </screenshot>
   </screenshots>
   <releases>
+    <release version="0.4.0" date="2026-09-16" urgency="medium">
+      <description>
+        <p>See CHANGELOG.md for details.</p>
+      </description>
+    </release>
     <release version="0.3.1" date="2026-09-14" urgency="medium">
       <description>
         <p>Disabling a plugin now really disables it, the right-click menu is no longer cut off behind a scrollbar, and MiAZ starts even when libpeas and pygobject are out of step.</p>

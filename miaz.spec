@@ -1,5 +1,5 @@
 Name:           miaz
-Version:        0.3.1
+Version:        0.4.0
 Release:        1%{?dist}
 Summary:        Personal Document Organizer
 
@@ -81,6 +81,9 @@ gtk-update-icon-cache %{_datadir}/icons/hicolor &> /dev/null || :
 %{_datadir}/metainfo/io.github.t00m.MiAZ.metainfo.xml
 
 %changelog
+* Wed Sep 16 2026 Tomás Vírseda <tomasvirseda@gmail.com> - 0.4.0-1
+- New release. See CHANGELOG.md for details.
+
 * Mon Sep 14 2026 Tomás Vírseda <tomasvirseda@gmail.com> - 0.3.1-1
 - Switching a plugin off takes its keyboard shortcuts with it. Ctrl+P went on running MiAZProjectMgt's assign action after the plugin was disabled, against a service that was already gone
 - The plugin info button works again. It showed nothing at all for seventeen of the twenty bundled plugins
