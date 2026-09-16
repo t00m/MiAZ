@@ -24,6 +24,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
   Run against FVM-test (1322 documents, 1055 MB), it says the listing and the index cost one directory enumeration and no bytes at all, and it found the two defects below.
 
+- **Two more architectural rules are tested rather than trusted.** A check of the front-end boundary found both holding in the code and resting on nobody breaking them.
+
+  `tests/test_boundaries.py` already refused a GUI toolkit in the backend. It now also refuses an import of either front-end there: a backend module importing `MiAZ.frontend.desktop` for a dialog is the same dependency with one more step in it, and the toolkit rule does not see it. The detector was already in the file, applied only to the console package.
+
+  `tests/test_no_toolkit.py` now runs `miaz ocr --help` with the Gtk, Gdk and Adw typelibs hidden. Plugin discovery reads `.plugin` files without importing anything, so a plugin command reaches the help text whatever its module does, but running one imports the module. MiAZOCR keeps its Adw and Gtk imports inside the methods that build the dialog, which is what lets `miaz ocr` work on a server, and until now that was a docstring with no test behind it.
+
 ### Fixed
 
 - The duplicate prefilter called `os.path.isfile` and then `os.path.getsize`, two stat calls per document to answer one question. One `os.stat` now answers both, which is 1322 fewer round trips per scan on the test repository.

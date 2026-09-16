@@ -101,6 +101,25 @@ def test_a_search_runs_without_any_toolkit(no_toolkit, tmp_path):
     assert 'Desktop dependencies not met' not in result.stderr
 
 
+def test_a_plugin_command_runs_without_any_toolkit(no_toolkit, tmp_path):
+    """A plugin that declares a command has to import with no typelib either.
+
+    Discovery reads the .plugin files without importing anything, so `miaz
+    --help` lists the command whatever the module does. Running it imports the
+    module, and that is where a Gtk import at module scope would land. MiAZOCR
+    keeps its Adw and Gtk imports inside the methods that build the dialog and
+    says so in its docstring, which was a convention with nothing behind it.
+
+    --help is enough: argparse prints the flags out of plugin_info, and getting
+    that far means the module imported.
+    """
+    result = run_miaz(['ocr', '--help'], tmp_path / 'home', no_toolkit)
+
+    assert result.returncode == 0, (
+        f'exit {result.returncode}, stderr: {result.stderr[-3000:]}')
+    assert '--language' in result.stdout, result.stdout + result.stderr
+
+
 def test_the_window_says_what_is_missing_and_where_to_go(no_toolkit, tmp_path):
     """Asking for the window on a server should name the commands that work.
 
