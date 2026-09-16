@@ -111,3 +111,31 @@ def test_the_duplicate_scan_still_runs_when_local(local_again):
 
     assert workspace._scan_duplicates() is True
     local_again.pump(0.6)
+
+
+def test_the_settings_switch_writes_the_flag(local_again):
+    row = local_again.widget('repository-settings-row-remote')
+    assert row is not None, 'the repository settings page has no remote row'
+
+    row.set_active(True)
+    local_again.pump(0.4)
+
+    assert local_again.service('repo').remote is True
+
+
+def test_the_settings_switch_follows_the_flag(local_again):
+    """Set from anywhere else, the switch still shows the truth."""
+    row = local_again.widget('repository-settings-row-remote')
+
+    local_again.service('repo').set_remote(True)
+    local_again.pump(0.4)
+
+    assert row.get_active() is True
+
+
+def test_the_detection_hint_is_shown(local_again):
+    """Shown, never acted on: GIO calls an rclone mount local."""
+    row = local_again.widget('repository-settings-row-detected')
+
+    assert row is not None
+    assert row.get_subtitle()
