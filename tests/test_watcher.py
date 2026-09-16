@@ -157,3 +157,58 @@ def test_a_local_watcher_schedules_no_poll(monkeypatch):
 
     MiAZWatcher(dirpath='/tmp', remote=False)
     assert scheduled == []
+
+
+# The poll interval and the pause. A remote repository has no usable file
+# monitor, so the directory is listed on a timer; the timer is the only thing
+# that notices a change made on the far side.
+
+def test_poll_interval_defaults_to_thirty_seconds():
+    """One tick is one directory enumeration, about 0.6s on a 40 ms link for
+    1322 documents. At 2 seconds that was a third of the link, permanently."""
+    watcher = MiAZWatcher(dirpath=None, remote=True)
+
+    assert watcher.poll_seconds == 30
+
+
+def test_poll_interval_is_configurable():
+    watcher = MiAZWatcher(dirpath=None, remote=True, poll_seconds=5)
+
+    assert watcher.poll_seconds == 5
+
+
+def test_a_paused_watcher_does_not_poll():
+    """The window is not on screen, so nothing is waiting for the answer."""
+    watcher = MiAZWatcher(dirpath=None, remote=True)
+    watcher.set_active(True)
+    asked = []
+    watcher.files_with_timestamp_async = lambda path, cb: asked.append(path)
+
+    watcher.set_paused(True)
+    watcher.monitor('/tmp/anywhere', watcher.watch)
+
+    assert asked == []
+
+
+def test_resuming_polls_again():
+    watcher = MiAZWatcher(dirpath=None, remote=True)
+    watcher.set_active(True)
+    asked = []
+    watcher.files_with_timestamp_async = lambda path, cb: asked.append(path)
+
+    watcher.set_paused(True)
+    watcher.set_paused(False)
+    watcher.monitor('/tmp/anywhere', watcher.watch)
+
+    assert asked == ['/tmp/anywhere']
+
+
+def test_a_paused_watcher_keeps_its_timer_armed():
+    """monitor() must keep returning True, or GLib removes the source and the
+    watcher never polls again after a resume."""
+    watcher = MiAZWatcher(dirpath=None, remote=True)
+    watcher.set_active(True)
+    watcher.files_with_timestamp_async = lambda path, cb: None
+    watcher.set_paused(True)
+
+    assert watcher.monitor('/tmp/anywhere', watcher.watch) is True

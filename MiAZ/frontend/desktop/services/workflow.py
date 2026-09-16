@@ -221,7 +221,11 @@ class MiAZWorkflow(GObject.GObject):
     def switch_finish(self, *args):
         """Finish switch repository operation"""
         repository = self.app.get_service('repo')
-        remote = self.util.is_remote_path(repository.docs)
+        # The user says whether this is remote. Asking the filesystem decides
+        # nothing: GIO reports an rclone mount as local, and the file monitor
+        # it would then build sees nothing when a change is made on the far
+        # side, so a repository nobody marked would silently stop updating.
+        remote = repository.remote
         if remote:
             success, error = self.util.check_remote_directory_sync(repository.docs)
         else:

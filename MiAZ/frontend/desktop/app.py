@@ -171,6 +171,8 @@ class MiAZApp(Adw.Application):
                 window.maximize()
         window.set_icon_name('io.github.t00m.MiAZ')
         window.connect('close-request', self._on_window_close_request)
+        window.connect('map', self._on_window_visibility_changed, False)
+        window.connect('unmap', self._on_window_visibility_changed, True)
         window.set_default_icon_name('io.github.t00m.MiAZ')
 
         # Theme
@@ -191,6 +193,19 @@ class MiAZApp(Adw.Application):
         # FIXME: Setup menu bar
         menubar = self.get_widget('window-menu-app')
         self.set_menubar(menubar)
+
+    def _on_window_visibility_changed(self, _window, paused):
+        """Pause the remote poll while the window is off screen.
+
+        A remote repository is listed on a timer, and each tick is a round
+        trip. Nothing is waiting for the answer while the window is unmapped,
+        so the poll is stopped rather than left running against the link.
+        Only the poll is affected: a local repository uses a file monitor,
+        which costs nothing to leave armed.
+        """
+        watcher = self.get_service('watcher')
+        if watcher is not None:
+            watcher.set_paused(paused)
 
     def _on_window_close_request(self, *args):
         self.log.debug("Close application requested")
