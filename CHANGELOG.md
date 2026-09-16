@@ -10,6 +10,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **A repository can be marked as remote, per machine.** The switch is in Repository Settings, and MiAZ never moves it by itself: GIO reports an rclone mount as local, so what was detected is shown beside the switch as a fact to weigh and decides nothing. A marked repository loses the grid, timeline and conversation views and the duplicate scan, which are the paths that read every document. Measured with `scripts/devel/fsprobe.py` on a 1322 document repository, opening the grid reads 386.8 MB and the duplicate scan reads 222.5 MB.
+
+  The flag lives in `~/.MiAZ/etc/repos-used.json` rather than inside the repository, because remoteness describes how this machine reaches it: the same repository is local on the machine holding the disk and remote on a laptop mounting it. Three places rebuilt a repository entry from scratch and would have dropped the flag, on load, on rename, and on disabling and re-enabling a repository; all three now carry it.
+
+  Each disabled feature is gated twice, at the affordance and at the work. The view buttons are not built and `show_view` refuses their names; the duplicate scan returns without starting. That second gate is not one place: MiAZDoctor calls `find_duplicates` directly while building its report, so it has a gate of its own, and its report says the check did not run rather than leaving it silently absent. Unmarking restores everything on the next frame, with no restart.
+
+  The watcher now takes its answer from the flag instead of sniffing the filesystem. That is also a correctness fix: a GIO file monitor on a FUSE mount reports nothing when a change is made on the far side, so a marked repository polls, which is the only mechanism that works there. The interval is 30 seconds rather than 2, and the poll stops while the window is off screen.
+
 - `scripts/devel/fsprobe.py` counts what each interaction costs on a remote repository, without needing a remote one. It patches `os.stat`, `os.lstat`, `os.scandir`, `os.listdir` and `builtins.open`, counts calls and bytes per scenario against the headless `MiAZConsoleApp`, ignores anything outside the repository directory, and projects a wall time for a link of a given round trip time and bandwidth. Patching `os.stat` alone catches `os.path.exists`, `isfile`, `isdir` and `getsize`, which all reach it through `genericpath`.
 
   It also charges what helper processes read. `pdftoppm` reads its input outside Python, which is most of the traffic a thumbnail costs, so every repository file handed to `subprocess.run` is charged at its full size. That is an upper bound, since rendering page one of a linearised PDF may read less.
@@ -17,6 +25,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Run against FVM-test (1322 documents, 1055 MB), it says the listing and the index cost one directory enumeration and no bytes at all, and it found the two defects below.
 
 ### Fixed
+
+- The duplicate prefilter called `os.path.isfile` and then `os.path.getsize`, two stat calls per document to answer one question. One `os.stat` now answers both, which is 1322 fewer round trips per scan on the test repository.
+
+- The preview sheet called `thumbnail_for` directly, skipping the shared in-memory cache and its cancellation, so reselecting a document rendered it again and arrowing down the list queued one render per keystroke. It now goes through `request_thumbnail`, and selection changes are debounced by 300 ms.
 
 - **A thumbnail already rendered still read the whole document to find itself.** Rendered images are named after the content digest of the document, so a renamed document keeps its image, which matters because renaming is what MiAZ does most. But `thumbnail_for` computed that digest, reading every byte, *before* checking whether the image it names was already on disk. A warm cache cost exactly as much reading as a cold one. Local storage hid it: a screen of 24 grid cells took 1.51s cold and 0.09s warm, because the page cache absorbed the reads.
 
