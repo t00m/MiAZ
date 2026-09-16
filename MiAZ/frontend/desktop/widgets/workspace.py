@@ -489,7 +489,15 @@ class MiAZWorkspace(Gtk.Box):
         Reads files, about 0.9s for 1336 documents, so it runs in a worker and
         only when something asks: review mode, or a caller wanting the copies
         told apart. A user who does neither pays nothing.
+
+        Never on a remote repository: the scan reads every file in any same
+        size group, measured at 222.5 MB on a 1322 document repository, and
+        review mode starts it without being asked.
         """
+        repository = self.app.get_service('repo')
+        if repository is not None and repository.remote:
+            self.log.debug("Duplicate scan skipped: the repository is remote")
+            return False
         index = self.app.get_service('index')
         if index is None or not index.duplicates_stale():
             return False

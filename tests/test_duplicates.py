@@ -143,3 +143,49 @@ def test_empty_files_match_each_other(tmp_path):
     a = write(tmp_path, 'a.pdf', '')
     b = write(tmp_path, 'b.pdf', '')
     assert find_duplicates([a, b])[a] == [b]
+
+
+def test_by_size_stats_each_file_once(tmp_path, monkeypatch):
+    """The prefilter asked isfile and then getsize: two round trips per
+    document to answer one question, and on a remote repository that is one
+    extra round trip per document in the repository."""
+    from MiAZ.backend import duplicates
+
+    for name in ('a.pdf', 'b.pdf', 'c.pdf'):
+        (tmp_path / name).write_bytes(b'x' * 10)
+    paths = [str(tmp_path / name) for name in ('a.pdf', 'b.pdf', 'c.pdf')]
+
+    calls = []
+    real_stat = duplicates.os.stat
+
+    def counting(path, *args, **kwargs):
+        calls.append(path)
+        return real_stat(path, *args, **kwargs)
+
+    monkeypatch.setattr(duplicates.os, 'stat', counting)
+    sizes = duplicates._by_size(paths)
+
+    assert len(calls) == 3, f'{len(calls)} stat calls for 3 documents'
+    assert sizes == {10: paths}
+
+
+def test_by_size_skips_a_directory(tmp_path):
+    """A directory is not a document, and os.stat says nothing about that."""
+    from MiAZ.backend import duplicates
+
+    (tmp_path / 'doc.pdf').write_bytes(b'x' * 10)
+    (tmp_path / 'subdir').mkdir()
+
+    sizes = duplicates._by_size([str(tmp_path / 'doc.pdf'), str(tmp_path / 'subdir')])
+
+    assert sizes == {10: [str(tmp_path / 'doc.pdf')]}
+
+
+def test_by_size_skips_what_it_cannot_stat(tmp_path):
+    from MiAZ.backend import duplicates
+
+    (tmp_path / 'doc.pdf').write_bytes(b'x' * 10)
+
+    sizes = duplicates._by_size([str(tmp_path / 'doc.pdf'), str(tmp_path / 'gone.pdf')])
+
+    assert sizes == {10: [str(tmp_path / 'doc.pdf')]}

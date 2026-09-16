@@ -6,6 +6,7 @@
 
 import hashlib
 import os
+import stat
 
 from MiAZ.backend.log import MiAZLog
 
@@ -34,15 +35,23 @@ def file_digest(path):
 
 
 def _by_size(paths):
-    """{size: [path]}, skipping anything that is not a readable file."""
+    """{size: [path]}, skipping anything that is not a readable file.
+
+    One stat per path. It used to call os.path.isfile and then
+    os.path.getsize, both of which reach os.stat, so every document cost two
+    round trips to answer one question. On a remote repository of 1322
+    documents that is 1322 round trips spent on nothing.
+    """
     sizes = {}
     for path in paths:
         try:
-            if not os.path.isfile(path):
-                continue
-            sizes.setdefault(os.path.getsize(path), []).append(path)
+            status = os.stat(path)
         except OSError as error:
             log.debug(f"Cannot stat '{path}': {error}")
+            continue
+        if not stat.S_ISREG(status.st_mode):
+            continue
+        sizes.setdefault(status.st_size, []).append(path)
     return sizes
 
 
