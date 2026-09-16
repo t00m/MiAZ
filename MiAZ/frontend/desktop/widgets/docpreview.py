@@ -13,8 +13,7 @@ from gi.repository import Pango
 
 from MiAZ.env import ENV
 from MiAZ.backend.log import MiAZLog
-from MiAZ.backend.tasks import run_in_background
-from MiAZ.backend.thumbnails import thumbnail_for
+from MiAZ.backend.thumbnails import request_thumbnail
 from MiAZ.frontend.desktop.widgets.pills import MiAZFieldPills
 
 # Preview widths in pixels. Zooming renders the page again at the new width
@@ -195,10 +194,14 @@ class MiAZDocPreview(Gtk.Box):
         self.spinner.start()
         cache_dir = os.path.join(ENV['LPATH']['CACHE'], 'thumbnails')
         width = ZOOM_STEPS[self._zoom]
-        run_in_background(lambda: thumbnail_for(filepath, cache_dir, scale=width),
-                          on_done=lambda path: self._on_rendered(token, path),
-                          on_error=lambda error: self._on_failed(token, error),
-                          name='doc-preview')
+        # Through request_thumbnail, not thumbnail_for: it shares the memo
+        # with the grid and the timeline, so reselecting a document costs a
+        # dictionary lookup rather than a fresh render, and it drops work for
+        # a document the user has already moved off.
+        request_thumbnail(
+            filepath, cache_dir, width,
+            on_done=lambda path: self._on_rendered(token, path),
+            is_wanted=lambda: self._token is token)
 
     def _set_titles(self, filepath):
         basename = os.path.basename(filepath)
@@ -232,9 +235,3 @@ class MiAZDocPreview(Gtk.Box):
         else:
             self.stack.set_visible_child_name('none')
 
-    def _on_failed(self, token, error):
-        if token is not self._token:
-            return
-        self.log.warning(f"Preview failed: {error}")
-        self.spinner.stop()
-        self.stack.set_visible_child_name('none')

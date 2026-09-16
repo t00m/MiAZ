@@ -131,6 +131,8 @@ class MiAZWorkspace(Gtk.Box):
         # Views a plugin registered, as name -> (icon_name, label). Needed
         # before the toolbar is built: rebuilding it walks this.
         self._extra_views = {}
+        # Armed by _update_preview so a burst of selection changes renders once.
+        self._preview_debounce_id = 0
         self._finish_config_done = False
         self._clearing_filters = False
         self._updating_dropdowns = False
@@ -1034,17 +1036,29 @@ class MiAZWorkspace(Gtk.Box):
         self._update_preview()
 
     def _update_preview(self, *args):
-        """Feed the preview panel while it is open; do nothing when closed."""
+        """Feed the preview panel while it is open; do nothing when closed.
+
+        Debounced: arrowing down the list asked for a render on every
+        keystroke, and on a remote repository each render is a document
+        fetched. Only the selection the user settles on is rendered.
+        """
+        if self._preview_debounce_id > 0:
+            GLib.source_remove(self._preview_debounce_id)
+        self._preview_debounce_id = GLib.timeout_add(300, self._apply_preview)
+
+    def _apply_preview(self):
+        self._preview_debounce_id = 0
         preview = self.app.get_widget('workspace-preview')
         sheet = self.app.get_widget('workspace-preview-sheet')
         if preview is None or sheet is None or not sheet.get_open():
-            return
+            return False
         repo = self.app.get_service('repo')
         items = self.get_selected_items()
         if items:
             preview.set_document(os.path.join(repo.docs, os.path.basename(items[0].id)))
         else:
             preview.set_document(None)
+        return False
 
     def _setup_filter_tags_bar(self):
         """Banner shown above the document list with the currently active
