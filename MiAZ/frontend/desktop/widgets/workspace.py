@@ -128,6 +128,9 @@ class MiAZWorkspace(Gtk.Box):
         self.config = self.app.get_config_dict()
         self.used_signals = {}
         self._repo_switch_signals = {}
+        # Views a plugin registered, as name -> (icon_name, label). Needed
+        # before the toolbar is built: rebuilding it walks this.
+        self._extra_views = {}
         self._finish_config_done = False
         self._clearing_filters = False
         self._updating_dropdowns = False
@@ -258,6 +261,9 @@ class MiAZWorkspace(Gtk.Box):
         # Connect Repository
         repository = self.app.get_service('repo')
         repository.connect('repository-switched', self._update_dropdowns)
+        # Marking a repository remote takes views away; unmarking is the only
+        # way back, so it has to land without a restart.
+        repository.connect('remote-changed', self._on_remote_changed)
 
         # Observe config changes
         for node in self.config:
@@ -775,6 +781,13 @@ class MiAZWorkspace(Gtk.Box):
         ('filenames', 'text-x-generic-symbolic', _('Filenames')),
     )
 
+    # Views that render one thumbnail per bound row, and bound is not visible:
+    # GTK keeps a buffer well past the screen. Measured on a 1322 document
+    # repository, opening the grid reads 386.8 MB. They are unreachable while
+    # the repository is marked remote. Details and filenames read nothing but
+    # the index, so they stay.
+    _REMOTE_DISABLED_VIEWS = ('grid', 'timeline', 'conversation')
+
     def _setup_view_toolbar(self):
         """The toolbar above the documents.
 
@@ -791,22 +804,10 @@ class MiAZWorkspace(Gtk.Box):
         linked = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
         linked.add_css_class('linked')
         self._view_buttons = {}
-        first = None
-        for name, icon_name, label in self._BUILTIN_VIEWS:
-            button = Gtk.ToggleButton()
-            button.set_icon_name(icon_name)
-            button.set_tooltip_text(label)
-            if first is None:
-                first = button
-            else:
-                button.set_group(first)
-            button.connect('toggled', self._on_view_button_toggled, name)
-            self._view_buttons[name] = button
-            linked.append(button)
         # Kept so a view added later joins the same radio group and the same box.
-        self._view_button_group = first
+        self._view_button_group = None
         self._view_button_box = linked
-        self._view_buttons['details'].set_active(True)
+        self._rebuild_view_buttons()
         # The Review toggle sits next to the views: it is another way of
         # choosing which documents are on screen. The main window makes it
         # and moves it here, the way it does with the document actions.
@@ -876,8 +877,62 @@ class MiAZWorkspace(Gtk.Box):
     def get_current_view(self):
         return self._view_stack.get_visible_child_name()
 
+    def _rebuild_view_buttons(self, keep=None):
+        """Build one toggle per view the repository allows.
+
+        Called again whenever the remote flag moves, so marking or unmarking a
+        repository takes effect on the next frame rather than the next run.
+        Views a plugin added are rebuilt too: they are not ours to judge, so
+        they are never disabled, but dropping their buttons on a rebuild would
+        take them away for good.
+        """
+        for button in list(self._view_buttons.values()):
+            self._view_button_box.remove(button)
+        self._view_buttons = {}
+        repository = self.app.get_service('repo')
+        remote = repository is not None and repository.remote
+        definitions = list(self._BUILTIN_VIEWS)
+        definitions += [(name, icon, label)
+                        for name, (icon, label) in self._extra_views.items()]
+        first = None
+        for name, icon_name, label in definitions:
+            if remote and name in self._REMOTE_DISABLED_VIEWS:
+                continue
+            button = Gtk.ToggleButton()
+            button.set_icon_name(icon_name)
+            button.set_tooltip_text(label)
+            if first is None:
+                first = button
+            else:
+                button.set_group(first)
+            button.connect('toggled', self._on_view_button_toggled, name)
+            self._view_buttons[name] = button
+            self._view_button_box.append(button)
+        self._view_button_group = first
+        wanted = keep if keep in self._view_buttons else 'details'
+        self._view_buttons[wanted].set_active(True)
+
+    def _on_remote_changed(self, _repository, _remote):
+        """Rebuild the toolbar and leave the user on a view that still exists."""
+        if not hasattr(self, '_view_button_box'):
+            return
+        current = self._view_stack.get_visible_child_name()
+        self._rebuild_view_buttons(keep=current)
+        if current not in self._view_buttons:
+            self.show_view('details')
+
     def show_view(self, name):
-        """Show one of details, grid, timeline, conversation or filenames."""
+        """Show one of details, grid, timeline, conversation or filenames.
+
+        A view the repository does not allow lands on Details instead. This is
+        the application's own policy, not a façade restricting plugins: a
+        plugin calling show_view('grid') gets what the toolbar would give it.
+        """
+        repository = self.app.get_service('repo')
+        if (repository is not None and repository.remote
+                and name in self._REMOTE_DISABLED_VIEWS):
+            self.log.debug(f"View '{name}' is disabled on a remote repository")
+            name = 'details'
         button = self._view_buttons.get(name)
         if button is not None:
             button.set_active(True)
@@ -906,6 +961,9 @@ class MiAZWorkspace(Gtk.Box):
         self._view_button_box.append(button)
         self._view_stack.add_named(widget, name)
         self._views[name] = widget
+        # Remembered so _rebuild_view_buttons can put this button back: the
+        # rebuild throws every button away and a plugin view would not return.
+        self._extra_views[name] = (icon_name, label)
         self.log.debug(f"Workspace view added: {name}")
 
     def remove_view(self, name):
@@ -924,6 +982,7 @@ class MiAZWorkspace(Gtk.Box):
         button = self._view_buttons.pop(name, None)
         if button is not None:
             self._view_button_box.remove(button)
+        self._extra_views.pop(name, None)
         self.log.debug(f"Workspace view removed: {name}")
 
     def _on_view_changed(self, *args):
