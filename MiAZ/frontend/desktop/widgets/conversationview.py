@@ -19,6 +19,7 @@ from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.conversation import (
     Message, conversations, exchanges, home_party, is_outgoing, owner_of)
 from MiAZ.backend.thumbnails import request_thumbnail
+from MiAZ.frontend.desktop.widgets.thumbnailcache import set_thumbnail
 from MiAZ.backend.util import UNKNOWN_DATE
 from MiAZ.frontend.desktop.widgets.filetypebadge import MiAZFileTypeBadge
 
@@ -113,11 +114,10 @@ class Bubble(Gtk.Box):
     def _show_thumbnail(self, doc, path):
         if doc != self._doc:
             return
-        if path is None:
+        if path is None or not set_thumbnail(self.thumbnail, path):
             self.badge.set_filepath(doc)
             self.badge.set_visible(True)
             return
-        self.thumbnail.set_filename(path)
         self.thumbnail.set_visible(True)
 
 

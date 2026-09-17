@@ -14,6 +14,7 @@ from gi.repository import Pango
 from MiAZ.env import ENV
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.thumbnails import request_thumbnail
+from MiAZ.frontend.desktop.widgets.thumbnailcache import set_thumbnail
 from MiAZ.frontend.desktop.widgets.pills import MiAZFieldPills
 
 # Preview widths in pixels. Zooming renders the page again at the new width
@@ -229,8 +230,7 @@ class MiAZDocPreview(Gtk.Box):
         if token is not self._token:
             return
         self.spinner.stop()
-        if path:
-            self.picture.set_filename(path)
+        if path and set_thumbnail(self.picture, path):
             self.stack.set_visible_child_name('picture')
         else:
             self.stack.set_visible_child_name('none')

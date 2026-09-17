@@ -15,6 +15,7 @@ from gi.repository import Pango
 from MiAZ.env import ENV
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.thumbnails import request_thumbnail
+from MiAZ.frontend.desktop.widgets.thumbnailcache import set_thumbnail
 from MiAZ.backend.util import date_is_valid, UNKNOWN_DATE
 from MiAZ.frontend.desktop.widgets.filetypebadge import MiAZFileTypeBadge
 from MiAZ.frontend.desktop.widgets.pills import MiAZFieldTable
@@ -256,11 +257,10 @@ class TimelineCard(Gtk.Box):
         # The row may have been recycled for another document meanwhile.
         if doc != self._doc:
             return
-        if path is None:
+        if path is None or not set_thumbnail(self.thumbnail, path):
             self.badge.set_filepath(doc)
             self.badge.set_visible(True)
             return
-        self.thumbnail.set_filename(path)
         self.thumbnail.set_visible(True)
 
 

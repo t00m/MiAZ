@@ -34,6 +34,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - The duplicate prefilter called `os.path.isfile` and then `os.path.getsize`, two stat calls per document to answer one question. One `os.stat` now answers both, which is 1322 fewer round trips per scan on the test repository.
 
+- **A preview already rendered was decoded again on every bind.** `MiAZ.backend.thumbnails` remembers which file holds the preview for a document, and it cannot remember more than that: decoded images are Gdk types and the backend imports no GUI toolkit. So the grid, the timeline, the conversation view and the preview panel each ended in `Gtk.Picture.set_filename`, which reads and decodes the PNG synchronously on the main thread. Scrolling back over rows already seen skipped `pdftoppm` and then paid for a full decode per cell anyway.
+
+  `MiAZ/frontend/desktop/widgets/thumbnailcache.py` holds the decoded `Gdk.Texture` instead, behind a `set_thumbnail(picture, path)` the four views share. It is an LRU capped by decoded bytes rather than by entry count, because the sizes differ by two orders of magnitude: a 256px grid cell is about 370 KB decoded and a 1920px preview about 21 MB. The budget is 64 MB, which covers a full screen of cells and the panel.
+
+  Two cases needed care. Images pass through unrendered at whatever size they are, so a photograph from a phone would spend the whole budget on one document; anything over 8 MB decoded is shown and then let go. And a plain image is its own preview, so it can be edited in place under the same path: entries are keyed by path, size and modification time, the same three values `thumbnail_key` is built from, so a stat of microseconds guards a decode of milliseconds. A file that cannot be decoded is remembered as having no image, so a corrupt document does not cost a failed decode on every bind.
+
+  The first decode still happens on the main thread. Moving it to a worker means loading a `GdkPixbuf` off the main loop and building the texture back on it, which is worth doing only if measurement says that first decode still hurts.
+
 - The preview sheet called `thumbnail_for` directly, skipping the shared in-memory cache and its cancellation, so reselecting a document rendered it again and arrowing down the list queued one render per keystroke. It now goes through `request_thumbnail`, and selection changes are debounced by 300 ms.
 
 - **A thumbnail already rendered still read the whole document to find itself.** Rendered images are named after the content digest of the document, so a renamed document keeps its image, which matters because renaming is what MiAZ does most. But `thumbnail_for` computed that digest, reading every byte, *before* checking whether the image it names was already on disk. A warm cache cost exactly as much reading as a cold one. Local storage hid it: a screen of 24 grid cells took 1.51s cold and 0.09s warm, because the page cache absorbed the reads.

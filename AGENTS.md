@@ -53,7 +53,8 @@ MiAZ/
 │   │   ├── repository.py         ← MiAZRepository (CRUD on file-based repo), REPO_FORMAT
 │   │   ├── secrets.py            ← plugin secret storage (libsecret, keyring fallback)
 │   │   ├── status.py             ← MiAZStatus (IntEnum: RUNNING=0, BUSY=1)
-│   │   ├── thumbnails.py         ← thumbnail_for, cached_thumbnail (preview images)
+│   │   ├── thumbnails.py         ← thumbnail_for, cached_thumbnail (preview image paths;
+│   │   │                          the decoded images live in frontend widgets/thumbnailcache.py)
 │   │   ├── util.py               ← MiAZUtil (file ops, JSON, normalization)
 │   │   ├── venv.py               ← MiAZVenv (per-user venv for plugin dependencies)
 │   │   ├── vocabhealth.py        ← what is wrong with a repository's vocabulary
@@ -87,7 +88,8 @@ MiAZ/
 │               ├── markdownview.py, metadatapage.py, pages.py, pills.py
 │               ├── rename.py, reposettingspage.py, selector.py
 │               ├── settings.py, sidebar.py, sidebarstack.py
-│               ├── timelineview.py, views.py, webbrowser.py, window.py
+│               ├── thumbnailcache.py, timelineview.py, views.py
+│               ├── webbrowser.py, window.py
 │               └── workspace.py
 │                 (no searchbar.py: search is a registered 'searchentry' widget)
 ├── data/
