@@ -32,15 +32,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Desktop startup did a quarter of its work for a window nobody opened, and the rest of it twice.** Against the 1322 document test repository, a cold start took 2221 ms to a loaded workspace. It now takes 1632 ms, measured the same way.
+
+  `MiAZWorkflow.switch_finish` built `MiAZRepoSettings` on every repository open and every switch, at 508 ms. The menu entry never used it: `show_repository_settings` builds its own. Its only reader was the auto-open for a repository whose configuration has no used entries, which builds one when it needs one now.
+
+  The other half was the Notes service. `workspace.update()` lists the repository, rebuilds the index and parses every filename, and Notes called it at startup to populate its column and again to refresh its filter, at 367 ms each. Both wanted the rows re-bound, which is what `view.refilter()` does and what the copy column has always used. `MiAZWorkspace.refresh_rows()` says so by name, and all three Notes call sites use it, including the only-with-notes switch, which was re-reading the repository to turn a filter on.
+
+  `index.reload` and `_parse_files_worker` now run once per startup rather than twice.
+
 - The duplicate prefilter called `os.path.isfile` and then `os.path.getsize`, two stat calls per document to answer one question. One `os.stat` now answers both, which is 1322 fewer round trips per scan on the test repository.
 
-- **Known, not fixed: stepping back over a configuration change loses the redo.** `scripts/checks/run_ui_tests.sh --shuffle` finds it at seed 20, on `test_stepping_back_takes_the_document_off_the_disk`. File order does not reach it.
-
-  `GitStore._rescue_pending` is careful about this. It commits a dirty working tree before a step overwrites it and appends that state at the end, keeping everything ahead reachable, precisely so no state is lost. `record()` truncates instead, on the text-editor rule that a change made after stepping back is a new branch of the user's work.
+- **Stepping back over a configuration change lost the redo.** `GitStore._rescue_pending` is careful about this. It commits a dirty working tree before a step overwrites it and appends that state at the end, keeping everything ahead reachable, precisely so no state is lost. `record()` truncates instead, on the text-editor rule that a change made after stepping back is a new branch of the user's work.
 
   The two meet badly. A step that touched `.conf` ends in `reload()`, which reopens the repository and writes its configuration files out again. That leaves the tree dirty, `_start_recording` calls `catch_up()`, and `catch_up` records through `record()`. The redo the step just created is truncated away by MiAZ rewriting its own configuration, which is not the user starting a new branch of anything. The states read `[..., 'Added 1 document', 'Changed outside MiAZ']` with the index on the last one.
 
-  The index arithmetic in `step_back` and `step_forward` is right; this is not an off-by-one. What `catch_up` needs is the non-truncating record that `_rescue_pending` already performs.
+  The index arithmetic in `step_back` and `step_forward` is right; this was never an off-by-one. `catch_up` now returns early while a redo is pending. Work found lying on disk is not the user starting a new branch, and leaving it costs nothing: the next step rescues it through `_rescue_pending`, which appends without truncating, and a real change by the user settles into `record()`, where truncating is right because by then the rule does apply.
+
+  Found by `scripts/checks/run_ui_tests.sh --shuffle` at seed 20. File order never reached it.
 
 - **Two more tests were leaning on the order they ran in, and the UI runner now says which order it wants.** `workspace.show_duplicates()` scans for copies and reveals the copy column. Three tests called it and none put it back, so `test_the_column_is_hidden_when_nothing_has_been_scanned` failed whenever one of them ran first. They clean up now, through a `forget_duplicates` helper.
 

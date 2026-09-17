@@ -527,3 +527,52 @@ def test_deleting_documents_is_recorded_as_one_step_named_for_all_of_them(
 
     newest = history.store.states()[-1]
     assert history.store.subject_of(newest) == 'Deleted 2 documents'
+
+
+def test_catch_up_leaves_a_pending_redo_alone(miaz, history):
+    """Stepping back must not lose its redo to MiAZ rewriting its own files.
+
+    A step that touched .conf ends in reload(), which reopens the repository
+    and writes its configuration out again. That leaves the tree dirty,
+    _start_recording calls catch_up, and catch_up recorded through record(),
+    which truncates everything ahead. The redo the step had just created was
+    thrown away by MiAZ reacting to its own step.
+
+    catch_up means work that happened while nobody was recording. While a redo
+    is pending that work is not the user starting a new branch, so it waits:
+    the next step rescues it through _rescue_pending, which appends without
+    truncating, and a real user change settles into record(), which truncates
+    because by then the text-editor rule does apply.
+    """
+    repository = miaz.service('repo').docs
+    name = '20261222-ES-FIN-BANKX-INV-n-JOHNDOE.pdf'
+    path = os.path.join(repository, name)
+    with open(path, 'wb') as document:
+        document.write(b'new')
+    history._counts = {'added': 1}
+    history.settle()
+    miaz.pump(0.5)
+
+    stepped_back = False
+    try:
+        step(miaz, history, 'back')
+        assert history.store.can_redo() is True, 'nothing to protect'
+        stepped_back = True
+        before = history.store.count()
+
+        # What the reload does: rewrite a configuration file under .conf.
+        marker = os.path.join(repository, '.conf', 'countries-used.json')
+        with open(marker, 'a', encoding='utf-8') as config:
+            config.write('\n')
+        assert history.store.is_dirty() is True, 'the tree is not dirty'
+
+        history.catch_up()
+        miaz.pump(0.8)
+
+        assert history.store.can_redo() is True, 'the redo was recorded away'
+        assert history.store.count() == before, 'a state was recorded anyway'
+    finally:
+        if stepped_back:
+            step(miaz, history, 'forward')
+        history.refresh_buttons()
+        miaz.pump(0.2)
