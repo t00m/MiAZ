@@ -39,6 +39,8 @@ from MiAZ.backend.dr import MiAZDR
 from MiAZ.backend.secrets import MiAZSecretStore
 from MiAZ.backend.venv import MiAZVenv
 from MiAZ.backend.webserver import MiAZWebServer
+from MiAZ.backend.jobs import MiAZJobQueue
+from MiAZ.backend.tasks import set_job_queue
 
 
 
@@ -89,6 +91,12 @@ class MiAZApp(Adw.Application):
         # Install the desktop crash handler early so it can report failures
         # raised while the rest of the services are being set up.
         self.set_service('crash', MiAZCrashHandler(self)).install()
+        # Installed before any other service, because every one of them may
+        # start background work while being built. Registered as a service for
+        # anything holding the app, and as the module singleton that
+        # run_in_background reads: the same object either way, or the
+        # indicator would watch a queue nothing registers with.
+        set_job_queue(self.set_service('jobs', MiAZJobQueue()))
         self.set_service('util', MiAZUtil(self))
         self.set_service('icons', MiAZIconManager(self))
         self.set_service('factory', MiAZFactory(self))

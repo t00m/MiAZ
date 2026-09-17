@@ -109,3 +109,27 @@ def test_two_applications_keep_their_own_widgets():
     assert result.returncode == 0, result.stderr[-2000:]
     assert 'kept True' in result.stdout, result.stdout + result.stderr[-2000:]
     assert 'separate True' in result.stdout, result.stdout
+
+
+def test_the_application_installs_one_job_queue():
+    """The queue is both a service, for anything holding the app, and the
+    module singleton run_in_background reads. They must be the same object, or
+    the indicator watches a queue nothing registers with."""
+    script = '''
+import os, sys, tempfile
+sys.path.insert(0, %r)
+os.environ['HOME'] = tempfile.mkdtemp(prefix='miaz-jobq-')
+import gi
+gi.require_version('Gtk', '4.0')
+gi.require_version('Adw', '1')
+from MiAZ.backend import tasks
+from MiAZ.frontend.desktop.app import MiAZApp
+app = MiAZApp(application_id='io.github.t00m.MiAZ.JobQueue')
+print('same', app.get_service('jobs') is tasks.job_queue())
+print('present', app.get_service('jobs') is not None)
+''' % ROOT
+    result = subprocess.run([sys.executable, '-c', script], cwd=ROOT,
+                            capture_output=True, text=True, timeout=120)
+    assert result.returncode == 0, result.stderr[-2000:]
+    assert 'same True' in result.stdout, result.stdout + result.stderr[-2000:]
+    assert 'present True' in result.stdout, result.stdout
