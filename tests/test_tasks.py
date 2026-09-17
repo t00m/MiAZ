@@ -389,3 +389,32 @@ def test_without_a_queue_nothing_changes():
     thread.join(timeout=5)
     drain()
     assert done == ['ok']
+
+
+def test_a_job_is_finished_when_the_thread_cannot_start(monkeypatch):
+    """A job that never gets a worker must not hold the lane forever.
+
+    If thread.start() raises after queue.start(job) already succeeded, the
+    worker's own finally never runs, since the worker never ran. Without this,
+    a queued=True job would sit registered and running for the rest of the
+    session.
+    """
+    queue = RecordingQueue()
+    tasks.set_job_queue(queue)
+
+    def cannot_start(self):
+        raise RuntimeError("can't start new thread")
+
+    monkeypatch.setattr(threading.Thread, 'start', cannot_start)
+
+    try:
+        with pytest.raises(RuntimeError, match="can't start new thread"):
+            tasks.run_in_background(lambda: 'ok', name='importdoc-batch',
+                                    queued=True)
+    finally:
+        tasks.set_job_queue(None)
+
+    assert queue.finished
+    job, error = queue.finished[0]
+    assert isinstance(error, RuntimeError)
+    assert str(error) == "can't start new thread"

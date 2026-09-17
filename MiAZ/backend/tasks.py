@@ -99,13 +99,25 @@ def run_in_background(fn, on_done=None, on_error=None, name=None,
                 except Exception as error:
                     log.warning(f"Could not finish job '{name}': {error}")
 
-    thread = threading.Thread(target=worker, name=name, daemon=True)
-    if queue is not None and job is not None:
-        try:
-            queue.start(job)
-        except Exception as error:
-            log.warning(f"Could not start job '{name}': {error}")
-    thread.start()
+    try:
+        thread = threading.Thread(target=worker, name=name, daemon=True)
+        if queue is not None and job is not None:
+            try:
+                queue.start(job)
+            except Exception as error:
+                log.warning(f"Could not start job '{name}': {error}")
+        thread.start()
+    except Exception as error:
+        # thread.start() can fail after queue.start(job) already succeeded.
+        # worker() never ran, so its own finally never ran either: without
+        # this, the job would stay registered and running for the rest of
+        # the session, holding the lane forever if queued=True.
+        if queue is not None and job is not None:
+            try:
+                queue.finish(job, error)
+            except Exception as finish_error:
+                log.warning(f"Could not finish job '{name}': {finish_error}")
+        raise
     return thread
 
 
