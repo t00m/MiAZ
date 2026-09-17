@@ -299,7 +299,9 @@ class MiAZOCRPlugin(MiAZExtension):
             lambda: self._process(eligible, lang, force, skipped),
             on_done=self._finish,
             on_error=self._on_process_crashed,
-            name='ocr-process')
+            name='ocr-process',
+            label=_('Reading text from documents'),
+            queued=True)
 
     def _on_process_crashed(self, error):
         """The OCR run died outside the per-document try block.

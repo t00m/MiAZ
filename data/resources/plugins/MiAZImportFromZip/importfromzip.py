@@ -92,7 +92,9 @@ class MiAZImportFromZipPlugin(MiAZExtension):
             lambda: self._import_zip(zip_path),
             on_done=self._finish_import,
             on_error=self._on_import_crashed,
-            name='importfromzip')
+            name='importfromzip',
+            label=_('Importing a ZIP file'),
+            queued=True)
 
     def _import_zip(self, zip_path):
         """Unzip and copy the documents. Returns (targets, error message or None).
