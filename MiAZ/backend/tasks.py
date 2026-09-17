@@ -69,6 +69,9 @@ def run_in_background(fn, on_done=None, on_error=None, name=None,
             log.warning(f"Could not register job '{name}': {error}")
 
     wants_report = _accepts_report(fn)
+    # Whether the queue was asked to start the job. When that call failed the
+    # job will never be released, so the worker must not wait for it.
+    asked_to_start = False
 
     def report(message, fraction=None):
         if queue is not None and job is not None:
@@ -80,6 +83,8 @@ def run_in_background(fn, on_done=None, on_error=None, name=None,
     def worker():
         failure = None
         try:
+            if asked_to_start:
+                _wait_for_lane(queue, job, name)
             result = fn(report=report) if wants_report else fn()
             if on_done is not None:
                 GLib.idle_add(_call_once, on_done, result)
@@ -104,6 +109,7 @@ def run_in_background(fn, on_done=None, on_error=None, name=None,
         if queue is not None and job is not None:
             try:
                 queue.start(job)
+                asked_to_start = True
             except Exception as error:
                 log.warning(f"Could not start job '{name}': {error}")
         thread.start()
@@ -119,6 +125,30 @@ def run_in_background(fn, on_done=None, on_error=None, name=None,
                 log.warning(f"Could not finish job '{name}': {finish_error}")
         raise
     return thread
+
+
+def _wait_for_lane(queue, job, name):
+    """Hold the worker until the queue says the job may run.
+
+    The queue owns when a queued job begins. Without this the thread ran the
+    moment it was created whatever the queue had decided, so a queued job
+    whose lane was busy stayed pending in the popover while its work was
+    already copying: two imports into one repository, which is the thing the
+    lane exists to prevent.
+
+    An unqueued job returns from here at once. A queue with no await_start, a
+    test double or a queue of somebody else's, means no waiting, which is the
+    behaviour this module had before there was a lane.
+    """
+    waiter = getattr(queue, 'await_start', None)
+    if waiter is None:
+        return
+    try:
+        waiter(job)
+    except Exception as error:
+        # A broken queue must never stop the work it is watching, and it must
+        # never park it either.
+        log.warning(f"Could not wait for the lane for '{name}': {error}")
 
 
 def _accepts_report(fn) -> bool:

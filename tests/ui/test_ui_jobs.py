@@ -90,3 +90,34 @@ def test_the_popover_names_the_running_job(indicator, clean_view):
     finally:
         queue.finish(job)
         clean_view.pump(0.5)
+
+
+def test_a_failed_job_stays_visible_and_says_it_failed(indicator, clean_view):
+    """A spinner that vanishes with no outcome is how a failure goes
+    unnoticed. The indicator used to derive busy from running and pending
+    only, so a failure hid it entirely."""
+    queue = clean_view.service('jobs')
+    job = queue.add('importdoc-batch', label='Importing documents')
+    queue.start(job)
+    queue.finish(job, OSError('the disk is full'))
+    clean_view.wait_until(lambda: indicator.get_visible() is True,
+                          message='the failed job to be shown')
+    clean_view.pump(0.3)
+    text = indicator.describe()
+    assert 'Importing documents' in text
+    assert 'ailed' in text, f'the failure is not marked as one: {text!r}'
+
+
+def test_the_next_job_clears_a_failure(indicator, clean_view):
+    queue = clean_view.service('jobs')
+    broken = queue.add('importdoc-batch', label='Importing documents')
+    queue.start(broken)
+    queue.finish(broken, OSError('the disk is full'))
+    clean_view.wait_until(lambda: indicator.get_visible() is True,
+                          message='the failed job to be shown')
+    later = queue.add('workspace-scan')
+    queue.start(later)
+    queue.finish(later)
+    clean_view.wait_until(lambda: indicator.get_visible() is False,
+                          message='the indicator to go away')
+    assert 'Importing documents' not in indicator.describe()

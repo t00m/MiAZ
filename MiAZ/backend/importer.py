@@ -90,18 +90,20 @@ def import_paths(util, docs_dir: str, paths, report=None):
     Nothing here draws anything, which is why `miaz add` and the window's own
     Add can be the same operation.
 
-    `report(message, fraction)` is called once per document when given. A large
+    `report(message, fraction)` is called once per document when given, saying
+    "340 of 1322" and the name of the document that just arrived. A large
     import is one job, so without it the indicator says "1 running" for as long
     as the copy takes and nothing else. `miaz add` passes none.
+
+    The report comes after the copy, not before it. Reporting first meant the
+    last document was announced as finished while it was still being written,
+    so the bar sat at 100% for however long the final copy took.
     """
     imported = []
     failed = []
     total = len(paths)
     for position, source in enumerate(paths, start=1):
-        if report is not None:
-            report(_('Importing {name}').format(
-                name=os.path.basename(source) if source else str(source)),
-                position / total)
+        name = os.path.basename(source) if source else str(source)
         try:
             # Uppercase here rather than leaving it to the window. A repository
             # stores its names uppercase, and filename_normalize does not do
@@ -113,8 +115,11 @@ def import_paths(util, docs_dir: str, paths, report=None):
             if util.filename_import(source, target):
                 imported.append(os.path.basename(target))
             else:
-                failed.append(os.path.basename(source) if source else str(source))
+                failed.append(name)
         except Exception as error:
-            failed.append(os.path.basename(source) if source else str(source))
+            failed.append(name)
             util.log.error(f"Could not import '{source}': {error}")
+        if report is not None:
+            report(_('{done} of {total}: {name}').format(
+                done=position, total=total, name=name), position / total)
     return imported, failed

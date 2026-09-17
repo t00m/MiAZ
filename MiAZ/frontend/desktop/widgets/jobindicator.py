@@ -21,7 +21,11 @@ SHOW_AFTER_MS = 500
 
 
 class MiAZJobIndicator(Gtk.MenuButton):
-    """A spinner, a count, and a list of what is running and what is waiting."""
+    """A spinner, a count, and a list of what is running, waiting or failed.
+
+    A failure keeps the indicator on screen until the next job is added. A
+    spinner that vanishes with no outcome is how a failure goes unnoticed.
+    """
     __gtype_name__ = 'MiAZJobIndicator'
 
     def __init__(self, app):
@@ -72,16 +76,27 @@ class MiAZJobIndicator(Gtk.MenuButton):
             return
         running = queue.running()
         pending = queue.pending()
-        busy = bool(running or pending)
-
-        if not busy:
+        failed = self._failed(queue)
+        # A failure counts as something to show. Deriving this from running
+        # and pending alone hid the indicator the moment a job failed, so the
+        # spinner disappeared and the failure was never seen.
+        if not (running or pending or failed):
             self._cancel_timer()
             self.set_visible(False)
+            # Cleared, not just hidden: the next thing to run would otherwise
+            # open a popover still listing the last one.
+            self._rebuild([], [], [])
             return
 
-        self.count_label.set_text(str(len(running) + len(pending))
-                                  if len(running) + len(pending) > 1 else '')
-        self._rebuild(running, pending)
+        # The count is work in flight. A failure is listed, not counted: it is
+        # not running any more.
+        in_flight = len(running) + len(pending)
+        self.count_label.set_text(str(in_flight) if in_flight > 1 else '')
+        if in_flight:
+            self.spinner.start()
+        else:
+            self.spinner.stop()
+        self._rebuild(running, pending, failed)
         if not self.get_visible() and self._show_id == 0:
             self._show_id = GLib.timeout_add(SHOW_AFTER_MS, self._show_if_busy)
 
@@ -90,16 +105,28 @@ class MiAZJobIndicator(Gtk.MenuButton):
         the window was never worth a spinner."""
         self._show_id = 0
         queue = self.app.get_service('jobs')
-        if queue is not None and (queue.running() or queue.pending()):
+        if queue is None:
+            return GLib.SOURCE_REMOVE
+        if queue.running() or queue.pending() or self._failed(queue):
             self.set_visible(True)
         return GLib.SOURCE_REMOVE
+
+    @staticmethod
+    def _failed(queue) -> list:
+        """The failures the queue is still holding.
+
+        Asked for by name rather than assumed, so an older queue without the
+        accessor simply has no failures to show.
+        """
+        lister = getattr(queue, 'failed', None)
+        return lister() if lister is not None else []
 
     def _cancel_timer(self):
         if self._show_id != 0:
             GLib.source_remove(self._show_id)
             self._show_id = 0
 
-    def _rebuild(self, running, pending):
+    def _rebuild(self, running, pending, failed=()):
         child = self.list_box.get_first_child()
         while child is not None:
             self.list_box.remove(child)
@@ -112,6 +139,10 @@ class MiAZJobIndicator(Gtk.MenuButton):
             self._add_heading(_('Pending'))
             for job in pending:
                 self._add_line(job.label)
+        if failed:
+            self._add_heading(_('Failed'))
+            for job in failed:
+                self._add_failed(job)
 
     def _add_heading(self, text):
         label = Gtk.Label(xalign=0)
@@ -131,6 +162,12 @@ class MiAZJobIndicator(Gtk.MenuButton):
             bar = Gtk.ProgressBar()
             bar.set_fraction(job.fraction)
             self.list_box.append(bar)
+
+    def _add_failed(self, job):
+        """A failure says what failed and, when there is one, why."""
+        self._add_line(_('{label}: failed').format(label=job.label))
+        if job.error is not None:
+            self._add_line(f'   {job.error}')
 
     def describe(self) -> str:
         """Everything the popover is showing, as one string. For tests."""
