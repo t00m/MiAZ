@@ -19,6 +19,7 @@ from gi.repository import GLib
 
 import pytest
 
+from MiAZ.backend import tasks
 from MiAZ.backend.tasks import log as tasks_log
 from MiAZ.backend.tasks import run_in_background
 from MiAZ.backend.tasks import run_on_main
@@ -272,3 +273,119 @@ def test_a_raising_callback_is_logged_and_still_not_repeated(task_log):
     assert calls == [1]
     messages = [record.getMessage() for record in task_log.records]
     assert any('toast exploded' in message for message in messages), messages
+
+
+# ---------------------------------------------------------------------------
+# Every background job registers itself, so nothing has to remember to
+# ---------------------------------------------------------------------------
+
+class RecordingQueue:
+    """A stand-in for MiAZJobQueue that records what it was told."""
+
+    def __init__(self):
+        self.added = []
+        self.started = []
+        self.finished = []
+        self.reports = []
+
+    def add(self, name, label=None, queued=False):
+        job = {'name': name, 'label': label, 'queued': queued}
+        self.added.append(job)
+        return job
+
+    def start(self, job):
+        self.started.append(job)
+
+    def report(self, job, message, fraction=None):
+        self.reports.append((message, fraction))
+
+    def finish(self, job, error=None):
+        self.finished.append((job, error))
+
+
+def drain():
+    """Run whatever run_in_background handed to the main loop."""
+    context = GLib.MainContext.default()
+    deadline = time.monotonic() + 5
+    while time.monotonic() < deadline:
+        while context.pending():
+            context.iteration(False)
+        time.sleep(0.01)
+
+
+def test_a_background_job_registers_with_the_queue():
+    """All 20 call sites already pass name=, so registering here is what puts
+    every one of them in the indicator without editing any of them."""
+    queue = RecordingQueue()
+    tasks.set_job_queue(queue)
+    try:
+        thread = tasks.run_in_background(lambda: 'ok', name='importdoc-batch')
+        thread.join(timeout=5)
+        drain()
+    finally:
+        tasks.set_job_queue(None)
+    assert queue.added and queue.added[0]['name'] == 'importdoc-batch'
+    assert queue.started
+    assert queue.finished and queue.finished[0][1] is None
+
+
+def test_a_failing_job_is_finished_with_its_error():
+    queue = RecordingQueue()
+    tasks.set_job_queue(queue)
+
+    def boom():
+        raise OSError('the disk is full')
+
+    try:
+        thread = tasks.run_in_background(boom, on_error=lambda error: None,
+                                         name='importdoc-batch')
+        thread.join(timeout=5)
+        drain()
+    finally:
+        tasks.set_job_queue(None)
+    assert queue.finished
+    assert isinstance(queue.finished[0][1], OSError)
+
+
+def test_a_job_that_wants_to_report_is_given_a_reporter():
+    queue = RecordingQueue()
+    tasks.set_job_queue(queue)
+
+    def work(report):
+        report('340 of 1322', 0.257)
+        return 'ok'
+
+    try:
+        thread = tasks.run_in_background(work, name='importdoc-batch')
+        thread.join(timeout=5)
+        drain()
+    finally:
+        tasks.set_job_queue(None)
+    assert queue.reports == [('340 of 1322', 0.257)]
+
+
+def test_work_that_takes_no_arguments_is_called_with_none():
+    """Nineteen of the twenty call sites pass a plain lambda."""
+    queue = RecordingQueue()
+    tasks.set_job_queue(queue)
+    seen = []
+    try:
+        thread = tasks.run_in_background(lambda: seen.append(True),
+                                         name='workspace-scan')
+        thread.join(timeout=5)
+        drain()
+    finally:
+        tasks.set_job_queue(None)
+    assert seen == [True]
+
+
+def test_without_a_queue_nothing_changes():
+    """The console frontend installs no queue, and the headless suite runs
+    without one. Both must behave exactly as before."""
+    tasks.set_job_queue(None)
+    done = []
+    thread = tasks.run_in_background(lambda: 'ok', on_done=done.append,
+                                     name='plain')
+    thread.join(timeout=5)
+    drain()
+    assert done == ['ok']
