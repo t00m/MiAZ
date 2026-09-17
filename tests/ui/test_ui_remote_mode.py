@@ -109,8 +109,14 @@ def test_the_duplicate_scan_still_runs_when_local(local_again):
     index = local_again.service('index')
     index._invalidate_duplicates()
 
-    assert workspace._scan_duplicates() is True
-    local_again.pump(0.6)
+    try:
+        assert workspace._scan_duplicates() is True
+        local_again.pump(0.6)
+    finally:
+        # A scan reveals the copy column, and test_ui_duplicates asserts it is
+        # hidden until something has been scanned.
+        index._invalidate_duplicates()
+        local_again.widget('workspace-view').column_duplicate.set_visible(False)
 
 
 def test_the_settings_switch_writes_the_flag(local_again):

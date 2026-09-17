@@ -37,6 +37,20 @@ def leave_review(driver):
     driver.pump(0.3)
 
 
+def forget_duplicates(driver):
+    """Put the map and the column back the way an untouched session has them.
+
+    Two tests here assert the promise that a user who never asks for copies
+    pays nothing: the map is unscanned and the column is hidden. That promise
+    is about the real starting state, so it cannot be handed to them by a
+    fixture without making both tests assert the fixture instead. Whoever
+    scans therefore cleans up.
+    """
+    driver.service('index')._invalidate_duplicates()
+    driver.widget('workspace-view').column_duplicate.set_visible(False)
+    driver.pump(0.2)
+
+
 def test_nothing_is_scanned_until_review_mode(clean_view):
     """A user who never opens review mode pays nothing for this."""
     assert clean_view.service('index').duplicates_stale() is True
@@ -242,11 +256,14 @@ def test_show_duplicates_scans_and_reveals_the_column(clean_view):
     index._invalidate_duplicates()
     view.column_duplicate.set_visible(False)
 
-    workspace.show_duplicates()
-    clean_view.wait_until(lambda: not index.duplicates_stale(),
-                          message='the duplicate scan')
-    clean_view.pump(0.5)
-    assert view.column_duplicate.get_visible() is True
+    try:
+        workspace.show_duplicates()
+        clean_view.wait_until(lambda: not index.duplicates_stale(),
+                              message='the duplicate scan')
+        clean_view.pump(0.5)
+        assert view.column_duplicate.get_visible() is True
+    finally:
+        forget_duplicates(clean_view)
 
 
 def test_show_duplicates_puts_the_copies_next_to_each_other(clean_view):
@@ -259,15 +276,18 @@ def test_show_duplicates_puts_the_copies_next_to_each_other(clean_view):
     workspace = clean_view.workspace
     view = clean_view.widget('workspace-view')
 
-    workspace.show_duplicates()
-    clean_view.wait_until(lambda: not clean_view.service('index').duplicates_stale(),
-                          message='the duplicate scan')
-    clean_view.pump(0.5)
+    try:
+        workspace.show_duplicates()
+        clean_view.wait_until(lambda: not clean_view.service('index').duplicates_stale(),
+                              message='the duplicate scan')
+        clean_view.pump(0.5)
 
-    shown = sorted_ids(clean_view)
-    expected = sorted(shown, key=lambda name: view._duplicate_sort_key(
-        clean_view.service('index').document(name)))
-    assert shown == expected, 'the view is not in copy order'
+        shown = sorted_ids(clean_view)
+        expected = sorted(shown, key=lambda name: view._duplicate_sort_key(
+            clean_view.service('index').document(name)))
+        assert shown == expected, 'the view is not in copy order'
+    finally:
+        forget_duplicates(clean_view)
 
 
 def test_show_duplicates_does_not_rescan_what_is_already_known(clean_view):
@@ -288,6 +308,7 @@ def test_show_duplicates_does_not_rescan_what_is_already_known(clean_view):
         assert scans == [], 'a fresh map was scanned again'
     finally:
         index.scan_duplicates = original
+        forget_duplicates(clean_view)
 
 
 def shown_in_order(driver):

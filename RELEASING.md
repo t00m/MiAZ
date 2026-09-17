@@ -61,9 +61,14 @@ declare none.
 - Every change for this release is committed. The script refuses a dirty tree.
 - `python3 -m pytest tests -q` passes.
 - `ruff check MiAZ data/resources/plugins tests` is clean.
-- The UI tests pass: `scripts/checks/run_ui_tests.sh`. They take about twenty
+- The UI tests pass: `scripts/checks/run_ui_tests.sh`. They take about eight
   minutes and are not part of `meson test`, so they are easy to skip and worth
   not skipping before a release.
+- Worth doing before a release, not before every commit:
+  `scripts/checks/run_ui_tests.sh --shuffle` and
+  `python3 -m pytest tests -q -p randomly`. Both randomise the order and catch a
+  test that leans on one that ran before it. The shuffled UI run takes about
+  23 minutes rather than eight, because repository switches stop batching.
 - `CHANGELOG.md` has an `Unreleased` section holding everything since the last
   release.
 

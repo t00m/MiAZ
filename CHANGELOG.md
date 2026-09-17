@@ -34,6 +34,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - The duplicate prefilter called `os.path.isfile` and then `os.path.getsize`, two stat calls per document to answer one question. One `os.stat` now answers both, which is 1322 fewer round trips per scan on the test repository.
 
+- **Two more tests were leaning on the order they ran in, and the UI runner now says which order it wants.** `workspace.show_duplicates()` scans for copies and reveals the copy column. Three tests called it and none put it back, so `test_the_column_is_hidden_when_nothing_has_been_scanned` failed whenever one of them ran first. They clean up now, through a `forget_duplicates` helper.
+
+  That one is not fixed in `clean_view`, unlike the view. Two tests in that file assert the promise itself, that a user who never asks for copies pays nothing, so handing them a reset state from a fixture would make both assert the fixture. Whoever scans cleans up instead.
+
+  `tests/ui/test_ui_history.py` is a sequence rather than a set: it records git history that its later tests read back, and stepping a document off the disk needs something to step back to. Shuffling inside it broke three of its tests. A `trylast` collection hook puts that one module back into source order, leaving its position among the other files to the shuffle.
+
+  `scripts/checks/run_ui_tests.sh` now pins file order by default and takes `--shuffle` to opt in. The default matters because `pytest-randomly` shuffles the moment it is installed, and a shuffled UI run takes 23 minutes against eight: the tests drive one application for the whole run, so repository switches and review-mode toggles stop batching. `RELEASING.md` lists both shuffled runs as pre-release checks.
+
 - **A log test passed only because two other tests happened to repair it first.** `cli.main` lowers the console handler to WARNING on purpose, so a command that prints filenames does not also narrate its startup. A real run exits afterwards; the suite does not, and fifteen tests across `test_cli.py` and `test_cli_plugins.py` call `main`, leaving the level down for everything after them.
 
   `test_the_console_starts_at_info` asserts the default is INFO. The CLI tests sort before it alphabetically and always ran first, yet it passed, because two earlier tests in its own file set the level and restore it in a `finally`. The default was back by accident, for unrelated reasons. `tests/conftest.py` now restores it after every test, so the assertion reads the default it means to read whatever ran before it.

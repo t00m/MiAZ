@@ -74,6 +74,41 @@ BETA_PLUGINS = {
 }
 
 
+# Modules whose tests are a sequence, not a set. pytest-randomly shuffles inside
+# every module once it is installed, and for these that is not a stricter test
+# but a broken one.
+SEQUENTIAL_MODULES = ('test_ui_history.py',)
+
+
+@pytest.hookimpl(trylast=True)
+def pytest_collection_modifyitems(items):
+    """Put a deliberately sequential module back into source order.
+
+    test_ui_history records git history that its later tests read back:
+    stepping a document off the disk needs something to step back to, and the
+    module fixture sweeps up once at the end rather than between tests, because
+    removing a file mid module would leave the working tree dirty. Shuffling
+    inside it produces failures about the order, not about the code.
+
+    Runs trylast so it lands after pytest-randomly. Only the positions the
+    module already occupies are rewritten, so where it sits among the other
+    files is still whatever the shuffle decided.
+    """
+    def is_sequential(item):
+        return os.path.basename(str(getattr(item, 'fspath', ''))) in SEQUENTIAL_MODULES
+
+    def source_line(item):
+        function = getattr(item, 'function', None)
+        code = getattr(function, '__code__', None)
+        return getattr(code, 'co_firstlineno', 0)
+
+    slots = [index for index, item in enumerate(items) if is_sequential(item)]
+    if not slots:
+        return
+    for index, item in zip(slots, sorted((items[i] for i in slots), key=source_line)):
+        items[index] = item
+
+
 def describe(code):
     return DESCRIPTIONS.get(code, code.title())
 
