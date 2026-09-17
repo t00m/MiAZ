@@ -159,7 +159,7 @@ class MiAZImportDoc(GObject.GObject):
         self._report(imported, failed)
         return imported, failed
 
-    def _copy_all(self, paths):
+    def _copy_all(self, paths, report=None):
         """Copy every path, counting what worked and naming what did not.
 
         The copying itself is MiAZ.backend.importer, which `miaz add` calls
@@ -167,7 +167,7 @@ class MiAZImportDoc(GObject.GObject):
         arrive the same way. No GTK here: this is the half the worker runs.
         """
         imported, failed = importer.import_paths(
-            self.util, self.repository.docs, paths)
+            self.util, self.repository.docs, paths, report=report)
         return len(imported), failed
 
     def _report(self, imported, failed):
@@ -196,13 +196,15 @@ class MiAZImportDoc(GObject.GObject):
             watcher.set_active(False)
         self.log.debug(f"Importing {len(paths)} documents in the background")
         run_in_background(
-            lambda: self._copy_batch(paths, suspend, watcher),
+            lambda report: self._copy_batch(paths, suspend, watcher, report),
             on_error=self._on_batch_failed,
-            name='importdoc-batch')
+            name='importdoc-batch',
+            label=_('Importing documents'),
+            queued=True)
 
-    def _copy_batch(self, paths, suspend, watcher):
+    def _copy_batch(self, paths, suspend, watcher, report=None):
         try:
-            imported, failed = self._copy_all(paths)
+            imported, failed = self._copy_all(paths, report=report)
             GLib.idle_add(self._report, imported, failed)
         finally:
             workspace = self.app.get_widget('workspace')

@@ -243,3 +243,37 @@ def test_nothing_to_import_is_not_an_error(tmp_path):
     docs = str(tmp_path / 'repo')
     os.makedirs(docs)
     assert import_paths(util(), docs, []) == ([], [])
+
+
+# ---------------------------------------------------------------------------
+# Reporting: a massive import is one job, so it has to say where it has got to
+# ---------------------------------------------------------------------------
+
+def test_importing_reports_each_document(tmp_path):
+    """Without this a 1322 document import shows "1 running" for minutes."""
+    docs = tmp_path / 'repo'
+    docs.mkdir()
+    sources = []
+    for index in range(3):
+        source = tmp_path / f'20260101-ES-HOU-ACME-INV-doc{index}-JOHNDOE.pdf'
+        source.write_text('x')
+        sources.append(str(source))
+
+    said = []
+    import_paths(util(), str(docs), sources,
+                 report=lambda message, fraction: said.append(
+                     (message, fraction)))
+
+    assert len(said) == 3, f'reported {len(said)} times for 3 documents'
+    assert said[-1][1] == 1.0, 'the last document is not the whole of it'
+
+
+def test_importing_without_a_reporter_still_works(tmp_path):
+    """`miaz add` passes none, and must not have to."""
+    docs = tmp_path / 'repo'
+    docs.mkdir()
+    source = tmp_path / '20260101-ES-HOU-ACME-INV-doc-JOHNDOE.pdf'
+    source.write_text('x')
+    imported, failed = import_paths(util(), str(docs), [str(source)])
+    assert len(imported) == 1
+    assert failed == []

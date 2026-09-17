@@ -76,3 +76,12 @@ def test_total_size_ignores_a_path_it_cannot_measure(tmp_path):
     real = tmp_path / 'a.pdf'
     real.write_bytes(b'x' * 10)
     assert m.total_size([str(real), str(tmp_path / 'gone.pdf')]) == 10
+
+
+def test_the_batch_import_asks_for_the_lane_and_names_itself():
+    """A second import must wait rather than copy into the same repository, and
+    the indicator must show words rather than the slug."""
+    import inspect
+    source = inspect.getsource(m.MiAZImportDoc._import_batch)
+    assert 'queued=True' in source, 'the batch import does not ask for the lane'
+    assert 'label=' in source, 'the batch import has no label for the indicator'

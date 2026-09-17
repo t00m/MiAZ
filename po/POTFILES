@@ -2,6 +2,7 @@
 MiAZ/backend/config.py
 MiAZ/backend/crash.py
 MiAZ/backend/dr.py
+MiAZ/backend/importer.py
 MiAZ/backend/log.py
 MiAZ/backend/models.py
 MiAZ/backend/ocr.py

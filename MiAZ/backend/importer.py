@@ -7,6 +7,7 @@
 """
 
 import os
+from gettext import gettext as _
 
 
 def expand_paths(paths, recursive: bool = False):
@@ -78,7 +79,7 @@ def free_target(docs_dir: str, basename: str) -> str:
         counter += 1
 
 
-def import_paths(util, docs_dir: str, paths):
+def import_paths(util, docs_dir: str, paths, report=None):
     """Copy every path into the repository under its normalized name.
 
     Returns (imported, failed): the repository names written, in the order
@@ -88,10 +89,19 @@ def import_paths(util, docs_dir: str, paths):
 
     Nothing here draws anything, which is why `miaz add` and the window's own
     Add can be the same operation.
+
+    `report(message, fraction)` is called once per document when given. A large
+    import is one job, so without it the indicator says "1 running" for as long
+    as the copy takes and nothing else. `miaz add` passes none.
     """
     imported = []
     failed = []
-    for source in paths:
+    total = len(paths)
+    for position, source in enumerate(paths, start=1):
+        if report is not None:
+            report(_('Importing {name}').format(
+                name=os.path.basename(source) if source else str(source)),
+                position / total)
         try:
             # Uppercase here rather than leaving it to the window. A repository
             # stores its names uppercase, and filename_normalize does not do
