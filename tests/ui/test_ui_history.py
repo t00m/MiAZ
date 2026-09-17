@@ -16,6 +16,8 @@ gi.require_version('Gtk', '4.0')
 
 import pytest
 
+from gi.repository import GLib
+
 PLUGIN_DIR = os.path.join('data', 'resources', 'plugins', 'MiAZHistory')
 
 pytestmark = pytest.mark.skipif(shutil.which('git') is None,
@@ -33,9 +35,17 @@ def leaves_no_documents_behind(miaz):
     broke the document counts in test_ui_repository, test_ui_workspace and
     test_ui_widgets, and the future preset in test_ui_sidebar.
 
-    The sweep runs once at the end rather than after each test. The tests build
-    on the git history they record between them, and removing a file mid module
-    would leave the working tree dirty for the step_back in the test below.
+    The sweep runs once at the end rather than after each test: removing a file
+    mid module would leave the working tree dirty for the step_back below.
+
+    This used to say the tests build on the git history they record between
+    them, and that reading held the file together. They do not. Each one is
+    relative, recording a state and asserting one more than there was. What
+    actually coupled them was three documents written under the same name by
+    two tests each: whichever ran second wrote bytes git already held, so its
+    settle recorded nothing about that document, and the assertion that
+    followed was about a state it had not made. Every name below belongs to one
+    test now.
 
     Names are compared rather than paths: MiAZHistory renames a document that
     does not match the naming format, so what a test wrote is not always what
@@ -83,10 +93,56 @@ def history(miaz):
     miaz.pump(0.5)
     instance = system.get_extension('miazhistory')
     assert instance is not None, 'the MiAZHistory plugin has no extension instance'
+    settled(miaz, instance)
     yield instance
+    settled(miaz, instance)
     if not was_loaded:
         system.unload_plugin(info)
         miaz.pump(0.3)
+
+
+def settled(driver, plugin, seconds=0.4):
+    """Hand over a plugin that is not still holding the last test's events.
+
+    _counts is fed by the filesystem watcher and accumulates: every test here
+    writes documents, and a step back or forward deletes and restores them.
+    Those events arrive after the test that caused them has finished, so the
+    next test sets _counts by hand on top of somebody else's tally and records
+    a step named for the wrong thing. 'Deleted 2 documents' where the test
+    asked for 'Added 2 documents' is what that looks like.
+
+    Pumping first lets the events land, so they are cleared rather than racing
+    the clear. Any settle timer they armed is dropped with them: it would fire
+    mid test and record a state nobody asked for.
+    """
+    driver.pump(seconds)
+    plugin._counts = {}
+    plugin._recording = False
+    plugin._suppressed = False
+    for attribute in ('_settle_id', '_ceiling_id'):
+        source_id = getattr(plugin, attribute, 0)
+        if source_id:
+            GLib.source_remove(source_id)
+            setattr(plugin, attribute, 0)
+
+
+def step(driver, plugin, direction, timeout=15):
+    """Take one step and wait for it to be finished, not merely visible.
+
+    apply_step hands the work to a thread. _apply puts the tree on disk with
+    read-tree and only then commits and writes the new index, so the moment a
+    document appears or disappears is the middle of the step, not the end of
+    it. Asserting on the index there reads the one from before the step, and
+    can_redo says False for a step back that is about to make it True.
+
+    _suppressed is the flag the step itself uses to mean 'in flight', cleared
+    in _on_step_done once the index has been written. It also makes a second
+    apply_step a no-op, so a step taken without waiting is silently dropped.
+    """
+    plugin.apply_step(direction)
+    driver.wait_until(lambda: not plugin._suppressed, timeout=timeout,
+                      message=f'the step {direction} to finish')
+    driver.pump(0.2)
 
 
 def test_the_plugin_finds_a_history_that_is_already_prepared(history):
@@ -147,7 +203,7 @@ def test_a_failed_recording_keeps_its_counts_for_the_next_step(miaz, history):
     have succeeded. A recording that fails must not lose that count: it comes
     back and is carried by the step that does succeed."""
     repository = miaz.service('repo').docs
-    with open(os.path.join(repository, '20261215-ES-FIN-BANKX-INV-w-JOHNDOE.pdf'),
+    with open(os.path.join(repository, '20261219-ES-FIN-BANKX-INV-r-JOHNDOE.pdf'),
               'wb') as document:
         document.write(b'new')
 
@@ -166,7 +222,7 @@ def test_a_failed_recording_keeps_its_counts_for_the_next_step(miaz, history):
 
     assert history._counts == {'added': 1}, 'the failed count is merged back, not lost'
 
-    with open(os.path.join(repository, '20261216-ES-FIN-BANKX-INV-v-JOHNDOE.pdf'),
+    with open(os.path.join(repository, '20261220-ES-FIN-BANKX-INV-s-JOHNDOE.pdf'),
               'wb') as document:
         document.write(b'new')
     history._counts['added'] += 1
@@ -207,7 +263,7 @@ def test_a_repository_with_one_state_can_step_nowhere(miaz, history):
 
 def test_a_recorded_change_makes_the_undo_button_work(miaz, history):
     repository = miaz.service('repo').docs
-    with open(os.path.join(repository, '20261214-ES-FIN-BANKX-INV-z-JOHNDOE.pdf'),
+    with open(os.path.join(repository, '20261221-ES-FIN-BANKX-INV-t-JOHNDOE.pdf'),
               'wb') as document:
         document.write(b'new')
     history._counts = {'added': 1}
@@ -236,6 +292,14 @@ def test_the_dialog_names_the_files_and_never_says_git(miaz, history):
 
 
 def test_stepping_back_takes_the_document_off_the_disk(miaz, history):
+    """A step back is the only test here that leaves the store somewhere else.
+
+    Every other test in this file works in relative terms, recording a state
+    and asserting one more than there was. This one ends with the store one
+    state behind and a redo pending, which is what the next test to record
+    against it would build on. It steps forward again, the way
+    test_a_repository_with_one_state_can_step_nowhere does.
+    """
     repository = miaz.service('repo').docs
     name = '20261216-ES-FIN-BANKX-INV-v-JOHNDOE.pdf'
     path = os.path.join(repository, name)
@@ -245,9 +309,22 @@ def test_stepping_back_takes_the_document_off_the_disk(miaz, history):
     history.settle()
     miaz.pump(0.5)
 
-    history.apply_step('back')
-    miaz.wait_until(lambda: not os.path.exists(path), message='the document went away')
-    assert history.store.can_redo() is True
+    stepped_back = False
+    try:
+        step(miaz, history, 'back')
+        assert not os.path.exists(path), 'the document is still on disk'
+        stepped_back = True
+        # The states are named in the failure: when the redo goes missing, the
+        # subject of the newest one says what took it.
+        assert history.store.can_redo() is True, 'index %s of %s' % (
+            history.store.index(),
+            [history.store.subject_of(s) for s in history.store.states()])
+    finally:
+        if stepped_back:
+            step(miaz, history, 'forward')
+            assert os.path.exists(path), 'the document did not come back'
+        history.refresh_buttons()
+        miaz.pump(0.2)
 
 
 def test_a_step_already_in_flight_blocks_a_second_one(miaz, history):

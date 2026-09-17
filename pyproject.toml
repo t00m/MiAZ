@@ -8,6 +8,14 @@ requires-python = ">=3.9"
 # available. 'keyring' is the cross-platform fallback backend.
 keyring = ["keyring"]
 
+# pytest-randomly shuffles the order every run. Three tests were passing only
+# because something unrelated happened to put shared state back before them:
+# the console log level, the current workspace view and the copy column. None
+# of those would have been found in file order. The UI suite opts back out,
+# through scripts/checks/run_ui_tests.sh, because it drives one application for
+# the whole run and a shuffle there costs 23 minutes against eight.
+test = ["pytest", "pytest-randomly"]
+
 [tool.ruff]
 target-version = "py39"
 line-length = 100

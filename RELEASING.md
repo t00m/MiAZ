@@ -69,6 +69,10 @@ declare none.
   `python3 -m pytest tests -q -p randomly`. Both randomise the order and catch a
   test that leans on one that ran before it. The shuffled UI run takes about
   23 minutes rather than eight, because repository switches stop batching.
+  Randomising needs `pytest-randomly`, which is the `test` extra in
+  `pyproject.toml` (`python3 -m pip install -e '.[test]'`, or
+  `python3-pytest-randomly` on Fedora). Without it both commands still run,
+  just in file order.
 - `CHANGELOG.md` has an `Unreleased` section holding everything since the last
   release.
 

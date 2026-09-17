@@ -34,13 +34,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - The duplicate prefilter called `os.path.isfile` and then `os.path.getsize`, two stat calls per document to answer one question. One `os.stat` now answers both, which is 1322 fewer round trips per scan on the test repository.
 
+- **Known, not fixed: stepping back over a configuration change loses the redo.** `scripts/checks/run_ui_tests.sh --shuffle` finds it at seed 20, on `test_stepping_back_takes_the_document_off_the_disk`. File order does not reach it.
+
+  `GitStore._rescue_pending` is careful about this. It commits a dirty working tree before a step overwrites it and appends that state at the end, keeping everything ahead reachable, precisely so no state is lost. `record()` truncates instead, on the text-editor rule that a change made after stepping back is a new branch of the user's work.
+
+  The two meet badly. A step that touched `.conf` ends in `reload()`, which reopens the repository and writes its configuration files out again. That leaves the tree dirty, `_start_recording` calls `catch_up()`, and `catch_up` records through `record()`. The redo the step just created is truncated away by MiAZ rewriting its own configuration, which is not the user starting a new branch of anything. The states read `[..., 'Added 1 document', 'Changed outside MiAZ']` with the index on the last one.
+
+  The index arithmetic in `step_back` and `step_forward` is right; this is not an off-by-one. What `catch_up` needs is the non-truncating record that `_rescue_pending` already performs.
+
 - **Two more tests were leaning on the order they ran in, and the UI runner now says which order it wants.** `workspace.show_duplicates()` scans for copies and reveals the copy column. Three tests called it and none put it back, so `test_the_column_is_hidden_when_nothing_has_been_scanned` failed whenever one of them ran first. They clean up now, through a `forget_duplicates` helper.
 
   That one is not fixed in `clean_view`, unlike the view. Two tests in that file assert the promise itself, that a user who never asks for copies pays nothing, so handing them a reset state from a fixture would make both assert the fixture. Whoever scans cleans up instead.
 
-  `tests/ui/test_ui_history.py` is a sequence rather than a set: it records git history that its later tests read back, and stepping a document off the disk needs something to step back to. Shuffling inside it broke three of its tests. A `trylast` collection hook puts that one module back into source order, leaving its position among the other files to the shuffle.
+  `tests/ui/test_ui_history.py` broke three of its own tests when shuffled, and its fixture said why: the tests build on the git history they record between them. They do not. Three documents were written under the same name by two tests each, so whichever ran second wrote bytes git already held. Its `settle()` recorded nothing about that document, and the assertion after it was about a state it had not made: an undo dialog naming a configuration change rather than the file, and a step back waiting forever for a document it was never going to remove. Each name belongs to one test now, and the fixture says what actually held the file together.
 
-  `scripts/checks/run_ui_tests.sh` now pins file order by default and takes `--shuffle` to opt in. The default matters because `pytest-randomly` shuffles the moment it is installed, and a shuffled UI run takes 23 minutes against eight: the tests drive one application for the whole run, so repository switches and review-mode toggles stop batching. `RELEASING.md` lists both shuffled runs as pre-release checks.
+  Two smaller leaks in the same file went with it. `test_stepping_back_takes_the_document_off_the_disk` was the only test there that left the store somewhere else, one state behind with a redo pending; it steps forward again now. And `_counts` is fed by the filesystem watcher and accumulates, so events from one test landed on the next one's hand-set tally and named a step `Deleted 2 documents` where it asked for `Added 2 documents`. The `history` fixture hands over a plugin with that drained.
+
+  `scripts/checks/run_ui_tests.sh` now pins file order by default and takes `--shuffle` to opt in. The reason is wall time and nothing else: `pytest-randomly` shuffles the moment it is installed, and a shuffled UI run takes 23 minutes against eight, because the tests drive one application for the whole run and repository switches stop batching. No file needs its order. `pytest-randomly` is declared as the `test` extra in `pyproject.toml`, and `RELEASING.md` lists both shuffled runs as pre-release checks.
 
 - **A log test passed only because two other tests happened to repair it first.** `cli.main` lowers the console handler to WARNING on purpose, so a command that prints filenames does not also narrate its startup. A real run exits afterwards; the suite does not, and fifteen tests across `test_cli.py` and `test_cli_plugins.py` call `main`, leaving the level down for everything after them.
 

@@ -13,12 +13,11 @@
 #   --headless  start a virtual display even when one is available
 #   --shuffle   randomise the order instead of running in file order
 #
-# File order is the default on purpose. These tests drive one application for
-# the whole run, so the order is part of what they are: tests/ui/test_ui_history
-# records git history its later tests read back. Shuffling also triples the wall
-# time, because repository switches and review-mode toggles stop batching:
-# 23 minutes against 8. --shuffle is for the occasional check that a test is not
-# quietly leaning on one that ran before it.
+# File order is the default because shuffling triples the wall time: these tests
+# drive one application for the whole run, so repository switches and
+# review-mode toggles stop batching, and 8 minutes becomes 23. That is the only
+# reason. No file here needs its order, and --shuffle is how you find out when
+# one starts to: it is worth running before a release, not before every commit.
 #
 # With no display and no headless tool it says so and exits 2, rather than
 # failing 40 tests for the same reason.
@@ -39,7 +38,7 @@ while [[ $# -gt 0 ]]; do
         --keep)     KEEP=1; shift ;;
         --headless) FORCE_HEADLESS=1; shift ;;
         --shuffle)  SHUFFLE=1; shift ;;
-        -h|--help)  sed -n '2,24p' "$0"; exit 0 ;;
+        -h|--help)  sed -n '2,23p' "$0"; exit 0 ;;
         *)          PYTEST_ARGS+=("$1"); shift ;;
     esac
 done
