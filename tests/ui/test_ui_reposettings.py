@@ -881,3 +881,27 @@ def test_the_plugin_index_carries_a_version_for_every_plugin(repo_settings,
     wrong = sorted(f'{name}={info["Version"]}' for name, info in index.items()
                    if info['Version'] != app_version)
     assert not wrong, f'not at the application version {app_version}: {wrong}'
+
+
+def test_opening_a_repository_builds_no_settings_window(clean_view):
+    """Half a second of startup went into a window nobody had asked for.
+
+    switch_finish built MiAZRepoSettings on every repository open and every
+    switch. Measured against the 1322 document test repository it cost 508 ms
+    of a 2.2 second startup, a quarter of it, and the menu entry never used it:
+    show_repository_settings builds its own. The only reader is the auto-open
+    for a repository whose configuration has no used entries, which can build
+    one when it needs one.
+    """
+    assert clean_view.widget('settings-repo') is None, (
+        'a repository settings window was built without anyone asking for it')
+
+
+def test_the_menu_entry_still_opens_the_settings_window(clean_view):
+    """The other half: nothing is built early, and it still opens."""
+    clean_view.service('actions').show_repository_settings()
+    clean_view.pump(0.5)
+    window = clean_view.widget('window-repo-settings')
+    assert window is not None, 'the repository settings window did not open'
+    window.close()
+    clean_view.pump(0.3)

@@ -1570,6 +1570,17 @@ class MiAZWorkspace(Gtk.Box):
             on_error=self._on_scan_failed,
             name='workspace-scan')
 
+    def refresh_rows(self):
+        """Re-bind the visible rows without re-reading the repository.
+
+        update() lists the directory, rebuilds the index and parses every
+        filename. A caller that only needs its own column or highlight redrawn
+        wants none of that: refilter re-binds every visible row, which is what
+        re-runs each column's bind. _update_duplicate_column does the same
+        thing for the copy column.
+        """
+        self.view.refilter()
+
     def _on_scan_failed(self, error):
         """Let the next scan through when this one could not finish.
 

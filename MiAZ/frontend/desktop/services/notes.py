@@ -251,8 +251,11 @@ class MiAZNotes(GObject.GObject):
         # _refresh_notes_filter(); the column cell reads self._note_counts.
         self._docs_with_notes = self._compute_docs_with_notes()
         self._install_notes_column()
-        # Force a re-bind so the column populates immediately.
-        self.workspace.update()
+        # Re-bind so the column populates immediately. Not update(): that
+        # lists the repository, rebuilds the index and parses every
+        # filename, which is 367 ms on a 1322 document repository to
+        # paint a column whose cell reads the dictionary above.
+        self.workspace.refresh_rows()
 
         self._started = True
         self._on_workspace_view_changed()
@@ -417,7 +420,10 @@ class MiAZNotes(GObject.GObject):
         if self._only_notes_active:
             self._docs_with_notes = self._compute_docs_with_notes()
         if self.workspace is not None:
-            self.workspace.update()
+            # Turning a filter on and off decides which rows are shown. The
+            # documents behind them have not changed, so there is nothing to
+            # re-read.
+            self.workspace.refresh_rows()
         return False  # let the switch update its visual state
 
     def _compute_docs_with_notes(self) -> set:
@@ -546,7 +552,9 @@ class MiAZNotes(GObject.GObject):
         the current notes."""
         self._docs_with_notes = self._compute_docs_with_notes()
         if self.workspace is not None:
-            self.workspace.update()
+            # The filter predicate and the highlight both read the set
+            # above, so re-binding the rows is the whole job.
+            self.workspace.refresh_rows()
 
     def _on_workspace_view_changed(self, *_args):
         self._update_indicator()

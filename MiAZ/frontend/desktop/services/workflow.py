@@ -109,13 +109,17 @@ class MiAZWorkflow(GObject.GObject):
         sidebar = self.app.get_widget('sidebar')
         if repo_loaded:
             self.log.info(f"Repo Working directory: '{repository.docs}'")
-            # Built against the repository being opened. The one from the
-            # previous repository shows that repository's vocabularies, so it
-            # is replaced rather than reused, and closed if it was on screen.
+            # Built against the repository being opened, so the one from the
+            # previous repository is wrong: it shows that repository's
+            # vocabularies. It is dropped here and built again when something
+            # asks for it, rather than eagerly. Building it cost 508 ms of a
+            # 2.2 second startup on a 1322 document repository, for a window
+            # the menu entry does not even use: show_repository_settings makes
+            # its own. The one reader is the auto-open below.
             previous = self.app.get_widget('settings-repo')
             if previous is not None:
                 previous.close()
-            self.app.add_widget('settings-repo', MiAZRepoSettings(self.app))
+                self.app.add_widget('settings-repo', None)
             workspace = self.app.get_widget('workspace')
             workspace.initialize_caches()
             tgbPendingDocs = self.app.get_widget('workspace-togglebutton-pending-docs')
@@ -207,8 +211,8 @@ class MiAZWorkflow(GObject.GObject):
         self.log.warning(message)
         repo_settings = self.app.get_widget('settings-repo')
         if repo_settings is None:
-            self.log.error("settings-repo widget not found; cannot auto-open repository settings")
-            return False
+            repo_settings = MiAZRepoSettings(self.app)
+            self.app.add_widget('settings-repo', repo_settings)
         window_main = self.app.get_widget('window')
         try:
             repo_settings.set_transient_for(window_main)
