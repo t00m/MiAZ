@@ -48,18 +48,21 @@ class MiAZApp(Adw.Application):
         "application-started": (GObject.SignalFlags.RUN_LAST, None, ()),
         "application-finished": (GObject.SignalFlags.RUN_LAST, None, ()),
     }
-    _plugins_loaded = False
-    _miazobjs = {}  # MiAZ Objects
-    _config = {}    # Dictionary holding configurations
-    _status = MiAZStatus.BUSY
 
     def __init__(self, **kwargs):
-        """Set up env, UI and services used by the rest of modules."""
+        """Set up env, UI and services used by the rest of modules.
+
+        The registries below are built here rather than on the class. As class
+        attributes they were one dictionary shared by every instance, and
+        __init__ assigned into it rather than rebinding it, so a second MiAZApp
+        emptied the first one's widgets and services without a word.
+        """
         application_id = kwargs['application_id']
         Adw.Application.__init__(self, application_id=application_id)
-        self._miazobjs['widgets'] = {}
-        self._miazobjs['services'] = {}
-        self._miazobjs['actions'] = {}
+        self._plugins_loaded = False
+        self._status = MiAZStatus.BUSY
+        self._miazobjs = {'widgets': {}, 'services': {}, 'actions': {}}
+        self._config = {}  # Dictionary holding configurations
         self.log = MiAZLog("MiAZ.App")
         # Install the desktop crash handler early so it can report failures
         # raised while the rest of the services are being set up.
@@ -323,50 +326,35 @@ class MiAZApp(Adw.Application):
             return None
 
     def remove_widget(self, name: str):
-        """Remove widget from dictionary and dispose it."""
+        """Forget a widget, and say whether there was one to forget.
+
+        The registry entry is what goes. Both methods here used to call
+        widget.dispose() behind a hasattr guard, which never held: PyGObject
+        exposes run_dispose(), so the branch was dead and the widget was only
+        ever dropped from the dictionary.
+
+        run_dispose() is not the missing half. It breaks a GObject while other
+        code may still hold it, which on a widget that is still parented buys a
+        crash somewhere else later. A caller that knows a widget is finished
+        with should unparent it itself.
+        """
         deleted = False
         try:
-            widget = self._miazobjs['widgets'].pop(name)
-            if hasattr(widget, 'dispose'):
-                widget.dispose()
+            self._miazobjs['widgets'].pop(name)
             deleted = True
         except KeyError:
             self.log.debug(f"Widget '{name}' doesn't exists")
         return deleted
 
     def remove_widgets_with_prefix(self, prefix: str) -> int:
-        """Remove all widgets whose key starts with prefix. Returns count removed."""
+        """Forget every widget whose key starts with prefix. Returns how many."""
         keys = [k for k in list(self._miazobjs['widgets']) if k.startswith(prefix)]
         for key in keys:
-            widget = self._miazobjs['widgets'].pop(key)
-            if hasattr(widget, 'dispose'):
-                widget.dispose()
+            self._miazobjs['widgets'].pop(key)
         return len(keys)
 
     def get_logger(self):
         return self.log
-
-    def find_widget_by_type(self, widget, widget_type=None):
-        """
-        Recursively search for a widget inside `widget` by optional type and/or widget name (ID).
-
-        :param widget: The root Gtk.Widget to start the search from.
-        :param widget_type: The Gtk.Widget subclass to match (e.g., Gtk.Label), or None to match any type.
-        :return: The first matching Gtk.Widget, or None if not found.
-        """
-        self.log.debug(f"Looking for widget type {widget_type}) in {widget}")
-        type_matches = widget_type is None or isinstance(widget, widget_type)
-
-        if type_matches:
-            self.log.debug(f"Found widget of type {widget_type}: {widget}")
-            return widget
-
-        child = widget.get_first_child()
-        while child:
-            result = self.find_widget_by_type(child, widget_type)
-            if result:
-                return result
-            child = child.get_next_sibling()
 
     def find_widget(self, widget, widget_type=None, widget_id=None):
         """

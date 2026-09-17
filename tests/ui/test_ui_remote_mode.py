@@ -17,6 +17,24 @@ def local_again(miaz):
     miaz.pump(0.4)
 
 
+@pytest.fixture
+def settings_open(local_again):
+    """The Repository Settings window, open, so its rows are registered.
+
+    The window is built when something asks for it rather than on every
+    repository open, which is where 508 ms of startup went. Its rows are
+    registered while it is built, so a test that reads one has to open it
+    first. Opening it is also what a user does to reach the switch.
+    """
+    local_again.service('actions').show_repository_settings()
+    local_again.pump(0.6)
+    window = local_again.widget('window-repo-settings')
+    assert window is not None, 'the repository settings window did not open'
+    yield local_again
+    window.close()
+    local_again.pump(0.3)
+
+
 def test_thumbnail_views_are_gone_when_remote(local_again):
     """Grid, timeline and conversation each render one thumbnail per row."""
     workspace = local_again.workspace
@@ -119,29 +137,29 @@ def test_the_duplicate_scan_still_runs_when_local(local_again):
         local_again.widget('workspace-view').column_duplicate.set_visible(False)
 
 
-def test_the_settings_switch_writes_the_flag(local_again):
-    row = local_again.widget('repository-settings-row-remote')
+def test_the_settings_switch_writes_the_flag(settings_open):
+    row = settings_open.widget('repository-settings-row-remote')
     assert row is not None, 'the repository settings page has no remote row'
 
     row.set_active(True)
-    local_again.pump(0.4)
+    settings_open.pump(0.4)
 
-    assert local_again.service('repo').remote is True
+    assert settings_open.service('repo').remote is True
 
 
-def test_the_settings_switch_follows_the_flag(local_again):
+def test_the_settings_switch_follows_the_flag(settings_open):
     """Set from anywhere else, the switch still shows the truth."""
-    row = local_again.widget('repository-settings-row-remote')
+    row = settings_open.widget('repository-settings-row-remote')
 
-    local_again.service('repo').set_remote(True)
-    local_again.pump(0.4)
+    settings_open.service('repo').set_remote(True)
+    settings_open.pump(0.4)
 
     assert row.get_active() is True
 
 
-def test_the_detection_hint_is_shown(local_again):
+def test_the_detection_hint_is_shown(settings_open):
     """Shown, never acted on: GIO calls an rclone mount local."""
-    row = local_again.widget('repository-settings-row-detected')
+    row = settings_open.widget('repository-settings-row-detected')
 
     assert row is not None
     assert row.get_subtitle()
