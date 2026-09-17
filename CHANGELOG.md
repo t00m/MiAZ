@@ -32,6 +32,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **A long import or a ZIP export made GNOME say the window had stopped responding.** The compositor puts up that dialog after about five seconds of a window not answering it, and both operations did their work on the main loop.
+
+  Import already had a worker path. It was chosen on the number of files, `count > 20`, which said nothing about the work: twenty 40 MB scans is 800 MB copied on the main loop and never reached the threshold. `needs_batch` now weighs the bytes as well, over 16 MB, which is about a second from a slow source. Either rule is enough on its own, because many small files are many workspace refreshes whatever they weigh and a few large ones are a long copy whatever they number.
+
+  `MiAZExport2Zip` did everything on the main loop, inside the file chooser's response handler: copy every selected document, compress the lot, rename the archive and delete the staging tree. It goes through the progress service now, the way `MiAZExport2Dir` already did: the names are gathered on the main loop, the worker touches no GTK, the bar names each document as it is copied, and the target directory is opened after the dialog is dismissed rather than while the copy is still running.
+
+  Export to text and to CSV were left alone. They only split filenames and never open a document.
+
 - **A document's own date was read out of the file every time it was asked for.** `dates_from_metadata` opens the document and scans it for the creation date it carries. Nothing was remembered, so asking twice read it twice: on the test repository ten documents came to 13.8 MB, and the second pass cost another 13.8 MB for an answer that cannot have changed.
 
   `filename_guess_date` is `dates_from_metadata(filepath) or dates_from_text(concept_hint)`, so editing the concept in the rename dialog and pressing Detect date again is exactly that second ask, and it re-read the whole document although only the hint had changed.
