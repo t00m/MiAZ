@@ -253,8 +253,18 @@ def miaz(sandbox):
 
 @pytest.fixture
 def clean_view(miaz):
-    """Reset the filters, so one test cannot leave another one blind."""
+    """Reset the filters and the view, so one test cannot leave another blind.
+
+    The view belongs here for the same reason the filters do. The application
+    is session scoped, tests in four files call show_view, and three tests in
+    test_ui_widgets.py open by asserting they start on Details. Leaving each
+    test to put back the view it changed arms the same trap for the next one
+    written; guaranteeing the starting state once covers all of them.
+    """
     def reset():
+        workspace = getattr(miaz, 'workspace', None)
+        if workspace is not None and workspace.get_current_view() != 'details':
+            workspace.show_view('details')
         for gtype_name in ('Country', 'Group', 'SentBy', 'Purpose', 'SentTo'):
             try:
                 miaz.select_dropdown_value(gtype_name, 'Any')

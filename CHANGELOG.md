@@ -34,6 +34,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - The duplicate prefilter called `os.path.isfile` and then `os.path.getsize`, two stat calls per document to answer one question. One `os.stat` now answers both, which is 1322 fewer round trips per scan on the test repository.
 
+- **A UI test failed depending on which file ran before it.** `test_timeline_builds_nothing_while_another_page_is_shown` opens by asserting the workspace starts on Details. `tests/ui/test_ui_remote_mode.py` ends on Filenames, on purpose: one of its tests is that marking a repository remote does not yank the user off a view that survives. The application fixture is session scoped, so the second file inherited the first one leaving.
+
+  `clean_view` puts the view back now, alongside the filters and the search box it already reset. Its job was always to guarantee a known starting state, and the current view was the one part of that state nobody had claimed. Leaving each test to restore the view it changed would have fixed this collision and armed the same trap for the next test written: four UI files call `show_view`, and three tests open by asserting they start on Details.
+
 - **A preview already rendered was decoded again on every bind.** `MiAZ.backend.thumbnails` remembers which file holds the preview for a document, and it cannot remember more than that: decoded images are Gdk types and the backend imports no GUI toolkit. So the grid, the timeline, the conversation view and the preview panel each ended in `Gtk.Picture.set_filename`, which reads and decodes the PNG synchronously on the main thread. Scrolling back over rows already seen skipped `pdftoppm` and then paid for a full decode per cell anyway.
 
   `MiAZ/frontend/desktop/widgets/thumbnailcache.py` holds the decoded `Gdk.Texture` instead, behind a `set_thumbnail(picture, path)` the four views share. It is an LRU capped by decoded bytes rather than by entry count, because the sizes differ by two orders of magnitude: a 256px grid cell is about 370 KB decoded and a 1920px preview about 21 MB. The budget is 64 MB, which covers a full screen of cells and the panel.
