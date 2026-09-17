@@ -459,3 +459,73 @@ def test_disabling_and_re_enabling_keeps_the_remote_flag(miaz_env):
     config.set_remote('Work', remembered, used=True)
 
     assert config.get_remote('Work', used=True) is True
+
+
+# ---------------------------------------------------------------------------
+# _add_batch writes only when the batch changes something
+# ---------------------------------------------------------------------------
+
+def test_adding_a_batch_that_changes_nothing_writes_nothing(tmp_path):
+    """The plugin list is handed to add_available_batch on every startup.
+
+    saved counted the keys written into the dictionary, not the keys that
+    differed, so with 20 plugins it was 20 every time and the file was rewritten
+    at every launch. The write cost a read of the previous contents for the diff
+    and invalidated the cache, so one logical read of plugins-available.json
+    became three accesses and a write. On a remote repository that is three
+    round trips instead of one.
+    """
+    cfg = make_config(tmp_path)
+    batch = [('one', 'One'), ('two', 'Two')]
+    cfg.add_available_batch(batch)
+
+    written = []
+    original = cfg.save
+
+    def counting_save(*args, **kwargs):
+        written.append(True)
+        return original(*args, **kwargs)
+
+    cfg.save = counting_save
+    try:
+        cfg.add_available_batch(batch)
+    finally:
+        cfg.save = original
+    assert written == [], 'the same batch was written again'
+
+
+def test_adding_a_batch_that_changes_something_still_writes(tmp_path):
+    """The guard must not stop a real change from reaching the disk."""
+    cfg = make_config(tmp_path)
+    cfg.add_available_batch([('one', 'One')])
+
+    written = []
+    original = cfg.save
+
+    def counting_save(*args, **kwargs):
+        written.append(True)
+        return original(*args, **kwargs)
+
+    cfg.save = counting_save
+    try:
+        cfg.add_available_batch([('one', 'One'), ('two', 'Two')])
+    finally:
+        cfg.save = original
+    assert written == [True], 'a new key was not written'
+    assert 'two' in cfg.load_available()
+
+
+def test_a_batch_that_changes_a_description_is_written(tmp_path):
+    """Same keys, different values: still a change."""
+    cfg = make_config(tmp_path)
+    cfg.add_available_batch([('one', 'One')])
+
+    written = []
+    original = cfg.save
+    cfg.save = lambda *a, **k: (written.append(True), original(*a, **k))[1]
+    try:
+        cfg.add_available_batch([('one', 'Uno')])
+    finally:
+        cfg.save = original
+    assert written == [True], 'a changed description was not written'
+    assert cfg.load_available()['one'] == 'Uno'

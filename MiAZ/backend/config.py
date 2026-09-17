@@ -279,15 +279,30 @@ class MiAZConfig(GObject.GObject):
         return key in config
 
     def _add_batch(self, filepath: str, keysvalues: list):
+        """Add every key in the batch, and write only if that changed anything.
+
+        saved used to count the keys written into the dictionary rather than
+        the keys that differed, so a batch identical to what was already there
+        still wrote the file. The plugin list is handed to
+        add_available_batch on every startup, so plugins-available.json was
+        rewritten at every launch: the write read the previous contents to work
+        out the diff and invalidated the cache, turning one read into three
+        accesses and a write. On a remote repository that is three round trips
+        where one would do.
+
+        load() hands out the cached dictionary itself, so the comparison is
+        against a copy taken before the batch is applied.
+        """
         util = self.app.get_service('util')
         items = self.load(filepath)
+        previous = dict(items)
         saved = 0
         for key, value in keysvalues:
             if len(key.strip()) != 0:
                 key = util.valid_key(key)
                 items[key] = value
                 saved += 1
-        if saved > 0:
+        if saved > 0 and items != previous:
             self.save(filepath, items=items)
             self.log.info(f"{self.config_for} - Added {saved} keys to {filepath}")
 

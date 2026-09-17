@@ -472,6 +472,9 @@ class MiAZPlugin(GObject.GObject):
         self.app = app
         self.log = MiAZLog('MiAZPlugin')
         self.util = self.app.get_service('util')
+        # This plugin's settings, by the file they came from. See
+        # get_config_data.
+        self._config_cache = {}
         # Filled in by register(). Defaulted here so anything reading them
         # early (an icon lookup, a log line) finds an empty value, not an
         # AttributeError.
@@ -679,12 +682,28 @@ class MiAZPlugin(GObject.GObject):
         return os.path.join(self.get_config_dir(), "default_available_data.json")
 
     def get_config_data(self):
+        """This plugin's settings, read from disk once per repository.
+
+        Every get_config_key call comes through here, and this used to open the
+        file each time: MiAZAutoScan reads four keys in four consecutive lines,
+        which was four opens of one small file, and on a remote repository four
+        round trips. Nothing between them can have changed it.
+
+        Keyed by the file path, so a repository switch reads the settings of the
+        repository being opened rather than serving the ones being left behind.
+        set_config_data is the only thing that can change them, and it refreshes
+        the entry as it writes.
+        """
         config_file = self.get_config_file()
+        cached = self._config_cache.get(config_file)
+        if cached is not None:
+            return cached
         try:
             config_data = self.util.json_load(config_file)
         except Exception:
             config_data = {}
             self.util.json_save(config_file, config_data)
+        self._config_cache[config_file] = config_data
         return config_data
 
     def get_config_key(self, key: str):
@@ -697,6 +716,7 @@ class MiAZPlugin(GObject.GObject):
     def set_config_data(self, config_data: {}):
         config_file = self.get_config_file()
         self.util.json_save(config_file, config_data)
+        self._config_cache[config_file] = config_data
 
     def set_config_key(self, key: str, value):
         config_file = self.get_config_file()

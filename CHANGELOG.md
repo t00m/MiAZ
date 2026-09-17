@@ -32,6 +32,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **A plugin read its settings file once per key, and the plugin list was rewritten at every launch.** Measured against the 1322 document test repository by counting every `open()` of a `.json` under `.conf`: a cold start made 16 reads of 16 files. It makes 13 now, one per file.
+
+  `MiAZPlugin.get_config_data` opened the file on every call, and every `get_config_key` goes through it. MiAZAutoScan reads four keys in four consecutive lines, which was four opens of one small file, and on a remote repository four round trips with nothing between them that could have changed it. The values are cached by file path now, so a repository switch still reads the settings of the repository being opened, and `set_config_data` refreshes the entry as it writes.
+
+  `MiAZConfig._add_batch` wrote whenever the batch was non-empty: `saved` counted the keys it put into the dictionary, not the keys that differed. The plugin list is handed to `add_available_batch` on every startup, so `plugins-available.json` was rewritten every launch, and the write read the previous contents for the diff and invalidated the cache. One logical read cost three accesses and a write. It compares first now.
+
+  What was already right, and is confirmed by the same measurement: the repository keys and descriptions are cached in memory and stay there. 14000 reads through the normal API cost six accesses, all of them the first touch of a file, and a workspace refresh costs none. One change to one field costs two accesses, a read of the previous contents for the diff and one refresh afterwards.
+
 - **The crash handler crashed instead of reporting, for the whole of application setup.** `MiAZApp.__init__` installs it on nearly its first line, with a comment saying it goes there so it can report failures raised while the services are built. Its excepthook asks the application for its environment, and `_env` was assigned on the last line of `__init__`, after every service. So a failure anywhere in between raised `AttributeError: 'MiAZApp' object has no attribute '_env'` inside the handler and took the real error with it. `_env` and `conf` are set before the handler is installed now.
 
   Found while fixing the one below: the second application failed to build, and what reached the terminal was the excepthook's own AttributeError rather than the reason.
