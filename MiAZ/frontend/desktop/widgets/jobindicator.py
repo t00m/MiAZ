@@ -56,6 +56,13 @@ class MiAZJobIndicator(Gtk.MenuButton):
             queue.connect('job-changed', self._on_changed)
             queue.connect('job-removed', self._on_changed)
 
+        # If the window closes while the 500ms timer is still pending, the
+        # source must not fire against a widget that is already gone.
+        self.connect('destroy', self._on_destroy)
+
+    def _on_destroy(self, _widget):
+        self._cancel_timer()
+
     def _on_changed(self, _queue, _job):
         self._refresh()
 

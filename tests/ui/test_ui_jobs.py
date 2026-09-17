@@ -30,6 +30,7 @@ def test_short_work_never_shows_the_indicator(indicator, clean_view):
     job = queue.add('workspace-scan')
     queue.start(job)
     clean_view.pump(0.2)
+    assert indicator.get_visible() is False
     queue.finish(job)
     clean_view.pump(0.5)
     assert indicator.get_visible() is False
