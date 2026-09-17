@@ -17,6 +17,7 @@ from MiAZ.frontend.desktop.widgets.pages import MiAZWelcome
 from MiAZ.frontend.desktop.widgets.webbrowser import MiAZWebBrowser
 from MiAZ.frontend.desktop.widgets.sidebar import MiAZSidebar
 from MiAZ.frontend.desktop.widgets.workspace import MiAZWorkspace
+from MiAZ.frontend.desktop.widgets.jobindicator import MiAZJobIndicator
 
 
 class MiAZMainWindow(Gtk.Box):
@@ -219,6 +220,12 @@ class MiAZMainWindow(Gtk.Box):
         # Primary menu (rightmost)
         menubutton = self._setup_menu_system()
         headerbar.pack_end(menubutton)
+
+        # What is running in the background, beside the primary menu. It hides
+        # itself when there is nothing to say, which is most of the time.
+        jobs = MiAZJobIndicator(self.app)
+        self.app.add_widget('headerbar-widget-jobs', jobs)
+        headerbar.pack_end(jobs)
 
         # What acts on documents belongs with the documents, not up in the
         # header bar: the toolbar above the list is where the user is looking.
