@@ -32,6 +32,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **A document's own date was read out of the file every time it was asked for.** `dates_from_metadata` opens the document and scans it for the creation date it carries. Nothing was remembered, so asking twice read it twice: on the test repository ten documents came to 13.8 MB, and the second pass cost another 13.8 MB for an answer that cannot have changed.
+
+  `filename_guess_date` is `dates_from_metadata(filepath) or dates_from_text(concept_hint)`, so editing the concept in the rename dialog and pressing Detect date again is exactly that second ask, and it re-read the whole document although only the hint had changed.
+
+  The answer is kept against the path, size and modification time, the same three values the thumbnail cache uses, so a document edited in place is read again. Measured the same way afterwards, the second ask for ten documents is ten stat calls and no reads. An empty answer is kept too: re-reading to find nothing again costs the same as re-reading to find something.
+
 - **The projects plugin asked the filesystem about every document it had assigned.** `MiAZProjectMgt.check()` ran `os.path.exists` once per assignment to find documents that had been removed from the repository. On the 1322 document test repository that was 1322 stat calls at startup, the largest single source of them in the whole application, and on a remote repository one round trip each: about 53 seconds at a 40 ms round trip.
 
   The listing two lines below answers the same question for every assignment at once, and `check()` was already taking it to count the documents in the repository. Measured the same way afterwards, a cold start makes 52 stat calls rather than 1374.

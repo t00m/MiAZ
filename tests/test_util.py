@@ -934,3 +934,63 @@ def test_zip_and_unzip_make_a_round_trip(util, tmp_path):
     assert (restored / 'subdir' / 'nested.pdf').read_bytes() == b'nested'
     assert (restored / '.conf' / 'repo.json').read_text(encoding='utf-8') == '{}'
     assert not (restored / '.git').exists()
+
+
+# ---------------------------------------------------------------------------
+# dates_from_metadata reads the document once per version of it
+# ---------------------------------------------------------------------------
+
+def test_the_document_date_is_read_once_for_repeated_asks(util, tmp_path, monkeypatch):
+    """Detect date on the same document twice used to read it twice.
+
+    filename_guess_date is dates_from_metadata(filepath) or
+    dates_from_text(concept_hint), so editing the concept and asking again
+    re-read the whole file although only the hint had changed. Measured on the
+    test repository, ten documents cost 13.8 MB the first time and 13.8 MB the
+    second.
+    """
+    doc = make_pdf(tmp_path, b"<< /CreationDate (D:20250116042015+01'00') >>")
+    opens = []
+    real_open = open
+
+    def counting_open(path, *args, **kwargs):
+        if str(path) == doc:
+            opens.append(path)
+        return real_open(path, *args, **kwargs)
+
+    monkeypatch.setattr('builtins.open', counting_open)
+    assert util.dates_from_metadata(doc) == ['20250116']
+    assert util.dates_from_metadata(doc) == ['20250116']
+    assert util.dates_from_metadata(doc) == ['20250116']
+    assert len(opens) == 1, f'the document was read {len(opens)} times'
+
+
+def test_an_edited_document_is_read_again(util, tmp_path):
+    """The cache is keyed by what the file is, not by its name."""
+    doc = make_pdf(tmp_path, b"<< /CreationDate (D:20250116042015+01'00') >>")
+    assert util.dates_from_metadata(doc) == ['20250116']
+
+    make_pdf(tmp_path, b"<< /CreationDate (D:20240722042015+01'00') /Pad (xx) >>")
+    assert util.dates_from_metadata(doc) == ['20240722'], 'the stale date was kept'
+
+
+def test_a_document_with_no_date_is_not_read_again_either(util, tmp_path):
+    """An empty answer is an answer. Re-reading to find nothing again is the
+    same cost as re-reading to find something."""
+    doc = make_pdf(tmp_path, b'<< /Title (nothing useful) >>')
+    assert util.dates_from_metadata(doc) == []
+    opens = []
+    real_open = open
+
+    def counting_open(path, *args, **kwargs):
+        if str(path) == doc:
+            opens.append(path)
+        return real_open(path, *args, **kwargs)
+
+    import builtins
+    builtins.open = counting_open
+    try:
+        assert util.dates_from_metadata(doc) == []
+    finally:
+        builtins.open = real_open
+    assert opens == [], 'the document was read again to find nothing again'
