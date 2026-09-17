@@ -32,6 +32,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **The projects plugin asked the filesystem about every document it had assigned.** `MiAZProjectMgt.check()` ran `os.path.exists` once per assignment to find documents that had been removed from the repository. On the 1322 document test repository that was 1322 stat calls at startup, the largest single source of them in the whole application, and on a remote repository one round trip each: about 53 seconds at a 40 ms round trip.
+
+  The listing two lines below answers the same question for every assignment at once, and `check()` was already taking it to count the documents in the repository. Measured the same way afterwards, a cold start makes 52 stat calls rather than 1374.
+
+  A repository that cannot be listed now produces no deletions at all. The old code stated each document, so a failed listing still produced a list of things to remove; the wipe guard caught the worst of that, and there is no longer anything for it to catch. Nothing is dropped on a guess.
+
+  Measured at the same time and left alone, because the index needs no work: one reload is a single directory listing, and 100000 lookups, rebuilding all 1322 items and a workspace refresh read nothing at all. `build_item` parses the filename and asks the cached configurations, so it never opens a document.
+
 - **A plugin read its settings file once per key, and the plugin list was rewritten at every launch.** Measured against the 1322 document test repository by counting every `open()` of a `.json` under `.conf`: a cold start made 16 reads of 16 files. It makes 13 now, one per file.
 
   `MiAZPlugin.get_config_data` opened the file on every call, and every `get_config_key` goes through it. MiAZAutoScan reads four keys in four consecutive lines, which was four opens of one small file, and on a remote repository four round trips with nothing between them that could have changed it. The values are cached by file path now, so a repository switch still reads the settings of the repository being opened, and `set_config_data` refreshes the entry as it writes.

@@ -138,18 +138,36 @@ class MiAZProject(GObject.GObject):
         self._handlers = []
 
     def check(self):
+        """Drop assignments whose document is no longer in the repository.
+
+        One listing answers that for every assignment at once. Asking the
+        filesystem per document was the largest source of stat calls in the
+        whole application: 1322 of them at startup on the test repository, one
+        per assignment, and on a remote repository one round trip each. The
+        listing was already being taken two lines further down, to count the
+        documents in the repository.
+
+        A repository that cannot be listed produces no deletions. Without the
+        listing there is no evidence that anything is missing, and the guard
+        below exists because deleting on bad evidence is what emptied a real
+        repository once.
+        """
         repository = self.app.get_service('repo')
+        try:
+            present = {os.path.basename(path)
+                       for path in self.util.get_files(repository.docs)}
+        except Exception as error:
+            self.log.warning(f"Cannot list '{repository.docs}': {error}. "
+                             "No project assignment was checked.")
+            return
+
         to_delete = []
         for project in self.projects:
             for doc in self.docs_in_project(project):
-                docpath = os.path.join(repository.docs, doc)
-                if not os.path.exists(docpath):
+                if doc not in present:
                     to_delete.append((doc, project))
         assigned = sum(len(docs) for docs in self.projects.values())
-        try:
-            documents_in_repo = len(self.util.get_files(repository.docs))
-        except Exception:
-            documents_in_repo = 0
+        documents_in_repo = len(present)
         if is_total_wipe(len(to_delete), assigned, documents_in_repo):
             self.log.error(
                 f"Refusing to drop all {assigned} project assignments: none of "
