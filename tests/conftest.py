@@ -13,9 +13,31 @@ import os
 
 import pytest
 
+from MiAZ.backend.log import DEFAULT_CONSOLE_LEVEL, set_console_level
+
 # The defaults each config copies into a fresh repository.
 DEFAULTS = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                         'data', 'resources', 'conf')
+
+
+@pytest.fixture(autouse=True)
+def console_level_restored():
+    """Put the console log level back after every test.
+
+    Logging is process global, and cli.main lowers the console to WARNING on
+    purpose: a command that prints filenames should not also narrate its
+    startup. In a real run the process then exits. In the suite it does not,
+    so the fifteen tests that call main leave the level changed for everything
+    after them.
+
+    Nothing caught it because test_log.py happens to repair the damage on its
+    way past: two earlier tests in that file set the level and restore it in a
+    finally, so by the time test_the_console_starts_at_info runs in file order
+    the default is back. Shuffle the order and it fails. Restoring here makes
+    that test read the default it means to read, whatever ran before it.
+    """
+    yield
+    set_console_level(DEFAULT_CONSOLE_LEVEL)
 
 
 @pytest.fixture

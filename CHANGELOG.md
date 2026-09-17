@@ -34,6 +34,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - The duplicate prefilter called `os.path.isfile` and then `os.path.getsize`, two stat calls per document to answer one question. One `os.stat` now answers both, which is 1322 fewer round trips per scan on the test repository.
 
+- **A log test passed only because two other tests happened to repair it first.** `cli.main` lowers the console handler to WARNING on purpose, so a command that prints filenames does not also narrate its startup. A real run exits afterwards; the suite does not, and fifteen tests across `test_cli.py` and `test_cli_plugins.py` call `main`, leaving the level down for everything after them.
+
+  `test_the_console_starts_at_info` asserts the default is INFO. The CLI tests sort before it alphabetically and always ran first, yet it passed, because two earlier tests in its own file set the level and restore it in a `finally`. The default was back by accident, for unrelated reasons. `tests/conftest.py` now restores it after every test, so the assertion reads the default it means to read whatever ran before it.
+
+  Found by installing `pytest-randomly` and running the suite under 25 seeds. Three seeds in the first ten failed; all 25 pass now. The plugin is not declared in `pyproject.toml`, which has no test extra.
+
 - **A UI test failed depending on which file ran before it.** `test_timeline_builds_nothing_while_another_page_is_shown` opens by asserting the workspace starts on Details. `tests/ui/test_ui_remote_mode.py` ends on Filenames, on purpose: one of its tests is that marking a repository remote does not yank the user off a view that survives. The application fixture is session scoped, so the second file inherited the first one leaving.
 
   `clean_view` puts the view back now, alongside the filters and the search box it already reset. Its job was always to guarantee a known starting state, and the current view was the one part of that state nobody had claimed. Leaving each test to restore the view it changed would have fixed this collision and armed the same trap for the next test written: four UI files call `show_view`, and three tests open by asserting they start on Details.
