@@ -32,6 +32,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **The crash handler crashed instead of reporting, for the whole of application setup.** `MiAZApp.__init__` installs it on nearly its first line, with a comment saying it goes there so it can report failures raised while the services are built. Its excepthook asks the application for its environment, and `_env` was assigned on the last line of `__init__`, after every service. So a failure anywhere in between raised `AttributeError: 'MiAZApp' object has no attribute '_env'` inside the handler and took the real error with it. `_env` and `conf` are set before the handler is installed now.
+
+  Found while fixing the one below: the second application failed to build, and what reached the terminal was the excepthook's own AttributeError rather than the reason.
+
+- **A second MiAZActions could not be created.** `__init__` registered `settings-loaded` and `rename-dialog-built` with `GObject.signal_new`, which registers on the class, so the second instance raised `could not create signal`. They are declared in `__gsignals__` now, the way `MiAZApp` already declares its own.
+
+  Nothing in MiAZ builds two, which is why it never showed. It did make the instance registries untestable: the test that two applications keep their own widgets could not be written until this was fixed, and it is there now, running in a subprocess because building an application installs a crash excepthook that the test suite needs for itself.
+
 - **A maximized window was remembered as the size of the screen.** `_on_window_close_request` saved `get_width()` and `get_height()` whatever state the window was in. A maximized window reports the screen as its size, and that is also what GTK restores to when the user unmaximizes, because the next start hands it to `set_default_size`. So maximizing once and closing made the restored window cover the screen, and the unmaximize button looked broken. `remembered_size` keeps the size only while the window is not maximized and carries the previous one forward otherwise.
 
 - **Each MiAZApp now owns its registries, and two pieces of `app.py` that did nothing are gone.** `_miazobjs` and `_config` were class attributes holding mutable dictionaries, and `__init__` assigned into them rather than rebinding, so every instance shared one registry and a second application emptied the first one's widgets and services. Latent, since every entry point builds one, and unreachable in practice for a second reason: `MiAZActions.__init__` calls `GObject.signal_new`, which registers on the class, so a second instance raises `could not create signal` before it gets that far.

@@ -79,6 +79,12 @@ class MiAZApp(Adw.Application):
         self._status = MiAZStatus.BUSY
         self._miazobjs = {'widgets': {}, 'services': {}, 'actions': {}}
         self._config = {}  # Dictionary holding configurations
+        # Set before the crash handler, not after the services. Its excepthook
+        # asks the application for its environment, so a failure while the
+        # services were being built used to raise AttributeError inside the
+        # handler and hide the error it was there to report.
+        self._env = None
+        self.conf = None
         self.log = MiAZLog("MiAZ.App")
         # Install the desktop crash handler early so it can report failures
         # raised while the rest of the services are being set up.
@@ -103,8 +109,6 @@ class MiAZApp(Adw.Application):
         self.set_service('massrename', MiAZMassRename(self))
         self.set_service('importdoc', MiAZImportDoc(self))
         self.set_service('document-tabs', MiAZDocumentTabs(self))
-        self._env = None
-        self.conf = None
 
     def get_status(self):
         """Return current app status.

@@ -12,11 +12,38 @@ calls GObject.signal_new, which registers on the class, so the second instance
 raises 'could not create signal' before reaching anything here.
 """
 
+import os
+import subprocess
+import sys
+
 import gi
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
 
+from gi.repository import GObject
+
 from MiAZ.frontend.desktop.app import MiAZApp, remembered_size
+from MiAZ.frontend.desktop.services.actions import MiAZActions
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+# Two applications in one process, which is what the registries above are for.
+# Run outside the suite because building one installs a crash excepthook, and
+# pytest needs its own.
+TWO_APPS = '''\
+import os, sys, tempfile
+sys.path.insert(0, %r)
+os.environ['HOME'] = tempfile.mkdtemp(prefix='miaz-twoapps-')
+import gi
+gi.require_version('Gtk', '4.0')
+gi.require_version('Adw', '1')
+from MiAZ.frontend.desktop.app import MiAZApp
+first = MiAZApp(application_id='io.github.t00m.MiAZ.TwoA')
+first.add_widget('only-in-first', object())
+second = MiAZApp(application_id='io.github.t00m.MiAZ.TwoB')
+print('kept', first.get_widget('only-in-first') is not None)
+print('separate', first._miazobjs is not second._miazobjs)
+''' % ROOT
 
 
 def test_the_registries_are_not_shared_between_instances():
@@ -59,3 +86,26 @@ def test_a_first_run_has_nothing_to_fall_back_on():
     """Maximized before anything was ever saved: the defaults stand."""
     assert remembered_size(1920, 1080, maximized=True, previous=(1280, 800)) \
         == (1280, 800)
+
+
+def test_the_signals_are_declared_on_the_class():
+    """MiAZActions registered them with GObject.signal_new inside __init__.
+
+    signal_new registers on the class, so the second instance raised
+    'could not create signal'. Nothing built two, which is the only reason it
+    never showed: it also made the shared registries above untestable.
+    """
+    # PyGObject empties __gsignals__ once it has registered what was in it, so
+    # the class is what holds the answer, not the attribute.
+    assert GObject.signal_lookup('settings-loaded', MiAZActions) != 0
+    assert GObject.signal_lookup('rename-dialog-built', MiAZActions) != 0
+
+
+def test_two_applications_keep_their_own_widgets():
+    """The payoff: what the instance registries are for."""
+    result = subprocess.run([sys.executable, '-c', TWO_APPS],
+                            cwd=ROOT, capture_output=True, text=True,
+                            timeout=120)
+    assert result.returncode == 0, result.stderr[-2000:]
+    assert 'kept True' in result.stdout, result.stdout + result.stderr[-2000:]
+    assert 'separate True' in result.stdout, result.stdout

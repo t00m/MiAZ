@@ -64,6 +64,17 @@ def document_names_text(items) -> str:
 
 
 class MiAZActions(GObject.GObject):
+    # Declared here rather than registered in __init__ with GObject.signal_new.
+    # signal_new registers on the class, so it ran again for every instance and
+    # the second one raised 'could not create signal'. Nothing built two, which
+    # is the only reason it never showed.
+    __gsignals__ = {
+        'settings-loaded': (GObject.SignalFlags.RUN_LAST,
+                            GObject.TYPE_PYOBJECT, (GObject.TYPE_PYOBJECT,)),
+        'rename-dialog-built': (GObject.SignalFlags.RUN_LAST, None,
+                                (GObject.TYPE_PYOBJECT, GObject.TYPE_PYOBJECT)),
+    }
+
     def __init__(self, app):
         super().__init__()
         self.log = MiAZLog('MiAZ.Actions')
@@ -75,14 +86,6 @@ class MiAZActions(GObject.GObject):
         # come and go with the plugins that contribute them.
         self._suggest_actions = {}
         self._suggest_items = []
-        GObject.signal_new('settings-loaded',
-                            MiAZActions,
-                            GObject.SignalFlags.RUN_LAST,
-                            GObject.TYPE_PYOBJECT, (GObject.TYPE_PYOBJECT,))
-        GObject.signal_new('rename-dialog-built',
-                            MiAZActions,
-                            GObject.SignalFlags.RUN_LAST,
-                            None, (GObject.TYPE_PYOBJECT, GObject.TYPE_PYOBJECT))
         # Built here, appended to the workspace selection menu by the main
         # window, which rebuilds that menu whenever the plugins change.
         self.menuitem_copy_names = self.factory.create_menuitem(
