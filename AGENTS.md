@@ -46,6 +46,7 @@ MiAZ/
 │   │   ├── duplicates.py         ← find_duplicates (documents with identical content)
 │   │   ├── extract.py            ← ExtractResult, extract (local, non-AI text extraction)
 │   │   ├── index.py              ← MiAZDocumentIndex (the parse: filename → MiAZItem)
+│   │   ├── jobs.py               ← MiAZJobQueue (what runs in the background)
 │   │   ├── log.py                ← MiAZLog (colored logging), debug_requested
 │   │   ├── query.py              ← DocumentQuery (the workspace filter, as a value)
 │   │   ├── tasks.py              ← run_in_background (thread + GLib.idle_add)
@@ -85,7 +86,8 @@ MiAZ/
 │               ├── columnview.py, configview.py, conversationview.py
 │               ├── dateentry.py, docpreview.py, dr.py, filenamesview.py
 │               ├── filetypebadge.py, gridview.py, mainwindow.py
-│               ├── markdownview.py, metadatapage.py, pages.py, pills.py
+│               ├── jobindicator.py, markdownview.py, metadatapage.py
+│               ├── pages.py, pills.py
 │               ├── rename.py, reposettingspage.py, selector.py
 │               ├── settings.py, sidebar.py, sidebarstack.py
 │               ├── thumbnailcache.py, timelineview.py, views.py

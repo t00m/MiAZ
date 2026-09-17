@@ -10,6 +10,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **A headerbar indicator for background work, and one lane for the long operations.** Two fixes in `94aa17f4` moved import and the ZIP export off the main loop, which stopped GNOME calling the window unresponsive and left the opposite problem: work happened with nothing on screen to say so, and nothing stopped a second import starting on top of the first.
+
+  `MiAZ/backend/jobs.py` records every job and serialises the ones asking for the lane. `run_in_background` registers with it, so all 20 call sites appear in the indicator without one of them being edited: every one already passed `name=`. Long operations opt into the lane with `queued=True`.
+
+  The indicator waits 500 ms before showing itself. Most background work in MiAZ is housekeeping that finishes well inside that, a workspace scan or an index reload, and a spinner appearing for each of them would flicker through ordinary browsing. They are recorded and counted and never seen.
+
+  A large import reports each document, so the popover reads "340 of 1322" rather than leaving one job sitting at "running" for minutes.
+
 - **A repository can be marked as remote, per machine.** The switch is in Repository Settings, and MiAZ never moves it by itself: GIO reports an rclone mount as local, so what was detected is shown beside the switch as a fact to weigh and decides nothing. A marked repository loses the grid, timeline and conversation views and the duplicate scan, which are the paths that read every document. Measured with `scripts/devel/fsprobe.py` on a 1322 document repository, opening the grid reads 386.8 MB and the duplicate scan reads 222.5 MB.
 
   The flag lives in `~/.MiAZ/etc/repos-used.json` rather than inside the repository, because remoteness describes how this machine reaches it: the same repository is local on the machine holding the disk and remote on a laptop mounting it. Three places rebuilt a repository entry from scratch and would have dropped the flag, on load, on rename, and on disabling and re-enabling a repository; all three now carry it.
