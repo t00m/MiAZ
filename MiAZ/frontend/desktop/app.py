@@ -41,6 +41,22 @@ from MiAZ.backend.venv import MiAZVenv
 from MiAZ.backend.webserver import MiAZWebServer
 
 
+
+def remembered_size(width, height, maximized, previous):
+    """The window size to store for the next start.
+
+    A maximized window reports the screen as its width and height, and that is
+    also what GTK restores to when the user unmaximizes, because the next start
+    passes it to set_default_size. Saved while maximized, the restored window
+    covers the screen and the unmaximize button looks broken. So the size is
+    kept only while the window is not maximized, and what was stored last time
+    is carried forward otherwise.
+    """
+    if maximized:
+        return previous
+    return (width, height)
+
+
 class MiAZApp(Adw.Application):
     """MiAZ Gtk Application class."""
 
@@ -215,9 +231,14 @@ class MiAZApp(Adw.Application):
         _settings = self._get_window_settings()
         if _settings is not None:
             window = self.get_widget('window')
-            _settings.set_int('window-width', window.get_width())
-            _settings.set_int('window-height', window.get_height())
-            _settings.set_boolean('window-maximized', window.is_maximized())
+            maximized = window.is_maximized()
+            width, height = remembered_size(
+                window.get_width(), window.get_height(), maximized,
+                (_settings.get_int('window-width'),
+                 _settings.get_int('window-height')))
+            _settings.set_int('window-width', width)
+            _settings.set_int('window-height', height)
+            _settings.set_boolean('window-maximized', maximized)
         actions = self.get_service('actions')
         actions.exit_app()
 

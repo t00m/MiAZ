@@ -16,7 +16,7 @@ import gi
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
 
-from MiAZ.frontend.desktop.app import MiAZApp
+from MiAZ.frontend.desktop.app import MiAZApp, remembered_size
 
 
 def test_the_registries_are_not_shared_between_instances():
@@ -36,3 +36,26 @@ def test_the_dead_finder_is_gone():
     filter and is the one that is used."""
     assert not hasattr(MiAZApp, 'find_widget_by_type')
     assert hasattr(MiAZApp, 'find_widget')
+
+
+def test_a_maximized_window_keeps_the_size_it_had_before():
+    """Saving the size of a maximized window makes unmaximizing do nothing.
+
+    A maximized window reports the screen as its size, and that size is what
+    GTK restores to when the user unmaximizes: set_default_size is what the
+    next start passes it. Saved while maximized, the restored window is the
+    size of the screen, so the unmaximize button appears broken.
+    """
+    assert remembered_size(1920, 1080, maximized=True, previous=(1024, 768)) \
+        == (1024, 768)
+
+
+def test_an_ordinary_window_is_remembered_as_it_is():
+    assert remembered_size(1024, 768, maximized=False, previous=(800, 600)) \
+        == (1024, 768)
+
+
+def test_a_first_run_has_nothing_to_fall_back_on():
+    """Maximized before anything was ever saved: the defaults stand."""
+    assert remembered_size(1920, 1080, maximized=True, previous=(1280, 800)) \
+        == (1280, 800)

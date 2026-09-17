@@ -32,6 +32,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **A maximized window was remembered as the size of the screen.** `_on_window_close_request` saved `get_width()` and `get_height()` whatever state the window was in. A maximized window reports the screen as its size, and that is also what GTK restores to when the user unmaximizes, because the next start hands it to `set_default_size`. So maximizing once and closing made the restored window cover the screen, and the unmaximize button looked broken. `remembered_size` keeps the size only while the window is not maximized and carries the previous one forward otherwise.
+
+- **Each MiAZApp now owns its registries, and two pieces of `app.py` that did nothing are gone.** `_miazobjs` and `_config` were class attributes holding mutable dictionaries, and `__init__` assigned into them rather than rebinding, so every instance shared one registry and a second application emptied the first one's widgets and services. Latent, since every entry point builds one, and unreachable in practice for a second reason: `MiAZActions.__init__` calls `GObject.signal_new`, which registers on the class, so a second instance raises `could not create signal` before it gets that far.
+
+  `remove_widget` and `remove_widgets_with_prefix` both called `widget.dispose()` behind a `hasattr` guard that never held: PyGObject exposes `run_dispose()`. The branch was dead, and the docstring said the widget was disposed when only the registry entry went. `run_dispose()` is not the missing half, since it breaks a GObject other code may still hold, so the dead code is gone and the docstrings say what happens. `find_widget_by_type` had no caller but its own recursion, and logged a debug line per widget visited; `find_widget` below it does the same job and is the one in use.
+
 - **Desktop startup did a quarter of its work for a window nobody opened, and the rest of it twice.** Against the 1322 document test repository, a cold start took 2221 ms to a loaded workspace. It now takes 1632 ms, measured the same way.
 
   `MiAZWorkflow.switch_finish` built `MiAZRepoSettings` on every repository open and every switch, at 508 ms. The menu entry never used it: `show_repository_settings` builds its own. Its only reader was the auto-open for a repository whose configuration has no used entries, which builds one when it needs one now.
