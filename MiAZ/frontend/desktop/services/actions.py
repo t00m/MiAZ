@@ -191,6 +191,13 @@ class MiAZActions(GObject.GObject):
             button.set_active(not button.get_active())
 
     def shortcut_focus_search(self, widget_name):
+        """Reveal the sidebar before focusing, since grab_focus needs a
+        mapped widget and the sidebar starts hidden whenever 'sidebar-visible'
+        is unset, which is every fresh install. Without this, Ctrl+F is listed
+        in the shortcuts window and silently does nothing."""
+        split_view = self.app.get_widget('main-split-view')
+        if split_view is not None and not split_view.get_show_sidebar():
+            split_view.set_show_sidebar(True)
         entry = self.app.get_widget(widget_name)
         if entry is not None:
             entry.grab_focus()

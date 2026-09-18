@@ -81,12 +81,28 @@ def test_the_preview_action_toggles_the_preview_sheet(miaz):
 
 
 def test_the_search_action_puts_the_cursor_in_the_search_entry(miaz):
+    """Hide the sidebar first, rather than trust it is already open. On a
+    fresh install the sidebar starts hidden, and grab_focus needs a mapped
+    widget, so this proves the action reveals it rather than depending on an
+    earlier test, such as test_the_sidebar_action_toggles_the_sidebar above,
+    having left it open."""
+    split = miaz.widget('main-split-view')
+    split.set_show_sidebar(False)
+    miaz.pump()
     activate(miaz, 'search-focus')
+    assert split.get_show_sidebar(), 'search-focus did not reveal the sidebar'
     assert focus_is_inside(miaz, 'searchentry')
 
 
 def test_the_concept_search_action_focuses_the_concept_entry(miaz):
+    """See test_the_search_action_puts_the_cursor_in_the_search_entry: the
+    sidebar is hidden first so this does not depend on test order either."""
+    split = miaz.widget('main-split-view')
+    split.set_show_sidebar(False)
+    miaz.pump()
     activate(miaz, 'search-focus-concept')
+    assert split.get_show_sidebar(), (
+        'search-focus-concept did not reveal the sidebar')
     assert focus_is_inside(miaz, 'searchentry-concept')
 
 
