@@ -176,6 +176,22 @@ class MiAZShortcuts:
         self._conflicts = [c for c in self._conflicts
                            if c['owner'] != owner and c['held_by'] != owner]
 
+    def scope_of(self, accelerator: str):
+        """The scope of whoever currently holds this accelerator, or None
+        when nobody does.
+
+        Used to check what register() actually granted: a same-owner
+        same-action reclaim returns True without telling the caller the
+        binding's scope, and a caller passing a LIST scoped accelerator
+        straight to set_accels_for_action would put a bare key back on the
+        window, which is exactly what scoping exists to prevent.
+        """
+        key = self._parse(accelerator)
+        if key is None:
+            return None
+        binding = self._held.get(key)
+        return binding.scope if binding is not None else None
+
     def accelerators_for(self, action: str) -> list:
         """What to hand set_accels_for_action for this action.
 

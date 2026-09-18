@@ -12,6 +12,7 @@ from gi.repository import Gtk
 from gi.repository import Pango
 
 from MiAZ.backend.log import MiAZLog
+from MiAZ.frontend.desktop.services.shortcuts import GLOBAL as SHORTCUT_GLOBAL
 from MiAZ.frontend.desktop.widgets.button import MiAZPopoverButton
 
 
@@ -478,8 +479,19 @@ class MiAZFactory:
         registry = self._shortcuts()
         if registry is None:
             return list(shortcuts)
-        return [accelerator for accelerator in shortcuts
-                if registry.register(owner, name, accelerator, label=label)]
+        granted = []
+        for accelerator in shortcuts:
+            if not registry.register(owner, name, accelerator, label=label):
+                continue
+            # register() treats a same-owner same-action reclaim as
+            # idempotent and returns True regardless of scope. A LIST scoped
+            # action must never reach set_accels_for_action: that would put a
+            # bare key back on the window, which is exactly what scoping
+            # exists to prevent.
+            if registry.scope_of(accelerator) != SHORTCUT_GLOBAL:
+                continue
+            granted.append(accelerator)
+        return granted
 
     def create_menu_action(self, name, callback, shortcuts=None, owner='core'):
         action = Gio.SimpleAction.new(name, None)

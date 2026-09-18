@@ -296,6 +296,21 @@ def test_without_a_registry_the_factory_behaves_as_it_always_did():
     assert app.accels['app.a-thing'] == ['<Control>j']
 
 
+def test_a_list_scoped_action_gets_no_application_accelerator_from_the_factory():
+    """register() treats a same-owner same-action reclaim as idempotent and
+    returns True without regard to scope, so _granted must check scope itself
+    after the fact. Without that check, a call site passing shortcuts=['Delete']
+    for a LIST scoped action such as document-delete would be granted and
+    would reach set_accels_for_action, putting a bare key back on the window,
+    which is exactly what LIST scoping exists to prevent."""
+    registry = make()
+    registry.register('core', 'document-delete', 'Delete', scope=sct.LIST)
+    app = FakeApp(registry)
+    factory_for(app).create_menuitem('document-delete', 'Delete document',
+                                     lambda *a: None, None, ['Delete'])
+    assert 'app.document-delete' not in app.accels
+
+
 # Lifecycle
 
 
