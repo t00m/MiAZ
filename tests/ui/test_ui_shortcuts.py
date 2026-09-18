@@ -155,3 +155,43 @@ def test_an_empty_section_is_not_shown(miaz):
     """A section header with nothing under it is noise."""
     for _title, rows in sections(miaz):
         assert len(rows) > 0
+
+
+def test_plugin_labels_are_translated_at_most_once(miaz, monkeypatch):
+    """A core label is a msgid and needs exactly one _() call here, deferred
+    from import time so the window follows the language in use. A plugin's
+    label already went through the plugin's own _() call before it reached
+    the registry, so translating it again would risk substituting an
+    unrelated msgid if the already translated text happened to coincide with
+    one.
+
+    Nothing is translated in this environment, so gettext is the identity
+    function and cannot tell one _() call from two on its own. The module
+    level `_` that shortcut_sections resolves is replaced here with a
+    function that marks what it touches, so the count of markers on a label
+    is the count of _() calls that ran on it.
+    """
+    from MiAZ.frontend.desktop.services import actions as actions_mod
+
+    registry = miaz.service('shortcuts')
+    accelerator = '<Control><Alt>z'
+    granted = registry.register('TestPlugin', 'test-plugin-marker-check',
+                                accelerator, label='Zed Marker Label',
+                                section='Plugins')
+    assert granted is True, 'the test accelerator collided with a real one'
+    try:
+        monkeypatch.setattr(actions_mod, '_', lambda text: text + '|X')
+        rows = {accel: label
+                for _title, section_rows in sections(miaz)
+                for label, accel in section_rows}
+
+        plugin_label = rows[accelerator]
+        assert plugin_label.count('|X') == 0, plugin_label
+
+        core_label = rows['<Control>q']
+        assert core_label.count('|X') == 1, core_label
+
+        for title, _rows in sections(miaz):
+            assert title.count('|X') == 1, title
+    finally:
+        registry.unregister_owner('TestPlugin')

@@ -810,9 +810,18 @@ class MiAZActions(GObject.GObject):
             return ()
         grouped = {}
         for binding in registry.bindings():
-            label = binding.label or binding.action.replace('-', ' ').capitalize()
+            if binding.label:
+                # A core label is a msgid, deferred so the window follows a
+                # language change. A plugin's label arrived already
+                # translated from the plugin's own _() call, so translating
+                # it again here could substitute an unrelated msgid.
+                label = _(binding.label) if binding.owner == 'core' else binding.label
+            else:
+                # Synthesised from the action name, so there is no msgid to
+                # look up.
+                label = binding.action.replace('-', ' ').capitalize()
             grouped.setdefault(binding.section, []).append(
-                (_(label), binding.accelerator))
+                (label, binding.accelerator))
         sections = []
         for name in SECTION_ORDER:
             rows = grouped.pop(name, [])
