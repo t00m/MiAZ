@@ -27,6 +27,7 @@ MiAZ/frontend/desktop/services/massrename.py
 MiAZ/frontend/desktop/services/notes.py
 MiAZ/frontend/desktop/services/pluginsystem.py
 MiAZ/frontend/desktop/services/progress.py
+MiAZ/frontend/desktop/services/shortcuts.py
 MiAZ/frontend/desktop/services/workflow.py
 MiAZ/frontend/desktop/widgets/assistant.py
 MiAZ/frontend/desktop/widgets/browserpage.py
