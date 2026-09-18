@@ -1169,7 +1169,16 @@ class MiAZPluginSystem(MiAZPluginCore):
         """
         already_loaded = self.is_plugin_loaded(plugin)
         loaded = super().load_plugin(plugin)
-        if not loaded or already_loaded:
+        if not loaded:
+            # A plugin that raised partway through do_activate() (its
+            # documented way of vetoing its own load, e.g. a missing external
+            # tool) may already have called install_menu_entries and claimed
+            # accelerators before it raised. The engine unloads it, but that
+            # only visits loaded plugins, so an owner that never finished
+            # loading would keep its keys forever. Give them back here.
+            self.actions.undo_all(plugin.get_name(), self.app)
+            return loaded
+        if already_loaded:
             return loaded
 
         pname = plugin.get_name()
@@ -1212,11 +1221,16 @@ class MiAZPluginSystem(MiAZPluginCore):
             self.menus.forget(plugin.get_name())
             self.settings.forget(plugin.get_name())
             self.widgets.undo_all(plugin.get_name())
-            self.actions.undo_all(plugin.get_name(), self.app)
             self.log.info(f"Plugin {pname} v{pvers} unloaded")
             self.emit('plugins-updated')
         except Exception as error:
             self.log.error(error)
+        finally:
+            # However much of the teardown above failed, the plugin's
+            # accelerators must come back. Otherwise they stay claimed
+            # forever and re-enabling the same plugin is refused as a
+            # collision with its own corpse.
+            self.actions.undo_all(plugin.get_name(), self.app)
 
     def unload_all(self) -> int:
         """Unload every loaded plugin. Returns how many were unloaded.
