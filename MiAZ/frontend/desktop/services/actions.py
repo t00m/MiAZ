@@ -91,6 +91,7 @@ class MiAZActions(GObject.GObject):
         self.menuitem_copy_names = self.factory.create_menuitem(
             name='copy-document-names', label=_('Copy document names'),
             callback=self.document_copy_names, shortcuts=['<Control><Shift>c'])
+        self.install_shortcut_actions()
 
     def document_display(self, doc):
         self.log.debug(f"Displaying {doc}")
@@ -157,6 +158,108 @@ class MiAZActions(GObject.GObject):
         workspace = self.app.get_widget('workspace')
         item = workspace.get_selected_items()[0]
         self._document_rename_single(item.id)
+
+    # The handlers behind the keyboard shortcuts.
+    #
+    # Every one of them looks its widget up at call time and returns quietly
+    # when it is not there. These actions are created while the services are
+    # still being built, long before the main window exists, and a key pressed
+    # in that window must not raise.
+
+    def shortcut_show_view(self, name):
+        """Switch the workspace to one view. Unknown names are refused by
+        show_view itself, which is what makes Ctrl+2 harmless on a repository
+        marked remote, where there is no grid."""
+        workspace = self.app.get_widget('workspace')
+        if workspace is not None:
+            workspace.show_view(name)
+
+    def shortcut_toggle_sidebar(self):
+        split_view = self.app.get_widget('main-split-view')
+        if split_view is not None:
+            split_view.set_show_sidebar(not split_view.get_show_sidebar())
+
+    def shortcut_toggle_preview(self):
+        """Driven through the header bar toggle rather than the sheet, so the
+        button and the sheet cannot disagree: the button's own handler is what
+        opens and closes the sheet."""
+        button = self.app.get_widget('headerbar-button-preview')
+        if button is not None:
+            button.set_active(not button.get_active())
+
+    def shortcut_focus_search(self, widget_name):
+        entry = self.app.get_widget(widget_name)
+        if entry is not None:
+            entry.grab_focus()
+
+    def shortcut_clear_filters(self):
+        sidebar = self.app.get_widget('sidebar')
+        if sidebar is not None:
+            sidebar.clear_filters()
+
+    def shortcut_select_all(self):
+        view = self.app.get_widget('workspace-view')
+        if view is None:
+            return
+        model = view.cv.get_model()
+        if model is not None:
+            model.select_all()
+
+    def shortcut_popup(self, widget_name):
+        """Open a menu button's popover from the keyboard."""
+        button = self.app.get_widget(widget_name)
+        if button is not None:
+            button.popup()
+
+    def install_shortcut_actions(self):
+        """Create the application actions the core key table names.
+
+        Only the ones nothing else creates. app-settings, app-quit, app-help,
+        app-shortcuts, import-doc, import-dir, copy-document-names, notes-doc
+        and notes-all are created by the main window, the importer and the
+        notes service, and creating them again here would replace the real
+        handler with one of these.
+
+        The accelerators come from the registry, looked up here by name: for
+        the actions this method creates, nothing else would ever set them.
+        document-open, document-rename, document-delete and
+        document-select-all are the exception: accelerators_for only returns
+        GLOBAL scope bindings, and those four are scoped to the document list,
+        so they get an empty list here and keep their keys on the document
+        list controller that installs them instead.
+        """
+        srvsct = self.app.get_service('shortcuts')
+
+        def create(name, callback):
+            self.factory.create_menu_action(name, callback,
+                                            srvsct.accelerators_for(name))
+
+        create('repo-management', lambda *a: self.show_repository_manager())
+        create('repo-settings', lambda *a: self.show_repository_settings())
+        create('app-menu',
+               lambda *a: self.shortcut_popup('headerbar-button-menu-system'))
+        create('document-open', lambda *a: self.document_display_selected())
+        create('document-rename', lambda *a: self.document_rename())
+        create('document-delete', lambda *a: self.document_delete())
+        create('document-select-all', lambda *a: self.shortcut_select_all())
+        create('massrename-open',
+               lambda *a: self.shortcut_popup('headerbar-button-massrename'))
+        for action, view in (('view-details', 'details'),
+                             ('view-grid', 'grid'),
+                             ('view-timeline', 'timeline'),
+                             ('view-conversation', 'conversation'),
+                             ('view-filenames', 'filenames')):
+            create(action,
+                   lambda *a, name=view: self.shortcut_show_view(name))
+        create('search-focus',
+               lambda *a: self.shortcut_focus_search('searchentry'))
+        create('search-focus-concept',
+               lambda *a: self.shortcut_focus_search('searchentry-concept'))
+        create('filters-clear', lambda *a: self.shortcut_clear_filters())
+        create('sidebar-toggle', lambda *a: self.shortcut_toggle_sidebar())
+        create('preview-toggle', lambda *a: self.shortcut_toggle_preview())
+        create('columns-choose',
+               lambda *a: self.shortcut_popup('workspace-button-columns'))
 
     def build_suggest_menu(self):
         """Build (once) the Gio.Menu behind the rename dialog's Suggest button.
