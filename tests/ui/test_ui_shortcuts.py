@@ -8,6 +8,8 @@ The fallback is the path a developer on Fedora never sees, so both are built
 here whatever this machine runs.
 """
 
+import pytest
+
 from gi.repository import Adw
 from gi.repository import Gtk
 
@@ -73,8 +75,11 @@ def test_the_fallback_lists_every_shortcut(clean_view):
         shown = labels_in(dialog)
         for title in titles(sections(clean_view)):
             assert title in shown, f"{title!r} missing from the fallback"
-        # And the keys next to them, not just the names.
-        assert 'Ctrl+S' in shown
+        # And the keys next to them, not just the names. Settings is bound to
+        # Ctrl+comma, not Ctrl+S: the old hand written list said Ctrl+S, which
+        # was never the real binding, and this test caught the mismatch once
+        # shortcut_sections started reading the registry.
+        assert 'Ctrl+,' in shown
         assert 'F1' in shown
     finally:
         dialog.close()
@@ -109,3 +114,44 @@ def test_both_builders_show_the_same_shortcuts(clean_view):
     finally:
         native.close()
         fallback.close()
+
+
+def test_the_window_lists_exactly_what_the_registry_holds(miaz):
+    """The window and the bindings were two hand written lists, and they had
+    already drifted: the window never mentioned Ctrl+N, Escape, or any of
+    MiAZProjectMgt's three keys."""
+    registry = miaz.service('shortcuts')
+    listed = {accelerator
+              for _title, rows in sections(miaz)
+              for _label, accelerator in rows}
+    held = {binding.accelerator for binding in registry.bindings()}
+    assert listed == held
+
+
+def test_a_plugin_key_appears_in_the_window(miaz):
+    """MiAZProjectMgt declares Ctrl+P. Before this work the window did not
+    mention it, so the window was telling the user something untrue."""
+    registry = miaz.service('shortcuts')
+    plugin_bindings = [b for b in registry.bindings()
+                       if b.owner != 'core']
+    if not plugin_bindings:
+        pytest.skip('no plugin claimed a key in this repository')
+    listed = {accelerator
+              for _title, rows in sections(miaz)
+              for _label, accelerator in rows}
+    for binding in plugin_bindings:
+        assert binding.accelerator in listed
+
+
+def test_the_sections_come_in_the_declared_order(miaz):
+    from MiAZ.frontend.desktop.services import shortcuts as sct
+    from gettext import gettext as _
+    titles = [title for title, _rows in sections(miaz)]
+    wanted = [_(name) for name in sct.SECTION_ORDER]
+    assert titles == [name for name in wanted if name in titles]
+
+
+def test_an_empty_section_is_not_shown(miaz):
+    """A section header with nothing under it is noise."""
+    for _title, rows in sections(miaz):
+        assert len(rows) > 0

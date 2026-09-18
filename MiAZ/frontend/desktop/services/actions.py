@@ -24,6 +24,7 @@ from MiAZ.frontend.desktop.widgets.rename import MiAZRenameDialog
 from MiAZ.frontend.desktop.widgets.settings import MiAZAppSettings
 from MiAZ.frontend.desktop.widgets.settings import MiAZRepoSettings
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewMassDelete
+from MiAZ.frontend.desktop.services.shortcuts import SECTION_ORDER
 
 # Adw.ShortcutsDialog needs libadwaita 1.8; Debian 13 ships 1.7.6. Drop this
 # and _build_shortcuts_fallback once every target distribution has 1.8.
@@ -790,29 +791,37 @@ class MiAZActions(GObject.GObject):
         self.show_app_help(*args)
 
     def shortcut_sections(self):
-        """The shortcuts, written once.
+        """The sections the Keyboard Shortcuts window is built from.
 
-        Both builders read this, so the two cannot list different keys. Built
-        on each call rather than at import, so the titles are translated in the
-        language in use rather than the one loaded first.
+        Read from the registry, not written out here. The two used to be
+        separate lists and they drifted: this window never mentioned Ctrl+N,
+        Escape, or any of the three keys MiAZProjectMgt declares.
+
+        Labels are translated here rather than in the table, because the table
+        is built at import time, before a locale has been chosen. Translating
+        at call time is what lets the window follow the language in use rather
+        than the one loaded first.
+
+        The shape, a tuple of (title, ((label, accelerator), ...)), is what
+        both dialog builders below consume.
         """
-        return (
-            (_('Application'), (
-                (_('Settings'), '<Control>s'),
-                (_('Keyboard shortcuts'), '<Control>question'),
-                (_('About MiAZ'), '<Control>b'),
-                (_('Quit'), '<Control>q'),
-                (_('Help (this window)'), 'F1'),
-            )),
-            (_('Documents'), (
-                (_('Add new document(s)'), '<Control>Insert'),
-                (_('Add documents from a directory'), '<Shift>Insert'),
-                (_('Rename document'), '<Control>BackSpace'),
-                (_('Delete documents'), '<Control>Delete'),
-                (_('View document'), 'Return'),
-                (_('Copy document names'), '<Control><Shift>c'),
-            )),
-        )
+        registry = self.app.get_service('shortcuts')
+        if registry is None:
+            return ()
+        grouped = {}
+        for binding in registry.bindings():
+            label = binding.label or binding.action.replace('-', ' ').capitalize()
+            grouped.setdefault(binding.section, []).append(
+                (_(label), binding.accelerator))
+        sections = []
+        for name in SECTION_ORDER:
+            rows = grouped.pop(name, [])
+            if rows:
+                sections.append((_(name), tuple(rows)))
+        # A section a plugin invented, in case one ever does.
+        for name, rows in grouped.items():
+            sections.append((_(name), tuple(rows)))
+        return tuple(sections)
 
     def show_app_help(self, *args):
         window = self.app.get_widget('window')

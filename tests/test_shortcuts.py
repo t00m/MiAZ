@@ -271,9 +271,17 @@ def test_without_a_registry_the_factory_behaves_as_it_always_did():
 
 
 def test_a_plugin_unloading_frees_its_keys_for_the_next_load():
-    """Disable a plugin, enable it again, and its key must still work. If
-    unregister_owner were missing, the second load would be refused as a
-    collision with the plugin's own previous registration."""
+    """Disable a plugin, enable it again, and its key must still work.
+
+    The `bindings() == []` assertion right after unregister_owner is the real
+    proof: it shows the binding is genuinely released, not merely tolerated.
+    register() treats a reclaim by the same owner of the same action as
+    idempotent and grants it either way, so the second create_menuitem call
+    succeeding would look identical whether or not the key had actually been
+    freed. Genuine release is what would let a DIFFERENT owner claim the key
+    afterward; this test happens to reclaim with the same owner, but the empty
+    bindings() list is what rules out the false alternative that the key was
+    simply left held."""
     registry = make()
     app = FakeApp(registry)
     factory = factory_for(app)
@@ -285,3 +293,59 @@ def test_a_plugin_unloading_frees_its_keys_for_the_next_load():
                             ['<Control>j'], owner='MiAZThing')
     assert registry.conflicts() == []
     assert app.accels['app.p-thing'] == ['<Control>j']
+
+
+# No accelerator is written down anywhere but the table
+
+
+import ast
+import os
+
+
+SOURCE_ROOTS = ('MiAZ', 'data/resources/plugins')
+# The registry itself holds the table, and the plugin that keeps its own three
+# keys. Everything else must ask the registry.
+ALLOWED = {
+    os.path.join('MiAZ', 'frontend', 'desktop', 'services', 'shortcuts.py'),
+    os.path.join('data', 'resources', 'plugins', 'MiAZProjectMgt', 'projmgt.py'),
+}
+
+
+def python_sources():
+    for root in SOURCE_ROOTS:
+        for base, dirs, names in os.walk(root):
+            dirs[:] = [d for d in dirs if d != '__pycache__']
+            for name in names:
+                if name.endswith('.py'):
+                    yield os.path.join(base, name)
+
+
+def accelerator_literals(path):
+    """Every string constant that GTK reads as a real key combination."""
+    with open(path, encoding='utf-8') as source:
+        tree = ast.parse(source.read(), filename=path)
+    found = []
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Constant) or not isinstance(node.value, str):
+            continue
+        text = node.value
+        if not text.startswith('<'):
+            continue
+        ok, key, mods = Gtk.accelerator_parse(text)
+        if ok and key != 0:
+            found.append(text)
+    return found
+
+
+def test_no_accelerator_is_written_outside_the_table():
+    """A literal accelerator somewhere else is a second source of truth, and
+    a second source of truth is the bug this whole design removes."""
+    offenders = {}
+    for path in python_sources():
+        if path in ALLOWED:
+            continue
+        literals = accelerator_literals(path)
+        if literals:
+            offenders[path] = literals
+    assert offenders == {}, (
+        f"these files hold accelerators the registry never sees: {offenders}")
