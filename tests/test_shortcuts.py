@@ -7,8 +7,6 @@ no display. Keeping these tests out of tests/ui is deliberate, because this is
 where a future collision gets caught cheaply.
 """
 
-import pytest
-
 from gi.repository import Gtk
 
 from MiAZ.frontend.desktop.services import shortcuts as sct
@@ -181,3 +179,89 @@ def test_only_the_four_bare_keys_are_list_scoped():
               if scope == sct.LIST}
     assert scoped == {'document-open', 'document-rename',
                       'document-delete', 'document-select-all'}
+
+
+# The factory routes everything through the registry
+
+
+class FakeApp:
+    """Enough application for create_menuitem, and a record of what it set."""
+
+    def __init__(self, registry=None):
+        self._registry = registry
+        self.accels = {}
+        self.actions = []
+
+    def get_service(self, name):
+        return self._registry if name == 'shortcuts' else None
+
+    def add_action(self, action):
+        self.actions.append(action)
+
+    def set_accels_for_action(self, detailed, shortcuts):
+        self.accels[detailed] = list(shortcuts)
+
+
+def factory_for(app):
+    from MiAZ.frontend.desktop.services.factory import MiAZFactory
+    return MiAZFactory(app)
+
+
+def test_the_factory_sets_an_accelerator_the_registry_granted():
+    registry = make()
+    app = FakeApp(registry)
+    factory_for(app).create_menuitem('a-thing', 'A thing', lambda *a: None,
+                                     None, ['<Control>j'])
+    assert app.accels['app.a-thing'] == ['<Control>j']
+    assert [b.action for b in registry.bindings()] == ['a-thing']
+
+
+def test_the_factory_does_not_set_an_accelerator_the_registry_refused():
+    """This is the whole point. A refused key must not reach GTK, or the
+    registry would be bookkeeping while the collision happened anyway."""
+    registry = make()
+    registry.register('core', 'app-quit', '<Control>q')
+    app = FakeApp(registry)
+    factory_for(app).create_menuitem('greedy', 'Greedy', lambda *a: None,
+                                     None, ['<Control>q'])
+    assert 'app.greedy' not in app.accels
+    assert registry.conflicts()[0]['action'] == 'greedy'
+
+
+def test_a_refused_entry_still_becomes_a_working_menu_item():
+    """Losing the key must not lose the command."""
+    registry = make()
+    registry.register('core', 'app-quit', '<Control>q')
+    app = FakeApp(registry)
+    item = factory_for(app).create_menuitem('greedy', 'Greedy',
+                                            lambda *a: None, None,
+                                            ['<Control>q'])
+    assert item is not None
+    assert len(app.actions) == 1
+
+
+def test_the_owner_is_recorded_so_a_plugin_can_give_its_keys_back():
+    registry = make()
+    app = FakeApp(registry)
+    factory_for(app).create_menuitem('p-thing', 'Thing', lambda *a: None,
+                                     None, ['<Control>j'], owner='MiAZThing')
+    registry.unregister_owner('MiAZThing')
+    assert registry.bindings() == []
+
+
+def test_create_menu_action_goes_through_the_registry_too():
+    registry = make()
+    app = FakeApp(registry)
+    factory_for(app).create_menu_action('an-action', lambda *a: None,
+                                        ['<Control>j'])
+    assert app.accels['app.an-action'] == ['<Control>j']
+    assert [b.action for b in registry.bindings()] == ['an-action']
+
+
+def test_without_a_registry_the_factory_behaves_as_it_always_did():
+    """The console frontend installs no registry, and neither do several
+    existing tests. Both must keep working."""
+    app = FakeApp(None)
+    factory_for(app).create_menuitem('a-thing', 'A thing', lambda *a: None,
+                                     None, ['<Control>j'])
+    assert app.accels['app.a-thing'] == ['<Control>j']
