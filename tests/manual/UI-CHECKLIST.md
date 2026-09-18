@@ -110,6 +110,8 @@ automated UI suite, **[K]** needs a paid API key (skip unless you have one).
       together, and the document count matches what is listed.
 - [ ] **3.8** Toggle the sidebar with the header bar button. It hides and shows,
       and the setting survives a restart.
+- [ ] **3.9** Press `F9`. The sidebar toggles, same as the header bar button.
+- [ ] **3.10** Press `F8`. The document preview toggles.
 
 ## 4. Rename dialog
 

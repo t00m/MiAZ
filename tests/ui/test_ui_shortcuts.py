@@ -134,8 +134,10 @@ def test_a_plugin_key_appears_in_the_window(miaz):
     registry = miaz.service('shortcuts')
     plugin_bindings = [b for b in registry.bindings()
                        if b.owner != 'core']
-    if not plugin_bindings:
-        pytest.skip('no plugin claimed a key in this repository')
+    assert plugin_bindings, (
+        'no plugin registered a key, so this test proved nothing: '
+        'MiAZProjectMgt is enabled in the test repository and should have '
+        'claimed one, so an empty plugin set here means plugin loading broke')
     listed = {accelerator
               for _title, rows in sections(miaz)
               for _label, accelerator in rows}
@@ -205,6 +207,10 @@ def test_nothing_collides_with_every_plugin_loaded(miaz):
     Ctrl+Alt+P, and the preview pane was very nearly given Ctrl+Shift+P.
     """
     registry = miaz.service('shortcuts')
+    assert any(b.owner != 'core' for b in registry.bindings()), (
+        'no plugin registered a key, so this test proved nothing: core keys '
+        'are already checked against each other in tests/test_shortcuts.py, '
+        'and the whole point of this test is the core against plugin case')
     assert registry.conflicts() == [], (
         'these shortcuts were refused because something already held the key: '
         f'{registry.conflicts()}')
