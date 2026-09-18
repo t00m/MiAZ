@@ -750,13 +750,15 @@ class MiAZActions(GObject.GObject):
         return assistant
 
     def show_repository_manager(self, *args):
+        window = self.app.get_widget('window')
+        if window is None:
+            return
         widget = self.factory.create_box_vertical(hexpand=True, vexpand=True)
         configview = MiAZRepositories(self.app)
         configview.set_hexpand(True)
         configview.set_vexpand(True)
         configview.update_views()
         widget.append(configview)
-        window = self.app.get_widget('window')
         title = _('Repository management')
         body = ""
         srvdlg = self.app.get_service('dialogs')
@@ -915,6 +917,12 @@ class MiAZActions(GObject.GObject):
 
     def stop_if_no_items(self, widget: Gtk.Widget = None):
         workspace = self.app.get_widget('workspace')
+        if workspace is None:
+            # No workspace means no selection. There is also no toast overlay
+            # to show one in yet: this is reached from actions created while
+            # the services are still being built, before the main window
+            # exists. Every caller already treats True as "do not proceed".
+            return True
         stop = False
         items = workspace.get_selected_items()
         if len(items) == 0:

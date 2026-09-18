@@ -131,3 +131,24 @@ def test_an_action_does_not_raise_before_its_widget_exists():
     MiAZActions.shortcut_clear_filters(bare)
     MiAZActions.shortcut_select_all(bare)
     MiAZActions.shortcut_popup(bare, 'headerbar-button-massrename')
+
+
+def test_stop_if_no_items_tolerates_no_workspace():
+    """repo-management, repo-settings, document-open, document-rename and
+    document-delete all route through here before doing anything else. No
+    workspace means no selection, which is what True already means to every
+    caller: do not proceed. This runs before the main window exists, so there
+    is also no toast overlay to show one in."""
+    from MiAZ.frontend.desktop.services.actions import MiAZActions
+
+    class Bare:
+        """Answers None to everything, same shape as the guard test above."""
+
+        def __init__(self):
+            self.app = self
+
+        def get_widget(self, name):
+            return None
+
+    bare = Bare()
+    assert MiAZActions.stop_if_no_items(bare) is True
