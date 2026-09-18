@@ -265,3 +265,22 @@ def test_without_a_registry_the_factory_behaves_as_it_always_did():
     factory_for(app).create_menuitem('a-thing', 'A thing', lambda *a: None,
                                      None, ['<Control>j'])
     assert app.accels['app.a-thing'] == ['<Control>j']
+
+
+# Lifecycle
+
+
+def test_a_plugin_unloading_frees_its_keys_for_the_next_load():
+    """Disable a plugin, enable it again, and its key must still work. If
+    unregister_owner were missing, the second load would be refused as a
+    collision with the plugin's own previous registration."""
+    registry = make()
+    app = FakeApp(registry)
+    factory = factory_for(app)
+    factory.create_menuitem('p-thing', 'Thing', lambda *a: None, None,
+                            ['<Control>j'], owner='MiAZThing')
+    registry.unregister_owner('MiAZThing')
+    factory.create_menuitem('p-thing', 'Thing', lambda *a: None, None,
+                            ['<Control>j'], owner='MiAZThing')
+    assert registry.conflicts() == []
+    assert app.accels['app.p-thing'] == ['<Control>j']

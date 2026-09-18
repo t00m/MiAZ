@@ -460,6 +460,11 @@ class PluginActionRegistry:
             except Exception as error:
                 self.log.warning(f"Could not remove action '{action_name}' "
                                  f"of '{owner}': {error}")
+        # Give the keys back, or re-enabling this plugin would be refused as a
+        # collision with the registration it left behind.
+        registry = app.get_service('shortcuts')
+        if registry is not None:
+            registry.unregister_owner(owner)
 
 
 class MiAZPlugin(GObject.GObject):
@@ -612,7 +617,8 @@ class MiAZPlugin(GObject.GObject):
         gone, and the shortcut still fires its handler.
         """
         factory = self.app.get_service('factory')
-        menuitem = factory.create_menuitem(name, label, callback, data, shortcuts)
+        menuitem = factory.create_menuitem(name, label, callback, data,
+                                           shortcuts, owner=self.get_name())
         if callback is not None:
             registry = self._action_registry()
             if registry is not None:

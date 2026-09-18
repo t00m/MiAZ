@@ -17,6 +17,7 @@ from MiAZ.frontend.desktop.services.notes import MiAZNotes
 from MiAZ.frontend.desktop.services.pluginsystem import MiAZPluginSystem
 from MiAZ.frontend.desktop.services.pluginsystem import format_load_failure_toast
 from MiAZ.frontend.desktop.services.icm import MiAZIconManager
+from MiAZ.frontend.desktop.services.shortcuts import MiAZShortcuts
 from MiAZ.frontend.desktop.services.factory import MiAZFactory
 from MiAZ.frontend.desktop.services.actions import MiAZActions
 from MiAZ.frontend.desktop.services.dialogs import MiAZDialog
@@ -99,6 +100,12 @@ class MiAZApp(Adw.Application):
         set_job_queue(self.set_service('jobs', MiAZJobQueue()))
         self.set_service('util', MiAZUtil(self))
         self.set_service('icons', MiAZIconManager(self))
+        # Installed before the factory, because the factory asks it whether an
+        # accelerator may be set, and both MiAZActions and MiAZImportDoc claim
+        # one while the services are still being built. The core table loads
+        # here, before any plugin can load, which is what makes the first
+        # claim on a key the application's rather than a plugin's.
+        self.set_service('shortcuts', MiAZShortcuts(self)).register_core()
         self.set_service('factory', MiAZFactory(self))
         self.set_service('dialogs', MiAZDialog(self))
         self.set_service('actions', MiAZActions(self))

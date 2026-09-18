@@ -545,6 +545,9 @@ class FakeActionApp:
         else:
             self.accels.pop(detailed, None)
 
+    def get_service(self, name):
+        return None
+
 
 def test_a_new_action_registry_knows_about_nothing():
     registry = ps.PluginActionRegistry()
