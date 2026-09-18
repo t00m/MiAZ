@@ -38,6 +38,7 @@ from MiAZ.frontend.desktop.widgets.gridview import MiAZGridView
 from MiAZ.frontend.desktop.widgets.pages import MiAZPageNotFound
 from MiAZ.frontend.desktop.widgets.pills import FIELD_COLORS
 from MiAZ.frontend.desktop.widgets.timelineview import MiAZTimelineView
+from MiAZ.frontend.desktop.services.shortcuts import LIST as SHORTCUT_LIST
 from MiAZ.frontend.desktop.widgets.dragout import (install_for_workspace_selection,
                                                    started_here)
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewWorkspace
@@ -620,6 +621,7 @@ class MiAZWorkspace(Gtk.Box):
         frame = Gtk.Frame()
         self.view = MiAZColumnViewWorkspace(self.app)
         self.app.add_widget('workspace-view', self.view)
+        self._install_list_shortcuts()
         # Documents can be dragged out of the list into another application.
         # On the column view itself, so a drag started anywhere in a row works
         # rather than only over one column.
@@ -631,6 +633,35 @@ class MiAZWorkspace(Gtk.Box):
         frame.set_child(self.view)
 
         return frame
+
+    def _install_list_shortcuts(self):
+        """The bare keys, on the list rather than on the window.
+
+        Return, F2, Delete and Ctrl+A are what a file manager uses, and they
+        are also what a text entry uses. LOCAL scope means they fire only
+        while this list, or something inside it, has focus, so Delete cannot
+        remove documents while somebody is typing in the sidebar search.
+
+        The accelerators come from the registry, so the four keys are written
+        down in exactly one place, the same place the Keyboard Shortcuts
+        window reads.
+        """
+        registry = self.app.get_service('shortcuts')
+        if registry is None:
+            return
+        controller = Gtk.ShortcutController()
+        controller.set_scope(Gtk.ShortcutScope.LOCAL)
+        for binding in registry.bindings(scope=SHORTCUT_LIST):
+            trigger = Gtk.ShortcutTrigger.parse_string(binding.accelerator)
+            if trigger is None:
+                self.log.warning(f"'{binding.accelerator}' is not a trigger "
+                                 f"GTK can read, so '{binding.action}' has "
+                                 "no key on the document list")
+                continue
+            action = Gtk.NamedAction.new(f'app.{binding.action}')
+            controller.add_shortcut(Gtk.Shortcut.new(trigger, action))
+        self.view.cv.add_controller(controller)
+        self.app.add_widget('workspace-shortcut-controller', controller)
 
     def register_filter_view(self, name: str, callback):
         registered = False

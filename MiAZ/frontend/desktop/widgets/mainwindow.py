@@ -6,7 +6,6 @@
 from gettext import gettext as _
 
 from gi.repository import Adw
-from gi.repository import Gdk
 from gi.repository import Gio
 from gi.repository import GLib
 from gi.repository import GObject
@@ -57,8 +56,8 @@ class MiAZMainWindow(Gtk.Box):
 
         # Sidebar visibility is core behaviour (formerly the MiAZSidebarTB
         # plugin). On first run the sidebar starts hidden; afterwards the last
-        # state is remembered. The headerbar reveal button and the Escape key
-        # both toggle it (see _setup_headerbar_start and _on_key_pressed).
+        # state is remembered. The headerbar reveal button toggles it (see
+        # _setup_headerbar_start).
         appconf = self.app.get_config('App')
         if appconf is not None and appconf.exists('sidebar-visible'):
             show_sidebar = bool(appconf.get('sidebar-visible'))
@@ -108,10 +107,6 @@ class MiAZMainWindow(Gtk.Box):
 
     def _setup_event_listener(self):
         """Setup an event listener for mainwindow"""
-        evk = Gtk.EventControllerKey.new()
-        evk.connect('key-pressed', self._on_key_pressed)
-        self.app.add_widget('window-event-controller', evk)
-        self.win.add_controller(evk)
         plugin_system = self.app.get_service('plugin-system')
         if plugin_system is not None:
             plugin_system.connect('plugins-updated', self._on_plugins_updated)
@@ -120,27 +115,6 @@ class MiAZMainWindow(Gtk.Box):
         workflow = self.app.get_service('workflow')
         if workflow is not None:
             workflow.connect('repository-switch-finished', self._update_window_title)
-
-    def _on_key_pressed(self, controller, keyval, keycode, state):
-        actions = self.app.get_service('actions')
-        ctrl = state & Gdk.ModifierType.CONTROL_MASK
-        if keyval == Gdk.KEY_Return:
-            actions.document_display_selected()
-            return True
-        if ctrl and keyval == Gdk.KEY_BackSpace:
-            actions.document_rename()
-            return True
-        if ctrl and keyval in (Gdk.KEY_Delete, Gdk.KEY_KP_Delete):
-            actions.document_delete()
-            return True
-        if keyval == Gdk.KEY_Escape:
-            # Toggle the sidebar without consuming the event, so Escape keeps
-            # working for other widgets (search entry, popovers).
-            split_view = self.app.get_widget('main-split-view')
-            if split_view is not None:
-                split_view.set_show_sidebar(not split_view.get_show_sidebar())
-            return False
-        return False
 
     def _on_sidebar_visibility_changed(self, split_view, gparam):
         """Persist sidebar visibility so it is remembered across runs."""
