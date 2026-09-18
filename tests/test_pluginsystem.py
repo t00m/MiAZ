@@ -619,6 +619,31 @@ def test_undo_all_for_an_unknown_plugin_removes_no_actions():
     assert app.actions == set()
 
 
+def test_undo_all_calls_registry_unregister_owner():
+    """Verify that undo_all calls registry.unregister_owner, releasing the
+    plugin's keys so it can re-enable without conflict."""
+    from MiAZ.frontend.desktop.services.shortcuts import MiAZShortcuts
+
+    class FakeActionAppWithRegistry(FakeActionApp):
+        def __init__(self, registry):
+            super().__init__()
+            self.registry = registry
+
+        def get_service(self, name):
+            return self.registry if name == 'shortcuts' else None
+
+    registry = MiAZShortcuts()
+    registry.register('Plugin', 'plugin-action', '<Control>x')
+    app = FakeActionAppWithRegistry(registry)
+    app.add_action_name('plugin-action')
+    plugin_registry = ps.PluginActionRegistry()
+    plugin_registry.add('Plugin', 'plugin-action')
+
+    plugin_registry.undo_all('Plugin', app)
+
+    assert registry.bindings() == []
+
+
 # format_plugin_info_value
 #
 # The info dialog shows every key a plugin declares. Two of them are not

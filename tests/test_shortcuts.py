@@ -280,6 +280,7 @@ def test_a_plugin_unloading_frees_its_keys_for_the_next_load():
     factory.create_menuitem('p-thing', 'Thing', lambda *a: None, None,
                             ['<Control>j'], owner='MiAZThing')
     registry.unregister_owner('MiAZThing')
+    assert registry.bindings() == []
     factory.create_menuitem('p-thing', 'Thing', lambda *a: None, None,
                             ['<Control>j'], owner='MiAZThing')
     assert registry.conflicts() == []
