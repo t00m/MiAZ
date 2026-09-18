@@ -88,9 +88,11 @@ class MiAZActions(GObject.GObject):
         self._suggest_items = []
         # Built here, appended to the workspace selection menu by the main
         # window, which rebuilds that menu whenever the plugins change.
+        srvsct = self.app.get_service('shortcuts')
         self.menuitem_copy_names = self.factory.create_menuitem(
             name='copy-document-names', label=_('Copy document names'),
-            callback=self.document_copy_names, shortcuts=['<Control><Shift>c'])
+            callback=self.document_copy_names,
+            shortcuts=srvsct.accelerators_for('copy-document-names'))
         self.install_shortcut_actions()
 
     def document_display(self, doc):

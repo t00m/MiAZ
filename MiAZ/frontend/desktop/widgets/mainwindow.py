@@ -701,23 +701,35 @@ class MiAZMainWindow(Gtk.Box):
     def _setup_menu_system(self):
         actions = self.app.get_service('actions')
         factory = self.app.get_service('factory')
+        srvsct = self.app.get_service('shortcuts')
         menu = self.app.add_widget('window-menu-app', Gio.Menu.new())
         section_common = self.app.add_widget('app-menu-section-common', Gio.Menu.new())
         section_bottom = self.app.add_widget('app-menu-section-common-bottom', Gio.Menu.new())
         menu.append_section(None, section_common)
         menu.append_section(None, section_bottom)
-        menuitem = factory.create_menuitem('app-settings', _('Settings'), actions.show_app_settings, None, ['<Control>s'])
+        menuitem = factory.create_menuitem(
+            'app-settings', _('Settings'), actions.show_app_settings, None,
+            srvsct.accelerators_for('app-settings'))
         section_common.append_item(menuitem)
-        menuitem = factory.create_menuitem('app-shortcuts', _('Keyboard Shortcuts'), actions.show_app_shortcuts, None, ['<Control>question'])
+        menuitem = factory.create_menuitem(
+            'app-shortcuts', _('Keyboard Shortcuts'), actions.show_app_shortcuts,
+            None, srvsct.accelerators_for('app-shortcuts'))
         section_common.append_item(menuitem)
         # F1 is listed in the shortcuts window, so it has to do something. It
         # opens that same window: MiAZ has no separate manual, and a shortcut
         # advertised and bound to nothing is worse than one that is honest.
-        menuitem = factory.create_menuitem('app-help', _('Help'), actions.show_app_help, None, ['F1'])
+        menuitem = factory.create_menuitem(
+            'app-help', _('Help'), actions.show_app_help, None,
+            srvsct.accelerators_for('app-help'))
         section_common.append_item(menuitem)
-        menuitem = factory.create_menuitem('app-about', _('About MiAZ'), actions.show_app_about, None, ['<Control>b'])
+        # About has no accelerator. Ctrl+B used to open it, which is Bold in
+        # every editor, and MiAZ has a notes editor.
+        menuitem = factory.create_menuitem(
+            'app-about', _('About MiAZ'), actions.show_app_about, None, None)
         section_common.append_item(menuitem)
-        menuitem = factory.create_menuitem('app-quit', _('Quit'), actions.exit_app, None, ['<Control>q'])
+        menuitem = factory.create_menuitem(
+            'app-quit', _('Quit'), actions.exit_app, None,
+            srvsct.accelerators_for('app-quit'))
         section_bottom.append_item(menuitem)
 
         menubutton = Gtk.MenuButton()

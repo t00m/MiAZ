@@ -148,9 +148,11 @@ class MiAZNotes(GObject.GObject):
     # with the others because they act on the notes, and hanging them off
     # entries of their own put two submenus in the workspace menu holding one
     # item each.
+    # No accelerators here: this is a class attribute, evaluated at import
+    # time, and the registry does not exist yet. menu() looks them up.
     MENU_ENTRIES = (
-        ('doc', _('Create a new note'), ['<Ctrl>N']),
-        ('all', _('See all notes…'), None),
+        ('doc', _('Create a new note'), 'notes-doc'),
+        ('all', _('See all notes…'), 'notes-all'),
         ('backup', _('Backup notes'), None),
         ('restore', _('Restore notes'), None),
     )
@@ -173,11 +175,14 @@ class MiAZNotes(GObject.GObject):
             'backup': self._on_menu_backup,
             'restore': self._on_menu_restore,
         }
+        srvsct = self.app.get_service('shortcuts')
         menu = Gio.Menu.new()
-        for entry_id, label, shortcuts in self.MENU_ENTRIES:
+        for entry_id, label, action in self.MENU_ENTRIES:
             key = f'notes-{entry_id}'
             menuitem = self.app.get_widget(f'menuitem-{key}')
             if menuitem is None:
+                shortcuts = ([] if action is None
+                             else srvsct.accelerators_for(action))
                 menuitem = self.factory.create_menuitem(
                     key, label, callbacks[entry_id], None, shortcuts)
                 self.app.add_widget(f'menuitem-{key}', menuitem)

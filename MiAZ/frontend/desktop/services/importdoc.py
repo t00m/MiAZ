@@ -73,12 +73,15 @@ class MiAZImportDoc(GObject.GObject):
         self.factory = app.get_service('factory')
         self.repository = app.get_service('repo')
         self.srvdlg = app.get_service('dialogs')
+        srvsct = app.get_service('shortcuts')
         self.menuitem = self.factory.create_menuitem(
             name='import-doc', label=_('Add new document(s)'),
-            callback=self.import_files, shortcuts=['<Control>Insert'])
+            callback=self.import_files,
+            shortcuts=srvsct.accelerators_for('import-doc'))
         self.menuitem_dir = self.factory.create_menuitem(
             name='import-dir', label=_('Add documents from a directory'),
-            callback=self.import_directory, shortcuts=['<Shift>Insert'])
+            callback=self.import_directory,
+            shortcuts=srvsct.accelerators_for('import-dir'))
 
     def import_files(self, *args):
         self.factory.create_filechooser_for_files(self._on_filechooser_response)
