@@ -172,13 +172,18 @@ def test_core_action_names_are_unique():
     assert len(names) == len(set(names))
 
 
-def test_only_the_four_bare_keys_are_list_scoped():
+def test_only_the_five_bare_keys_are_list_scoped():
     """Scoping is the safety mechanism for keys a text entry also wants. If a
-    fifth key becomes list scoped, that is a decision, not an accident."""
+    sixth key becomes list scoped, that is a decision, not an accident.
+
+    Escape joined this set because a global accelerator runs in the capture
+    phase and would swallow Escape from Adw.AlertDialog, Adw.Dialog and
+    Gtk.Popover before their own bubble phase handler ever saw it."""
     scoped = {action for _s, _l, action, _a, scope in sct.CORE
               if scope == sct.LIST}
     assert scoped == {'document-open', 'document-rename',
-                      'document-delete', 'document-select-all'}
+                      'document-delete', 'document-select-all',
+                      'filters-clear'}
 
 
 # The factory routes everything through the registry

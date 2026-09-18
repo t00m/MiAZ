@@ -94,7 +94,7 @@ CORE = (
 
     (SECTION_WORKSPACE, N_('Search in all fields'), 'search-focus', '<Control>f', GLOBAL),
     (SECTION_WORKSPACE, N_('Search in Concept field'), 'search-focus-concept', '<Control><Shift>f', GLOBAL),
-    (SECTION_WORKSPACE, N_('Clear all filters'), 'filters-clear', 'Escape', GLOBAL),
+    (SECTION_WORKSPACE, N_('Clear all filters'), 'filters-clear', 'Escape', LIST),
     (SECTION_WORKSPACE, N_('Toggle sidebar'), 'sidebar-toggle', 'F9', GLOBAL),
     (SECTION_WORKSPACE, N_('Toggle document preview'), 'preview-toggle', 'F8', GLOBAL),
     (SECTION_WORKSPACE, N_('Choose the columns to show'), 'columns-choose', '<Control><Shift>k', GLOBAL),
