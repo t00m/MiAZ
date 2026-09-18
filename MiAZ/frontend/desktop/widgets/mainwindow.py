@@ -107,6 +107,15 @@ class MiAZMainWindow(Gtk.Box):
 
     def _setup_event_listener(self):
         """Setup an event listener for mainwindow"""
+        # MiAZ's own keys now live in the shortcut registry (GLOBAL
+        # accelerators on the application, LIST accelerators on the document
+        # list). This controller carries none of them any more; it stays
+        # registered as 'window-event-controller' purely as an extension
+        # point that plugins attach to, for example MiAZFullscreen connecting
+        # F11 to toggle fullscreen.
+        evk = Gtk.EventControllerKey.new()
+        self.app.add_widget('window-event-controller', evk)
+        self.win.add_controller(evk)
         plugin_system = self.app.get_service('plugin-system')
         if plugin_system is not None:
             plugin_system.connect('plugins-updated', self._on_plugins_updated)
@@ -143,7 +152,7 @@ class MiAZMainWindow(Gtk.Box):
         sidebar_toggle.add_css_class('flat')
         sidebar_toggle.set_tooltip_text(_(
             'Show or hide the sidebar.\n'
-            'Press Escape to toggle it.\n'
+            'Press F9 to toggle it.\n'
             'You can hide this button in Settings ▸ User Interface.'))
         split_view.bind_property(
             'show-sidebar', sidebar_toggle, 'active',

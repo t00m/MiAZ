@@ -114,7 +114,10 @@ def handler_census(driver):
     for name, signals in WATCHED.items():
         obj = watched_object(driver, name)
         if obj is None:
-            continue
+            raise AssertionError(
+                f"handler_census: watched name '{name}' resolved to None; "
+                "the widget or service it names is gone, so the census "
+                "cannot see any handler connected to it")
         for signal in signals:
             census[f'{name}.{signal}'] = count_handlers(obj, signal)
     for name in CONTROLLED:

@@ -52,8 +52,17 @@ def test_no_list_scoped_key_is_also_an_application_accelerator(miaz):
 
 def test_the_hand_written_key_handler_is_gone(miaz):
     """Four keys used to be implemented by hand on a window controller. Two
-    implementations of one key is the drift this work removes."""
-    assert miaz.widget('window-event-controller') is None
+    implementations of one key is the drift this work removes.
+
+    The controller widget itself stays registered as 'window-event-controller':
+    plugins such as MiAZFullscreen attach to it (F11), and removing it would
+    silently break that extension point instead of the duplicate key handling
+    this task actually removes. What must be gone is MiAZ's own handler.
+    """
+    mainwindow = miaz.widget('mainwindow')
+    assert mainwindow is not None, 'the main window is not registered'
+    assert not hasattr(mainwindow, '_on_key_pressed'), (
+        'the hand written key handler is still defined on the main window')
 
 
 def test_escape_is_a_global_accelerator_for_clearing_filters(miaz):
