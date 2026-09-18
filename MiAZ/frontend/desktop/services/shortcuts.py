@@ -163,9 +163,18 @@ class MiAZShortcuts:
                           section=section, scope=scope)
 
     def unregister_owner(self, owner: str) -> None:
-        """Release everything one owner holds, so its keys are free again."""
+        """Release everything one owner holds, so its keys are free again.
+
+        Conflicts naming this owner, on either side, are dropped too.
+        conflicts() is meant to report the current state, not a history: left
+        alone, a conflict would still be reported after the offending plugin
+        was gone, and the list would grow by one on every enable/disable
+        cycle of the same plugin.
+        """
         for key in self._owned.pop(owner, []):
             self._held.pop(key, None)
+        self._conflicts = [c for c in self._conflicts
+                           if c['owner'] != owner and c['held_by'] != owner]
 
     def accelerators_for(self, action: str) -> list:
         """What to hand set_accels_for_action for this action.

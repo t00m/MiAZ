@@ -92,6 +92,30 @@ def test_unregister_owner_leaves_other_owners_alone():
     assert [b.action for b in registry.bindings()] == ['app-quit']
 
 
+def test_unregister_owner_drops_conflicts_naming_the_losing_side():
+    """conflicts() is meant to report the current state, not a history. Left
+    alone, a conflict naming the plugin that lost would still be reported
+    after that plugin was disabled, and the list would grow by one on every
+    enable/disable cycle of the same plugin."""
+    registry = make()
+    registry.register('core', 'app-quit', '<Control>q')
+    registry.register('MiAZPlugin', 'plugin-thing', '<Control>q')
+    assert len(registry.conflicts()) == 1
+    registry.unregister_owner('MiAZPlugin')
+    assert registry.conflicts() == []
+
+
+def test_unregister_owner_drops_conflicts_naming_the_winning_side():
+    """The same is true from the other direction: once the owner that held
+    the key is gone, a conflict naming it as 'held_by' is stale too."""
+    registry = make()
+    registry.register('core', 'app-quit', '<Control>q')
+    registry.register('MiAZPlugin', 'plugin-thing', '<Control>q')
+    assert len(registry.conflicts()) == 1
+    registry.unregister_owner('core')
+    assert registry.conflicts() == []
+
+
 def test_accelerators_for_returns_only_global_scope():
     """A list scoped key is installed on the document list, not on the
     application, so a call site asking what to pass to set_accels_for_action
