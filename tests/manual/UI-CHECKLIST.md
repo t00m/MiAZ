@@ -113,7 +113,7 @@ automated UI suite, **[K]** needs a paid API key (skip unless you have one).
 
 ## 4. Rename dialog
 
-- [ ] **4.1 [S] [A]** Select one document, press `Ctrl+BackSpace`. The dialog opens
+- [ ] **4.1 [S] [A]** Select one document, press `F2`. The dialog opens
       with all seven fields filled from the filename.
 - [ ] **4.2 [N] [A]** Open it on a document whose values are not in the
       configuration. Those dropdowns show "Any", the affected rows are marked,
@@ -210,12 +210,12 @@ automated UI suite, **[K]** needs a paid API key (skip unless you have one).
 
 ## 7. Adding and deleting documents
 
-- [ ] **7.1 [S]** Add menu, then Add document (`Ctrl+Insert`). Pick a file. It is
+- [ ] **7.1 [S]** Add menu, then Add document (`Ctrl+I`). Pick a file. It is
       copied in, normalised to the seven-field form, and appears for review.
 - [ ] **7.2** Add several files at once. All arrive and the count is right.
 - [ ] **7.3** Add a file whose name is already in the repository. The clash is
       reported and nothing is overwritten.
-- [ ] **7.4** Select documents and press `Ctrl+Delete`. The confirmation lists
+- [ ] **7.4** Select documents and press `Delete`. The confirmation lists
       exactly what will go, and Cancel leaves them alone.
 - [ ] **7.5** Confirm a delete. The files are gone from disk, the rows are gone,
       and the count matches.
@@ -231,7 +231,7 @@ automated UI suite, **[K]** needs a paid API key (skip unless you have one).
       ticked. Answering No imports nothing; answering Yes imports exactly the
       number that was shown.
 - [ ] **7.10 [N]** Add menu, then Add documents from a directory
-      (`Shift+Insert`). It asks about subfolders exactly as a dropped folder
+      (`Ctrl+Shift+I`). It asks about subfolders exactly as a dropped folder
       does, the documents arrive, and the workspace stays usable while it runs.
 - [ ] **7.11 [N]** Point it at an unreadable directory
       (`mkdir /tmp/locked && chmod 000 /tmp/locked`). It reports the failure
@@ -270,7 +270,7 @@ automated UI suite, **[K]** needs a paid API key (skip unless you have one).
 
 ## 9. Settings
 
-- [ ] **9.1 [S]** `Ctrl+S` opens Application settings, and the pages listed are
+- [ ] **9.1 [S]** `Ctrl+,` opens Application settings, and the pages listed are
       reachable.
 - [ ] **9.2** Change the theme preference. It applies immediately.
 - [ ] **9.3** Repository settings opens a window with a tab per vocabulary:
@@ -375,9 +375,9 @@ automated UI suite, **[K]** needs a paid API key (skip unless you have one).
 
 - [ ] **12.1** `Ctrl+?` opens the shortcuts window and lists Application and
       Documents sections.
-- [ ] **12.2 [S]** Every shortcut in that window does what it says: `Ctrl+S`,
-      `Ctrl+B`, `Ctrl+Q`, `F1`, `Ctrl+BackSpace`, `Ctrl+Delete`, `Return`.
-- [ ] **12.3** `Ctrl+Insert` adds a document.
+- [ ] **12.2 [S]** Every shortcut in that window does what it says: `Ctrl+,`,
+      `Ctrl+Q`, `F1`, `F2`, `Delete`, `Return`.
+- [ ] **12.3** `Ctrl+I` adds a document.
 - [ ] **12.4** Tab moves through the rename dialog fields in filename order.
 - [ ] **12.5** The whole add-classify-rename loop is possible without the mouse.
 

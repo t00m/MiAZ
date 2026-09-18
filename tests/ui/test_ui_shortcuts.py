@@ -195,3 +195,52 @@ def test_plugin_labels_are_translated_at_most_once(miaz, monkeypatch):
             assert title.count('|X') == 1, title
     finally:
         registry.unregister_owner('TestPlugin')
+
+
+def test_nothing_collides_with_every_plugin_loaded(miaz):
+    """The test the design exists for.
+
+    A core key and a plugin key colliding is invisible to any check that reads
+    only the core table. MiAZProjectMgt declares Ctrl+P, Ctrl+Shift+P and
+    Ctrl+Alt+P, and the preview pane was very nearly given Ctrl+Shift+P.
+    """
+    registry = miaz.service('shortcuts')
+    assert registry.conflicts() == [], (
+        'these shortcuts were refused because something already held the key: '
+        f'{registry.conflicts()}')
+
+
+def test_every_registered_action_exists(miaz):
+    """An accelerator pointing at an action that does not exist makes the key
+    do nothing at all, silently, and it does not fall through to whatever else
+    wanted it."""
+    registry = miaz.service('shortcuts')
+    missing = [b.action for b in registry.bindings()
+               if miaz.app.lookup_action(b.action) is None]
+    assert missing == [], f'bound to actions that do not exist: {missing}'
+
+
+def test_no_binding_takes_a_reserved_combination(miaz):
+    """Core and plugins alike. MiAZProjectMgt's Ctrl+P is Print, which is a
+    known wart and is listed here as the one allowed exception so that any
+    new one fails this test."""
+    from MiAZ.frontend.desktop.services import shortcuts as sct
+    allowed = {'<Control>p'}
+    reserved = set()
+    for item in sct.RESERVED:
+        ok, key, mods = Gtk.accelerator_parse(item)
+        if ok:
+            reserved.add((key, mods))
+    offenders = []
+    for binding in registry_bindings(miaz):
+        if binding.accelerator in allowed:
+            continue
+        ok, key, mods = Gtk.accelerator_parse(binding.accelerator)
+        if ok and (key, mods) in reserved:
+            offenders.append((binding.owner, binding.action,
+                              binding.accelerator))
+    assert offenders == [], f'reserved combinations taken: {offenders}'
+
+
+def registry_bindings(driver):
+    return driver.service('shortcuts').bindings()

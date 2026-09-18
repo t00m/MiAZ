@@ -80,6 +80,7 @@ MiAZ/
 │           │   ├── importdoc.py  ← MiAZImportDoc (core add-document service + menu items)
 │           │   ├── pluginsystem.py ← MiAZExtension, MiAZPlugin, MiAZPluginSystem
 │           │   ├── progress.py   ← MiAZProgress
+│           │   ├── shortcuts.py  ← the key table and the registry that holds it
 │           │   └── workflow.py   ← MiAZWorkflow (repo switching lifecycle)
 │           └── widgets/
 │               ├── assistant.py, browserpage.py, button.py, chip.py

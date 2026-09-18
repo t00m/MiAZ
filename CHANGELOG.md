@@ -10,6 +10,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Every core action has a keyboard shortcut, and one registry holds them all.** MiAZ bound 16 keys before this. Five of the core ones took a combination the desktop or a GTK text entry already owns: `Ctrl+S` is Save, `Ctrl+Insert` and `Shift+Insert` are Copy and Paste, and `Ctrl+BackSpace` and `Ctrl+Delete` delete a word in any entry.
+
+  `MiAZ/frontend/desktop/services/shortcuts.py` holds the table and a registry that sits behind the two factory functions which are the only places MiAZ ever sets an accelerator. Every binding passes through it, plugins included, so a second claim on one key is refused and logged rather than silently winning. Keys are compared parsed, not as strings, because the codebase contained both `<Ctrl>N` and `<Control>n`.
+
+  The Keyboard Shortcuts window is built from that registry instead of from a second hand written list. The two had already drifted: the window never mentioned `Ctrl+N`, `Escape`, or any of the three keys MiAZProjectMgt declares.
+
+  `Return`, `F2`, `Delete` and `Ctrl+A` are installed on the document list rather than on the window, so they cannot fire while the sidebar search entry has focus. A global `Delete` would have removed documents while somebody was editing a filter.
+
+  Seven keys change meaning: Settings moves from `Ctrl+S` to `Ctrl+,`; About loses `Ctrl+B` and has no key, as is conventional; adding documents moves from `Ctrl+Insert` and `Shift+Insert` to `Ctrl+I` and `Ctrl+Shift+I`; renaming moves from `Ctrl+BackSpace` to `F2`; deleting moves from `Ctrl+Delete` to `Delete`; and `Escape` now clears filters, with the sidebar toggle moving to `F9`. None of them are rebound to a different MiAZ action, so a stale reflex does nothing rather than something surprising.
+
 - **A headerbar indicator for background work, and one lane for the long operations.** Two fixes in `94aa17f4` moved import and the ZIP export off the main loop, which stopped GNOME calling the window unresponsive and left the opposite problem: work happened with nothing on screen to say so, and nothing stopped a second import starting on top of the first.
 
   `MiAZ/backend/jobs.py` records every job and serialises the ones asking for the lane. `run_in_background` registers with it, so all 20 call sites appear in the indicator without one of them being edited: every one already passed `name=`. Long operations opt into the lane with `queued=True`.
