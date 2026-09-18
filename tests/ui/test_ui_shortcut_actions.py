@@ -20,6 +20,27 @@ def activate(driver, name):
     driver.pump()
 
 
+def focus_is_inside(driver, widget_name):
+    """Whether the window's focus widget is the named widget, or is nested
+    inside it.
+
+    has_focus() is no good here: it additionally requires the toplevel window
+    to be window-manager-active, which a process spawned outside a real
+    desktop session never becomes. What grab_focus() actually does, and what
+    is observable regardless of window activation, is move
+    window.get_focus(). A Gtk.SearchEntry does not receive that focus itself:
+    it delegates to an internal Gtk.Text, so the check has to walk up the
+    parent chain rather than compare identity directly.
+    """
+    target = driver.widget(widget_name)
+    focus = driver.widget('window').get_focus()
+    while focus is not None:
+        if focus is target:
+            return True
+        focus = focus.get_parent()
+    return False
+
+
 def test_every_shortcut_action_exists(miaz):
     """A key bound to an action that does not exist does nothing at all, and
     does it silently. The table and the actions must agree."""
@@ -61,12 +82,12 @@ def test_the_preview_action_toggles_the_preview_sheet(miaz):
 
 def test_the_search_action_puts_the_cursor_in_the_search_entry(miaz):
     activate(miaz, 'search-focus')
-    assert miaz.widget('searchentry').has_focus()
+    assert focus_is_inside(miaz, 'searchentry')
 
 
 def test_the_concept_search_action_focuses_the_concept_entry(miaz):
     activate(miaz, 'search-focus-concept')
-    assert miaz.widget('searchentry-concept').has_focus()
+    assert focus_is_inside(miaz, 'searchentry-concept')
 
 
 def test_clearing_filters_empties_the_search_entry(miaz, clean_view):
