@@ -60,7 +60,7 @@ Out of the box core capabilities:
 **Getting documents in**
 
 - **Drag and drop**: drop files from the file manager onto the document list. Drop a folder and MiAZ asks whether its subfolders count, telling you how many files each answer imports
-- **Add menu**: pick one file or many (`Ctrl+Insert`), or a whole directory (`Shift+Insert`), which asks the same question about subfolders. Either way the document is copied in, never moved, and normalised to the seven-field shape. A big import runs in the background, with one refresh at the end instead of one per file
+- **Add menu**: pick one file or many (`Ctrl+I`), or a whole directory (`Ctrl+Shift+I`), which asks the same question about subfolders. Either way the document is copied in, never moved, and normalised to the seven-field shape. A big import runs in the background, with one refresh at the end instead of one per file
 
 **Filing them**
 
