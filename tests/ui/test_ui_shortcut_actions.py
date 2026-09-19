@@ -9,8 +9,6 @@ way GTK does when the key is pressed.
 
 import pytest
 
-from gi.repository import Gtk
-
 
 def activate(driver, name):
     """Activate an application action the way an accelerator would."""

@@ -8,8 +8,6 @@ The fallback is the path a developer on Fedora never sees, so both are built
 here whatever this machine runs.
 """
 
-import pytest
-
 from gi.repository import Adw
 from gi.repository import Gtk
 
