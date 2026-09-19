@@ -79,9 +79,16 @@ jobs:
         run: .venv/bin/ruff check MiAZ data/resources/plugins tests
 
       - name: Run pytest
+        # GTK 4.20 removed the headless GDK backend, so GDK_BACKEND=headless
+        # left this step with no display and the widget-constructing tests
+        # (test_thumbnail_textures) segfaulted inside GTK's CSS code. Xvfb
+        # already provides the display for the UI tests, so it runs here too.
+        #
+        # PYTHONUNBUFFERED: a segfaulted pytest loses the tail of its output
+        # unless everything was already written, which only unbuffered I/O is.
         env:
-          GDK_BACKEND: headless
-        run: .venv/bin/python -m pytest tests/ -v --cov=MiAZ --cov-report=term-missing
+          PYTHONUNBUFFERED: "1"
+        run: xvfb-run -a .venv/bin/python -m pytest tests/ -v --cov=MiAZ --cov-report=term-missing
 
       - name: Run the UI tests
         # These start the real application against a throwaway repository, so
