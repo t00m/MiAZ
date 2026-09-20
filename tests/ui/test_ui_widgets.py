@@ -281,7 +281,7 @@ def test_preview_leads_with_the_concept_then_the_date(clean_view):
     clean_view.pump(0.3)
     clean_view.select_documents('20260612-ES-FIN-BANKX-INV-mortgage-JOHNDOE.pdf')
     preview = clean_view.widget('workspace-preview')
-    clean_view.wait_until(lambda: preview.label_title.get_text() != '',
+    clean_view.wait_until(lambda: preview.label_title.get_text() == 'mortgage',
                           message='the preview names the document')
     assert preview.label_title.get_text() == 'mortgage'
     assert preview.label_subtitle.get_text() == '12/06/2026'

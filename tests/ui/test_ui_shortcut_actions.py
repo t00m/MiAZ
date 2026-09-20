@@ -89,6 +89,10 @@ def test_the_search_action_puts_the_cursor_in_the_search_entry(miaz):
     miaz.pump()
     activate(miaz, 'search-focus')
     assert split.get_show_sidebar(), 'search-focus did not reveal the sidebar'
+    if not focus_is_observable(miaz):
+        pytest.skip('focus cannot be observed in this environment (Xvfb '
+                    'without a window manager: grab_focus never advances '
+                    'window.get_focus())')
     assert focus_is_inside(miaz, 'searchentry')
 
 
@@ -101,6 +105,10 @@ def test_the_concept_search_action_focuses_the_concept_entry(miaz):
     activate(miaz, 'search-focus-concept')
     assert split.get_show_sidebar(), (
         'search-focus-concept did not reveal the sidebar')
+    if not focus_is_observable(miaz):
+        pytest.skip('focus cannot be observed in this environment (Xvfb '
+                    'without a window manager: grab_focus never advances '
+                    'window.get_focus())')
     assert focus_is_inside(miaz, 'searchentry-concept')
 
 
