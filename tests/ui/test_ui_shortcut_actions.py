@@ -9,6 +9,11 @@ way GTK does when the key is pressed.
 
 import pytest
 
+# tests/ui is not a package, so pytest puts this directory on sys.path
+# and the shared helpers in conftest.py import by their bare module
+# name. Only fixtures arrive on their own; a plain function does not.
+from conftest import skip_unless_focus_observable
+
 
 def activate(driver, name):
     """Activate an application action the way an accelerator would."""
@@ -78,25 +83,28 @@ def test_the_preview_action_toggles_the_preview_sheet(miaz):
     assert sheet.get_open() is before
 
 
-def test_the_search_action_puts_the_cursor_in_the_search_entry(miaz):
+def test_the_search_action_puts_the_cursor_in_the_search_entry(
+        miaz, focus_observable):
     """Hide the sidebar first, rather than trust it is already open. On a
     fresh install the sidebar starts hidden, and grab_focus needs a mapped
     widget, so this proves the action reveals it rather than depending on an
     earlier test, such as test_the_sidebar_action_toggles_the_sidebar above,
-    having left it open."""
+    having left it open.
+
+    The sidebar half runs everywhere. The focus half needs a display that
+    reflects grab_focus(), which is what focus_observable answers.
+    """
     split = miaz.widget('main-split-view')
     split.set_show_sidebar(False)
     miaz.pump()
     activate(miaz, 'search-focus')
     assert split.get_show_sidebar(), 'search-focus did not reveal the sidebar'
-    if not focus_is_observable(miaz):
-        pytest.skip('focus cannot be observed in this environment (Xvfb '
-                    'without a window manager: grab_focus never advances '
-                    'window.get_focus())')
+    skip_unless_focus_observable(focus_observable)
     assert focus_is_inside(miaz, 'searchentry')
 
 
-def test_the_concept_search_action_focuses_the_concept_entry(miaz):
+def test_the_concept_search_action_focuses_the_concept_entry(
+        miaz, focus_observable):
     """See test_the_search_action_puts_the_cursor_in_the_search_entry: the
     sidebar is hidden first so this does not depend on test order either."""
     split = miaz.widget('main-split-view')
@@ -105,10 +113,7 @@ def test_the_concept_search_action_focuses_the_concept_entry(miaz):
     activate(miaz, 'search-focus-concept')
     assert split.get_show_sidebar(), (
         'search-focus-concept did not reveal the sidebar')
-    if not focus_is_observable(miaz):
-        pytest.skip('focus cannot be observed in this environment (Xvfb '
-                    'without a window manager: grab_focus never advances '
-                    'window.get_focus())')
+    skip_unless_focus_observable(focus_observable)
     assert focus_is_inside(miaz, 'searchentry-concept')
 
 

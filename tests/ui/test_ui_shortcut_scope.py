@@ -15,6 +15,10 @@ All five are installed on the list instead, and this file is the proof.
 from gi.repository import Adw
 from gi.repository import Gtk
 
+# tests/ui is not a package, so pytest puts this directory on sys.path and
+# the shared helpers in conftest.py import by their bare module name.
+from conftest import skip_unless_focus_observable
+
 from MiAZ.frontend.desktop.services import shortcuts as sct
 
 DELETE_DOC = '20260612-ES-FIN-BANKX-INV-mortgage-JOHNDOE.pdf'
@@ -149,15 +153,36 @@ def test_escape_reaches_an_open_delete_confirmation_dialog(clean_view, monkeypat
         clean_view.pump(0.3)
 
 
-def test_focus_can_land_in_the_document_list(miaz, clean_view):
+def test_focus_can_land_in_the_document_list(miaz, clean_view,
+                                            focus_observable):
     """LOCAL scope fires only while the list, or a widget inside it, has
     focus. If focus can never land there, F2 and Delete do nothing at all,
     which is worse than the behaviour they replace.
 
-    Focus is walked upwards because a Gtk.ColumnView holds an inner list that
-    is what actually takes focus.
+    Two halves, because only one of them is observable everywhere.
+
+    can_focus is the invariant a regression would actually break, and it
+    reads the same on any display. The Gtk.ColumnView is a focus container
+    rather than a focus target of its own (focusable is False by design, an
+    inner row widget is what takes the focus), so can_focus is the flag that
+    decides whether focus can reach the list at all.
+
+    The walk that follows needs a display which reflects grab_focus() in
+    window.get_focus(). Xvfb without a window manager does not, so it is
+    guarded rather than asserted blindly: guarding the whole test on that
+    probe would turn a genuine regression into a skip, which is why the
+    can_focus assertion sits in front of it.
+
+    Focus is walked upwards because the inner list is what actually takes
+    the focus.
     """
     cv = miaz.widget('workspace-view').cv
+    assert cv.get_can_focus(), (
+        'the document list cannot take focus, so no LIST scoped key can '
+        'ever fire')
+
+    skip_unless_focus_observable(focus_observable)
+
     cv.grab_focus()
     miaz.pump()
     focus = miaz.widget('window').get_focus()
