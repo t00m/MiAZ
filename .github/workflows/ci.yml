@@ -11,11 +11,17 @@ name: CI
 # matches 0.2, 0.3 and every series after them, including 0.10 and 1.0. It does
 # not match the old three-part branches (0.1.26), a branch with a suffix
 # (0.1.26-perf-changes), or anything under a prefix (feat/x).
+#
+# Tags are matched too, because a release is a tag and a release is exactly
+# when the full UI suite is worth its twenty-six minutes. See the ui-tests
+# job for what runs when.
 on:
   push:
     branches:
       - main
       - '[0-9]+.[0-9]+'
+    tags:
+      - 'v[0-9]+.[0-9]+*'
   pull_request:
     branches:
       - main
@@ -31,8 +37,8 @@ jobs:
     name: Tests, lint and metadata
     runs-on: ubuntu-latest
     # A stalled apt or dnf used to burn the 6 hour ceiling before GitHub killed
-    # the job. Nothing here takes more than ten minutes when it works.
-    timeout-minutes: 30
+    # the job. Without the UI tests nothing here takes more than three minutes.
+    timeout-minutes: 15
     # ubuntu-latest ships libadwaita 1.5, below the 1.7 floor, so the version
     # gate exits before any test runs. Fedora 43 ships 1.8.7.
     container: fedora:43
@@ -90,10 +96,95 @@ jobs:
           PYTHONUNBUFFERED: "1"
         run: xvfb-run -a .venv/bin/python -m pytest tests/ -v --cov=MiAZ --cov-report=term-missing
 
-      - name: Run the UI tests
+      - name: Validate AppStream metainfo
+        run: appstream-util validate --nonet data/io.github.t00m.MiAZ.metainfo.xml.in
+
+      - name: Validate desktop file
+        # desktop-file-validate requires a .desktop extension; the source is a
+        # plain (placeholder-free) .desktop.in template that meson merges into
+        # the real file, so validate a copy with the correct extension.
+        run: |
+          tmp="$(mktemp -d)"
+          cp data/io.github.t00m.MiAZ.desktop.in "$tmp/io.github.t00m.MiAZ.desktop"
+          desktop-file-validate "$tmp/io.github.t00m.MiAZ.desktop"
+
+  ui-tests:
+    # The UI tests drive the real application in process. They are the only
+    # thing here that exercises GTK, the plugin loader and the widgets, and
+    # they are also, by a wide margin, the slowest: the full 373 take about
+    # twenty-six minutes on this runner against fifty seconds for the 1483
+    # unit tests. Running all of them on every commit meant every push waited
+    # twenty-eight minutes for an answer that lint and the unit suite already
+    # had after two.
+    #
+    # So they are their own job (the fast answers no longer queue behind
+    # them) and what runs depends on the event. See the scope step.
+    name: UI tests
+    runs-on: ubuntu-latest
+    # The full suite takes ~26 minutes. This is the ceiling for a hang, not a
+    # target; a stalled dnf once burned six hours before GitHub killed it.
+    timeout-minutes: 45
+    # ubuntu-latest ships libadwaita 1.5, below the 1.7 floor, so the version
+    # gate exits before any test runs. Fedora 43 ships 1.8.7.
+    container: fedora:43
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      # No OCR tools and no metadata validators here: those belong to the unit
+      # tests and the validation steps in the `test` job. This job needs the
+      # toolkit, the plugin loader, WebKit and a display, and nothing else.
+      - name: Install system dependencies
+        run: |
+          dnf install -y --setopt=install_weak_deps=False \
+            python3 python3-pip python3-gobject python3-cairo \
+            gtk4 libadwaita \
+            libpeas libpeas-loader-python webkitgtk6.0 libsecret \
+            poppler-utils \
+            xorg-x11-server-Xvfb git
+
+      - name: Install Python tooling
+        # --system-site-packages so the venv can import the system gi while
+        # keeping pytest isolated from the system Python.
+        run: |
+          python3 -m venv --system-site-packages .venv
+          .venv/bin/pip install --upgrade pip
+          .venv/bin/pip install pytest
+
+      - name: Choose which UI tests to run
+        id: scope
+        # A push gets the smoke subset: the application starts and does its
+        # startup work, the plugins load, a repository opens and switches.
+        # That is about four minutes and catches the failures that make the
+        # application unusable rather than merely wrong in one widget.
+        #
+        # Everything else gets all 373. That is a pull request, a tag (a
+        # release), and a manual run, which are the three moments where
+        # twenty-six minutes is worth paying and none of them happen often.
+        #
+        # An empty target list means "everything": run_ui_tests.sh appends
+        # tests/ui when it is given no path of its own.
+        run: |
+          if [ "${{ github.event_name }}" = "push" ] \
+             && [ "${{ startsWith(github.ref, 'refs/tags/') }}" = "false" ]; then
+            echo "label=smoke subset" >> "$GITHUB_OUTPUT"
+            echo "targets=tests/ui/test_ui_startup_work.py tests/ui/test_ui_plugins.py tests/ui/test_ui_repository.py" >> "$GITHUB_OUTPUT"
+          else
+            echo "label=full suite" >> "$GITHUB_OUTPUT"
+            echo "targets=" >> "$GITHUB_OUTPUT"
+          fi
+          echo "Running the ${{ github.event_name }} scope."
+
+      - name: Run the UI tests (${{ steps.scope.outputs.label }})
         # These start the real application against a throwaway repository, so
         # they need a display and the plugin loader. Xvfb provides the first;
         # the runner sandboxes HOME so nothing here touches a real one.
+        #
+        # Xvfb runs without a window manager, so the toplevel never becomes
+        # window-manager-active and GTK does not advance window.get_focus()
+        # for a plain grab_focus(). The handful of tests that assert focus
+        # detect that and skip themselves; see focus_observable in
+        # tests/ui/conftest.py.
         #
         # PYTHONUNBUFFERED: Python buffers 8 KiB into a pipe, so a process
         # killed mid-run loses everything it wrote.
@@ -107,23 +198,7 @@ jobs:
         run: |
           PYTEST=.venv/bin/python \
             xvfb-run -a --server-args="-screen 0 1280x1024x24" \
-            scripts/checks/run_ui_tests.sh -q
-
-      # Run even when the UI step failed: metadata needs no display, and a
-      # broken metainfo holds up a release just as surely.
-      - name: Validate AppStream metainfo
-        if: always()
-        run: appstream-util validate --nonet data/io.github.t00m.MiAZ.metainfo.xml.in
-
-      - name: Validate desktop file
-        if: always()
-        # desktop-file-validate requires a .desktop extension; the source is a
-        # plain (placeholder-free) .desktop.in template that meson merges into
-        # the real file, so validate a copy with the correct extension.
-        run: |
-          tmp="$(mktemp -d)"
-          cp data/io.github.t00m.MiAZ.desktop.in "$tmp/io.github.t00m.MiAZ.desktop"
-          desktop-file-validate "$tmp/io.github.t00m.MiAZ.desktop"
+            scripts/checks/run_ui_tests.sh -q ${{ steps.scope.outputs.targets }}
 
   build-meson:
     name: Meson build and install

@@ -63,7 +63,9 @@ declare none.
 - `ruff check MiAZ data/resources/plugins tests` is clean.
 - The UI tests pass: `scripts/checks/run_ui_tests.sh`. They take about eight
   minutes and are not part of `meson test`, so they are easy to skip and worth
-  not skipping before a release.
+  not skipping before a release. A push to a branch only runs three of the
+  files in CI (see **Things worth knowing**), so this local run is the first
+  full one since the last pull request.
 - Worth doing before a release, not before every commit:
   `scripts/checks/run_ui_tests.sh --shuffle` and
   `python3 -m pytest tests -q -p randomly`. Both randomise the order and catch a
@@ -222,12 +224,34 @@ leaves it alone rather than dating the fresh `Unreleased` as well.
 on `main` and on `[0-9]+.[0-9]+`, which covers `0.3`, the series after it, and
 `0.10` and `1.0` when they come. Opening a series needs no change to the
 workflow, as long as the branch is named after its version and nothing else.
+It also triggers on `v[0-9]+.[0-9]+*` tags, which is what a release is.
 
 Those branches were listed by hand until 2026-09-09, and `0.3` was left off
 both lists, so the whole series ran with no CI: eighty commits checked by
 nothing but what somebody remembered to run. A branch the workflow does not
 cover does not fail, it never runs, so there is nothing to notice. If you name
 a branch something other than `X.Y` and want CI on it, add it explicitly.
+
+**CI runs all the UI tests on a tag, and three files on a push.** They are
+their own job, `ui-tests`, because the full 373 take about twenty-six minutes
+on the runner while lint and the 1483 unit tests are done in two. Sharing one
+job meant every push waited twenty-eight minutes for an answer that already
+existed after two.
+
+What runs depends on the event:
+
+| Event | UI tests | About |
+|---|---|---|
+| push to a branch | `test_ui_startup_work`, `test_ui_plugins`, `test_ui_repository` | 4 min |
+| pull request | all of them | 26 min |
+| tag, manual run | all of them | 26 min |
+
+The smoke subset is the three files that fail when the application is
+unusable rather than merely wrong in one widget: it starts and finishes its
+startup work, the plugins load, a repository opens and switches. A widget
+regression will reach you on the pull request rather than on the push, which
+is the trade the split makes. Releasing from a tag gets the full suite, so
+nothing ships on the subset alone.
 
 **`meson test` runs the unit suite and the three file validations**, in about
 fifteen seconds. The UI tests are deliberately not in it: they need a display
@@ -249,6 +273,7 @@ same commit. The parts most likely to go out of date:
   carries no version, and a test enforces that
 - the steps, whenever `release.sh`, `sync_versions.sh`,
   `render_release_notes.py` or `build_all.sh` grow or lose a stage
-- the CI note above, whenever the workflow's branch filters change
+- the CI notes above, whenever the workflow's branch filters change, or the
+  split between the smoke subset and the full UI suite moves
 
 A release document that is wrong is worse than none: it gets followed.

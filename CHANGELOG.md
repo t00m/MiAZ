@@ -48,7 +48,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
   `tests/test_no_toolkit.py` now runs `miaz ocr --help` with the Gtk, Gdk and Adw typelibs hidden. Plugin discovery reads `.plugin` files without importing anything, so a plugin command reaches the help text whatever its module does, but running one imports the module. MiAZOCR keeps its Adw and Gtk imports inside the methods that build the dialog, which is what lets `miaz ocr` work on a server, and until now that was a docstring with no test behind it.
 
+### Changed
+
+- **CI runs three UI test files on a push and all of them on a pull request or a tag.** The UI tests share the job with lint, the unit suite and the metadata validators, and they are about twenty-six minutes of a twenty-eight minute job: 373 tests driving the real application, against fifty seconds for 1483 unit tests. Every push waited for an answer that lint and the unit suite already had after two minutes.
+
+  They are now their own job, so the fast answers no longer queue behind them, and what runs depends on the event. A push to a branch runs `test_ui_startup_work`, `test_ui_plugins` and `test_ui_repository`, about four minutes: the application starts and finishes its startup work, the plugins load, a repository opens and switches. That is the set that fails when the application is unusable rather than merely wrong in one widget. A pull request, a tag and a manual run get all 373.
+
+  The workflow now also triggers on `v[0-9]+.[0-9]+*` tags, which it did not before, so a release is checked against the full suite rather than against whatever the last push ran.
+
 ### Fixed
+
+- **The focus observability guard stole the focus it was guarding.** Three UI tests assert that focus lands somewhere after an action, and they fail under Xvfb without a window manager: the toplevel never becomes window-manager-active, so GTK 4.20 does not advance `window.get_focus()` for a plain `grab_focus()`. The guard added to skip them in that environment probed by calling `grab_focus()` on the document list, and it was called between the action and the assertion, so it moved the focus off the search entry a line before the test checked the search entry had it. Both tests passed on a real desktop before the guard and failed after it.
+
+  The probe is now a session scoped fixture. pytest resolves a fixture before the test body runs, so it cannot land in the middle of one, and it runs once for the session rather than before every test that asks. `test_focus_can_land_in_the_document_list` asserts `can_focus` on the document list before consulting the guard, because that is the invariant a real regression would break and it reads the same on any display; guarding the whole test on the probe would have turned that regression into a skip.
+
+- **`focus_is_observable` was called in a file that never imported it.** It is defined in `tests/ui/conftest.py`, and only fixtures reach a test module on their own. `ruff check` catches this as F821 and runs before pytest in CI, so the job would have failed at lint.
 
 - **The lane serialised nothing, so two imports could still copy into the same repository at once.** `run_in_background` asked the queue to start the job and then started the worker thread regardless. A queued job whose lane was busy stayed `pending` in the popover while its work was already running, which is both the bug the lane exists to prevent and a popover that lied about it. The queue now owns when a queued job begins: each job carries an event, `start` and the handover in `finish` are what set it, and the worker waits on it before calling its function. An unqueued job never waits, so a workspace scan still runs during an import. The wait is bounded at 30 minutes, after which the job runs anyway and says so in the log, because a worker parked for the rest of the session would be worse than two copies overlapping. The test that covers this counts how many workers ran at the same time; the previous tests asserted on job states, which read correctly while both workers were running.
 
