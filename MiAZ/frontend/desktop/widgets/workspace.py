@@ -139,6 +139,10 @@ class MiAZWorkspace(Gtk.Box):
         self._updating_dropdowns = False
         self._filter_in_progress = False
         self._dropdown_update_pending = False
+        # Same idea for the filter tag banner: one user action reaches
+        # _update_filter_tags up to six times, and each pass throws the chips
+        # away and builds them again.
+        self._filter_tags_pending = False
         # Must exist before _setup_logic(), which builds the date presets and
         # reads these. The presets encode absolute days derived from "now";
         # _date_presets_day tracks the day they were built for (so update() can
@@ -1241,6 +1245,26 @@ class MiAZWorkspace(Gtk.Box):
             dropdown.set_selected(0)
 
     def _update_filter_tags(self, *args):
+        """Ask for one rebuild of the filter tags banner, on idle.
+
+        Three paths reach this for a single change: both 'workspace-view-filtered'
+        and 'workspace-view-updated' are connected to it, and
+        _update_dropdowns_after_filter calls it when it finishes. One
+        'workspace-view-updated' also runs _on_filter_selected, which refilters
+        and emits 'workspace-view-filtered' in turn. Rebuilding on each of them
+        destroyed and recreated every chip three to six times per click.
+        """
+        if self._filter_tags_pending:
+            return
+        self._filter_tags_pending = True
+        GLib.idle_add(self._idle_rebuild_filter_tags)
+
+    def _idle_rebuild_filter_tags(self):
+        self._filter_tags_pending = False
+        self._rebuild_filter_tags()
+        return False
+
+    def _rebuild_filter_tags(self):
         """Rebuild the active-filter tags banner from the current dropdown state."""
         flowbox = getattr(self, '_filter_tags_flowbox', None)
         if flowbox is None:
@@ -1435,7 +1459,12 @@ class MiAZWorkspace(Gtk.Box):
         self._refresh_filter_cache()
         self.view.refilter()
         self.emit('workspace-view-filtered')
-        self._update_dropdowns_after_filter()
+        # On idle, like every other caller. Inline it ran against a filter model
+        # that had not caught up, and it skipped the pending flag, so a queued
+        # update still ran afterwards and the dropdowns were narrowed twice.
+        if not self._dropdown_update_pending:
+            self._dropdown_update_pending = True
+            GLib.idle_add(self._idle_update_dropdowns)
 
     def _parse_files_worker(self, repo_docs, result_dict):
         """Run in a background thread: rebuild the index and hand back its items.

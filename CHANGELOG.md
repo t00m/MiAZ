@@ -58,6 +58,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **A document list row kept the destructive style after an inactive document scrolled past it.** `Gtk.SignalListItemFactory` builds its widget once in `setup` and hands the same widget to every item that later scrolls into that slot. `_on_factory_bind_subtitle` added `destructive-action` to the concept label for an inactive document and never took it off, so the next active document bound to that recycled row rendered as destructive. The markup was rewritten on each bind, which is why only the styling was wrong and the text always looked right.
+
+  An AST scan of every bind callback in `MiAZ/frontend/desktop/services` and `MiAZ/frontend/desktop/widgets` found this as the only case where a bind branch set widget state its sibling branch did not reset.
+
+- **One filter change rebuilt the filter tag banner three to six times.** `_update_filter_tags` is connected to both `workspace-view-filtered` and `workspace-view-updated`, and `_update_dropdowns_after_filter` calls it when it finishes. A single `workspace-view-updated` also runs `_on_filter_selected`, which refilters and emits `workspace-view-filtered` in turn, so the three paths compound. Each pass emptied the flowbox and built every chip again.
+
+  Measured in the running application: picking one country built 6 chips to show 2. Startup rebuilt the banner 4 times, and one config `used-updated` rebuilt it 6 times.
+
+  `_update_filter_tags` is now the scheduler and `_rebuild_filter_tags` does the work, coalesced onto an idle callback behind `_filter_tags_pending`, the way `_update_dropdowns_after_filter` already was. The cost never scaled with the number of documents, only with the number of active filters.
+
+- **`clear_filters` narrowed the dropdowns twice.** It called `_update_dropdowns_after_filter` inline while the other two call sites route through `_dropdown_update_pending` and `GLib.idle_add`. The comment at the call site in `set_query` already said why inline is wrong: it runs against a filter model that has not caught up, so the value just selected looks absent and the dropdown resets itself to `Any`. In `clear_filters` that outcome was harmless, everything was going to `Any` anyway, but skipping the pending flag meant a queued idle update still ran afterwards.
+
 - **The focus observability guard stole the focus it was guarding.** Three UI tests assert that focus lands somewhere after an action, and they fail under Xvfb without a window manager: the toplevel never becomes window-manager-active, so GTK 4.20 does not advance `window.get_focus()` for a plain `grab_focus()`. The guard added to skip them in that environment probed by calling `grab_focus()` on the document list, and it was called between the action and the assertion, so it moved the focus off the search entry a line before the test checked the search entry had it. Both tests passed on a real desktop before the guard and failed after it.
 
   The probe is now a session scoped fixture. pytest resolves a fixture before the test body runs, so it cannot land in the middle of one, and it runs once for the session rather than before every test that asks. `test_focus_can_land_in_the_document_list` asserts `can_focus` on the document list before consulting the guard, because that is the invariant a real regression would break and it reads the same on any display; guarding the whole test on the probe would have turned that regression into a skip.
