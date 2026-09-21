@@ -134,10 +134,19 @@ jobs:
       # No OCR tools and no metadata validators here: those belong to the unit
       # tests and the validation steps in the `test` job. This job needs the
       # toolkit, the plugin loader, WebKit and a display, and nothing else.
+      #
+      # gobject-introspection is listed even though nothing here is built
+      # against it, because it owns /usr/lib64/girepository-1.0/cairo-1.0
+      # .typelib and `import gi.repository.Adw` fails without that file. The
+      # `test` job never had to name it: gtk4-devel pulls it in, and this job
+      # does not install the -devel packages. Weak dependencies are off, so
+      # nothing else drags it in either. Dropping it fails every UI test at
+      # collection with "Typelib file for namespace 'cairo' not found".
       - name: Install system dependencies
         run: |
           dnf install -y --setopt=install_weak_deps=False \
             python3 python3-pip python3-gobject python3-cairo \
+            gobject-introspection \
             gtk4 libadwaita \
             libpeas libpeas-loader-python webkitgtk6.0 libsecret \
             poppler-utils \
