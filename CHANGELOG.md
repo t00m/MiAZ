@@ -58,6 +58,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Startup filled each sidebar filter dropdown twice.** The sidebar creates the `ws-dropdowns` dictionary and fills all five from the configuration on `repository-switch-finished`. `MiAZWorkspace._setup_logic` filled the same five widgets a few lines earlier in the same `switch_finish` call, so the first fill was overwritten before a frame was drawn. Measured with a counting probe: 12 `dropdown_populate` calls at startup, 5 from the workspace, 5 from the sidebar, 2 from plugins filling dropdowns of their own.
+
+  The workspace now only connects the selection signal. The sidebar fill runs on every repository switch, where the workspace one ran once ever, so the sidebar is the path that has to stay.
+
+- **Every vocabulary change repopulated a sidebar dropdown for nothing.** `_setup_logic` connected `used-updated` on each of the five configurations to `update_dropdown_filter`, which reads the configuration and rebuilds the dropdown. The same signal also starts the debounced update, and that ends in `_update_dropdowns_after_filter`, which rebuilds those models from the filter and lands last. The configuration fill was always thrown away.
+
+  The connection is gone, along with `used_signals`, the dictionary that held the handler ids and that nothing ever read. `update_dropdown_filter` stays: it works, it is public, and a plugin that changes a vocabulary behind MiAZ's back can call it to show the result without waiting for a full update.
+
+- **Closing the rename dialog left two concept timers armed.** Leaving the concept entry defers a popover popdown by 120 ms so a click landing on a row registers first, and typing in it defers a refilter by 150 ms. Both callbacks touch the popover and its store. Closing the dialog inside either window ran them against widgets that were already gone.
+
+  Both are cancelled on `unmap` now. Cancelling there alone was not enough: closing the dialog also takes the focus off the entry, and that leave arrives after the unmap, so the close armed a fresh timer on its way out. `_on_concept_focus_leave` returns early when the widget is not mapped, which `get_mapped()` reports correctly again if the dialog is reopened.
+
 - **A document list row kept the destructive style after an inactive document scrolled past it.** `Gtk.SignalListItemFactory` builds its widget once in `setup` and hands the same widget to every item that later scrolls into that slot. `_on_factory_bind_subtitle` added `destructive-action` to the concept label for an inactive document and never took it off, so the next active document bound to that recycled row rendered as destructive. The markup was rewritten on each bind, which is why only the styling was wrong and the text always looked right.
 
   An AST scan of every bind callback in `MiAZ/frontend/desktop/services` and `MiAZ/frontend/desktop/widgets` found this as the only case where a bind branch set widget state its sibling branch did not reset.

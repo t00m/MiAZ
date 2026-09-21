@@ -594,7 +594,12 @@ class MiAZRenameDialog(Gtk.Box):
         self._concept_popover.set_child(scroll)
 
         self._concept_throttle_id = 0
+        self._concept_popdown_id = 0
         self._concept_loading = False
+        # Both concept timers touch the popover and its store. Closing the
+        # dialog inside their window left them armed and they ran on widgets
+        # that were already gone.
+        self.connect('unmap', self._on_concept_unmap)
         self.entry_concept.connect('changed', self._on_concept_entry_changed)
         self.entry_concept.connect('changed', self._on_changed_entry)
 
@@ -985,12 +990,37 @@ class MiAZRenameDialog(Gtk.Box):
         return False
 
     def _on_concept_focus_leave(self, _ctrl):
+        # Closing the dialog takes the focus off the entry too, and that leave
+        # arrives after the unmap, so cancelling there is not enough on its
+        # own: without this the close arms a fresh timer on the way out.
+        # get_mapped() goes back to True if the dialog is opened again, so the
+        # guard needs no resetting.
+        if not self.get_mapped():
+            return
         # Defer so that clicks landing on a popover row register first.
-        GLib.timeout_add(120, self._popdown_concept_popover)
+        # Closing the dialog cancels it, see _on_concept_unmap.
+        if self._concept_popdown_id:
+            GLib.source_remove(self._concept_popdown_id)
+        self._concept_popdown_id = GLib.timeout_add(
+            120, self._popdown_concept_popover)
 
     def _popdown_concept_popover(self):
+        self._concept_popdown_id = 0
         self._concept_popover.popdown()
         return False
+
+    def _on_concept_unmap(self, *_args):
+        """Drop both concept timers when the dialog closes.
+
+        Leaving the entry arms a popdown 120 ms out, and typing arms a refilter
+        150 ms out. Closing the dialog inside either window ran the callback
+        against a popover and a store that no longer had a widget behind them.
+        """
+        for attribute in ('_concept_popdown_id', '_concept_throttle_id'):
+            source_id = getattr(self, attribute, 0)
+            if source_id:
+                GLib.source_remove(source_id)
+                setattr(self, attribute, 0)
 
     def has_valid_date(self) -> bool:
         """Whether the date field holds a date, without saying so anywhere.

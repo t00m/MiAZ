@@ -127,7 +127,6 @@ class MiAZWorkspace(Gtk.Box):
         self.log.debug("Initializing widget Workspace!!")
         self.app = app
         self.config = self.app.get_config_dict()
-        self.used_signals = {}
         self._repo_switch_signals = {}
         # Views a plugin registered, as name -> (icon_name, label). Needed
         # before the toolbar is built: rebuilding it walks this.
@@ -239,17 +238,20 @@ class MiAZWorkspace(Gtk.Box):
         self._sid_date_selected = dd_date.connect("notify::selected-item", self.update)
 
         ## Rest of dropdowns
+        # Only the selection signal. The sidebar owns 'ws-dropdowns' and fills
+        # all five from the configuration on 'repository-switch-finished',
+        # which switch_finish emits a few lines after it builds this page, so
+        # filling them here as well did the same work twice at startup.
+        #
+        # No 'used-updated' connection either. It ran dropdown_populate for
+        # every vocabulary change, and the debounced update that the same
+        # signal starts ends in _update_dropdowns_after_filter, which rebuilds
+        # these models from the filter and lands last. The config fill was
+        # always overwritten.
         for item_type in [Country, Group, SentBy, Purpose, SentTo]:
             i_type = item_type.__gtype_name__
-            i_title = _(item_type.__title__)
             dropdown = dropdowns[i_type]
-            actions.dropdown_populate(  config=self.config,
-                                        dropdown=dropdowns[i_type],
-                                        item_type=item_type,
-                                        any_value=True,
-                                        none_value=False)
             dropdown.connect("notify::selected-item", self._on_filter_selected)
-            self.used_signals[i_type] = self.config[i_type].connect('used-updated', self.update_dropdown_filter, item_type)
 
         # Connect Watcher service. 'repository-changed' carries the changed path
         # for a targeted, incremental update; 'repository-updated' is the full
@@ -444,6 +446,12 @@ class MiAZWorkspace(Gtk.Box):
         self.selected_items = []
 
     def update_dropdown_filter(self, config, changed, item_type):
+        """Fill one sidebar dropdown from the configuration.
+
+        Nothing in core connects this any more, see _setup_logic. Kept because
+        it works and a plugin that changes a vocabulary behind MiAZ's back can
+        use it to show the result without waiting for a full update.
+        """
         # 'changed' is the key set the config signal carries. Repopulating reads
         # the whole file, so it is not needed here.
         actions = self.app.get_service('actions')
