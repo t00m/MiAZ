@@ -131,9 +131,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v5
 
-      # No OCR tools and no metadata validators here: those belong to the unit
-      # tests and the validation steps in the `test` job. This job needs the
-      # toolkit, the plugin loader, WebKit and a display, and nothing else.
+      # No metadata validators here: those belong to the `test` job. The OCR
+      # tools do belong here, even though they look like unit-test tooling:
+      # MiAZOCR refuses to load without ocrmypdf, and three UI tests then
+      # skip themselves rather than fail. Leaving them out cost real coverage
+      # silently, which is the same trap the `test` job's list warns about.
       #
       # gobject-introspection is listed even though nothing here is built
       # against it, because it owns /usr/lib64/girepository-1.0/cairo-1.0
@@ -149,7 +151,7 @@ jobs:
             gobject-introspection \
             gtk4 libadwaita \
             libpeas libpeas-loader-python webkitgtk6.0 libsecret \
-            poppler-utils \
+            poppler-utils tesseract tesseract-langpack-eng ocrmypdf \
             xorg-x11-server-Xvfb git
 
       - name: Install Python tooling
