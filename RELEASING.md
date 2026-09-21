@@ -242,7 +242,7 @@ What runs depends on the event:
 
 | Event | UI tests | About |
 |---|---|---|
-| push to a branch | `test_ui_startup_work`, `test_ui_plugins`, `test_ui_repository` | 4 min |
+| push to a branch | `test_ui_startup_work`, `test_ui_plugins`, `test_ui_repository` | 1.5 min |
 | pull request | all of them | 26 min |
 | tag, manual run | all of them | 26 min |
 
@@ -252,6 +252,24 @@ startup work, the plugins load, a repository opens and switches. A widget
 regression will reach you on the pull request rather than on the push, which
 is the trade the split makes. Releasing from a tag gets the full suite, so
 nothing ships on the subset alone.
+
+**Check a change to the UI job in a container, not on the runner.** The job
+runs in `fedora:43`, so the same image reproduces it here. It ran the full
+suite in 25:57 against the runner's 25:51, which makes it a fair stand-in and
+far cheaper than a CI round trip:
+
+```bash
+podman run --rm -v "$PWD":/src:ro,z fedora:43 bash -c '
+  dnf install -y --setopt=install_weak_deps=False <the job list>
+  cp -a /src /work && cd /work
+  python3 -m venv --system-site-packages .venv
+  .venv/bin/pip install -q pytest
+  PYTEST=.venv/bin/python xvfb-run -a scripts/checks/run_ui_tests.sh -q'
+```
+
+Trimming that package list is how the job broke once already: dropping
+`gtk4-devel` also dropped `gobject-introspection`, which owns the cairo
+typelib, and every UI test failed to import `Adw`.
 
 **`meson test` runs the unit suite and the three file validations**, in about
 fifteen seconds. The UI tests are deliberately not in it: they need a display

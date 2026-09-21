@@ -164,8 +164,9 @@ jobs:
         id: scope
         # A push gets the smoke subset: the application starts and does its
         # startup work, the plugins load, a repository opens and switches.
-        # That is about four minutes and catches the failures that make the
-        # application unusable rather than merely wrong in one widget.
+        # That is about ninety seconds of tests, measured in this image, and
+        # it catches the failures that make the application unusable rather
+        # than merely wrong in one widget.
         #
         # Everything else gets all 373. That is a pull request, a tag (a
         # release), and a manual run, which are the three moments where

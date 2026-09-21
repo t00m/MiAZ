@@ -52,7 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **CI runs three UI test files on a push and all of them on a pull request or a tag.** The UI tests share the job with lint, the unit suite and the metadata validators, and they are about twenty-six minutes of a twenty-eight minute job: 373 tests driving the real application, against fifty seconds for 1483 unit tests. Every push waited for an answer that lint and the unit suite already had after two minutes.
 
-  They are now their own job, so the fast answers no longer queue behind them, and what runs depends on the event. A push to a branch runs `test_ui_startup_work`, `test_ui_plugins` and `test_ui_repository`, about four minutes: the application starts and finishes its startup work, the plugins load, a repository opens and switches. That is the set that fails when the application is unusable rather than merely wrong in one widget. A pull request, a tag and a manual run get all 373.
+  They are now their own job, so the fast answers no longer queue behind them, and what runs depends on the event. A push to a branch runs `test_ui_startup_work`, `test_ui_plugins` and `test_ui_repository`, about ninety seconds: the application starts and finishes its startup work, the plugins load, a repository opens and switches. That is the set that fails when the application is unusable rather than merely wrong in one widget. A pull request, a tag and a manual run get all 373.
 
   The workflow now also triggers on `v[0-9]+.[0-9]+*` tags, which it did not before, so a release is checked against the full suite rather than against whatever the last push ran.
 
