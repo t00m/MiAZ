@@ -24,7 +24,7 @@ PLUGINS = [
     'MiAZAIAssistant', 'MiAZAutoScan', 'MiAZColumnVisibility',
     'MiAZExport2CSV', 'MiAZExport2Dir', 'MiAZExport2Text',
     'MiAZExport2Zip', 'MiAZFullscreen', 'MiAZImportFromScan',
-    'MiAZImportFromZip', 'MiAZInsights', 'MiAZOCR',
+    'MiAZImportFromZip', 'MiAZInsights', 'MiAZOCR', 'MiAZOikos',
     'MiAZPeriodicity', 'MiAZProjectMgt', 'MiAZWSFont',
 ]
 
@@ -182,7 +182,8 @@ def test_a_plugin_disconnects_everything_it_connected(miaz, plugin_name):
 # the test above would pass for them even if it were broken. These make it
 # fail if the counting itself stops working.
 CONNECTORS = ['MiAZPeriodicity', 'MiAZProjectMgt',
-              'MiAZColumnVisibility', 'MiAZFullscreen', 'MiAZInsights']
+              'MiAZColumnVisibility', 'MiAZFullscreen', 'MiAZInsights',
+              'MiAZOikos']
 
 
 @pytest.mark.parametrize('plugin_name', CONNECTORS)

@@ -892,6 +892,7 @@ PYTHONPATH=. python -m MiAZ.miaz
 | MiAZImportFromZip | Documents / Import | Import documents from a ZIP file |
 | MiAZInsights | Repository / Statistics | Insights into the repository (totals, activity heatmap, rank movers, country map) published to the Browser page |
 | MiAZOCR | Documents / Annotation | Extract text from PDFs with OCR and save it as a note, from the menu or as `miaz ocr`; vetoes activation if `ocrmypdf` is missing |
+| MiAZOikos | Documents / Annotation | Record documents as income or expense (amount + ISO currency, per document in `data/MiAZOikos.json`) and chart the totals of the selection per currency in a workspace view (`add_workspace_view`, Cairo chart); `oikos/money.py`, `ledger.py`, `aggregate.py` have no GTK |
 | MiAZPeriodicity | Organise / Tags | Set document periodicity |
 | MiAZProjectMgt | Organise / Projects | Project management |
 | MiAZWSFont | Interface / Fonts | Modify workspace font name and size |

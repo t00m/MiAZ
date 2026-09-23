@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <!-- MiAZOikos: money in (blue) and money out (orange) of a household. -->
+  <rect x="8" y="12" width="112" height="104" rx="14" fill="#f6f5f4" stroke="#9a9996" stroke-width="4"/>
+  <rect x="26" y="34" width="60" height="16" rx="4" fill="#2a78d6"/>
+  <rect x="26" y="56" width="40" height="16" rx="4" fill="#eb6834"/>
+  <rect x="26" y="84" width="76" height="16" rx="4" fill="#2a78d6"/>
+  <rect x="22" y="28" width="4" height="76" fill="#5e5c64"/>
+</svg>

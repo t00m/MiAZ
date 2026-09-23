@@ -1,0 +1,15 @@
+[Plugin]
+Module=miazoikos
+Name=MiAZOikos
+Loader=python
+Description=Record documents as income or expense and chart their totals
+Authors=Tomás Vírseda <tomasvirseda@gmail.com>
+Copyright=Copyright © 2026 Tomás Vírseda
+Website=http://github.com/t00m/MiAZ
+Help=https://github.com/t00m/MiAZ/blob/main/README.md
+Category=Documents
+Subcategory=Annotation
+MenuEntry-set=Set income or expense…
+MenuEntry-clear=Clear income or expense
+MenuEntry-show=Show income and expenses
+MenuEntry-currencies=Manage currencies

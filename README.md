@@ -251,6 +251,7 @@ and a sidebar switch to show only those. They were a plugin until 0.3.
 |---|---|
 | MiAZProjectMgt | Group related documents under a project, and filter the workspace by it. The assignment lives in `projects.json`, never in the filename |
 | MiAZPeriodicity | Record how often a document is expected: monthly, yearly, on demand |
+| MiAZOikos | Record a document as an income or an expense, with its amount and currency, and chart the totals of the selected documents per currency |
 
 **Reading the document for you**
 

@@ -2244,9 +2244,8 @@ msgstr "Ficha de datos"
 #: MiAZ/frontend/desktop/widgets/gridview.py:122
 #: MiAZ/frontend/desktop/widgets/timelineview.py:234
 #: data/resources/plugins/MiAZRelated/relateddocs.py:130
-#, fuzzy
 msgid "No date"
-msgstr "Sin datos"
+msgstr "Sin fecha"
 
 #: MiAZ/frontend/desktop/widgets/conversationview.py:91
 #, python-brace-format
@@ -2280,11 +2279,11 @@ msgid "No concept"
 msgstr "Conceptos más frecuentes"
 
 #: MiAZ/frontend/desktop/widgets/conversationview.py:341
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "{count} document"
 msgid_plural "{count} documents"
-msgstr[0] "{n} documentos"
-msgstr[1] "{n} documentos"
+msgstr[0] "{count} documento"
+msgstr[1] "{count} documentos"
 
 #: MiAZ/frontend/desktop/widgets/conversationview.py:364
 #, python-brace-format
@@ -6079,6 +6078,373 @@ msgstr "Elegir el tipo de letra del área de trabajo"
 #: data/resources/plugins/MiAZWSFont/wsfont.py:143
 msgid "Workspace font size"
 msgstr "Tamaño de letra del área de trabajo"
+
+#: data/resources/plugins/MiAZOikos/miazoikos.py:24
+msgid "Record documents as income or expense and chart their totals"
+msgstr ""
+"Registrar documentos como ingreso o gasto y ver sus totales en un gráfico"
+
+#: data/resources/plugins/MiAZOikos/miazoikos.py:33
+#: data/resources/plugins/MiAZOikos/oikos/view.py:87
+#: data/resources/plugins/MiAZOikos/oikos/view.py:119
+msgid "Set income or expense…"
+msgstr "Establecer ingreso o gasto…"
+
+#: data/resources/plugins/MiAZOikos/miazoikos.py:34
+msgid "Clear income or expense"
+msgstr "Quitar ingreso o gasto"
+
+#: data/resources/plugins/MiAZOikos/miazoikos.py:35
+msgid "Show income and expenses"
+msgstr "Mostrar ingresos y gastos"
+
+#: data/resources/plugins/MiAZOikos/miazoikos.py:36
+msgid "Manage currencies"
+msgstr "Gestionar monedas"
+
+#: data/resources/plugins/MiAZOikos/miazoikos.py:129
+#: data/resources/plugins/MiAZOikos/oikos/vocabulary.py:21
+msgid "Currencies"
+msgstr "Monedas"
+
+#: data/resources/plugins/MiAZOikos/miazoikos.py:134
+msgid "Income or expense"
+msgstr "Ingreso o gasto"
+
+#: data/resources/plugins/MiAZOikos/miazoikos.py:173
+#, python-brace-format
+msgid "Income or expense of {count} document"
+msgid_plural "Income or expense of {count} documents"
+msgstr[0] "Ingreso o gasto de {count} documento"
+msgstr[1] "Ingreso o gasto de {count} documentos"
+
+#: data/resources/plugins/MiAZOikos/miazoikos.py:191
+#, python-brace-format
+msgid "Income or expense saved for {count} document"
+msgid_plural "Income or expense saved for {count} documents"
+msgstr[0] "Ingreso o gasto guardado para {count} documento"
+msgstr[1] "Ingreso o gasto guardado para {count} documentos"
+
+#: data/resources/plugins/MiAZOikos/miazoikos.py:202
+msgid "None of the selected documents has an income or expense"
+msgstr "Ninguno de los documentos seleccionados tiene un ingreso o gasto"
+
+#: data/resources/plugins/MiAZOikos/miazoikos.py:205
+#, python-brace-format
+msgid "The amount recorded for {count} document will be forgotten."
+msgid_plural "The amounts recorded for {count} documents will be forgotten."
+msgstr[0] "Se olvidará el importe registrado para {count} documento."
+msgstr[1] "Se olvidarán los importes registrados para {count} documentos."
+
+#: data/resources/plugins/MiAZOikos/miazoikos.py:209
+msgid "Clear income or expense?"
+msgstr "¿Quitar ingreso o gasto?"
+
+#: data/resources/plugins/MiAZOikos/miazoikos.py:210
+msgid "Clear"
+msgstr "Quitar"
+
+#: data/resources/plugins/MiAZOikos/miazoikos.py:217
+#, python-brace-format
+msgid "Cleared {count} document"
+msgid_plural "Cleared {count} documents"
+msgstr[0] "Se ha quitado {count} documento"
+msgstr[1] "Se han quitado {count} documentos"
+
+#: data/resources/plugins/MiAZOikos/miazoikos.py:238
+#: data/resources/plugins/MiAZOikos/miazoikos.py:261
+msgid "Income and expenses"
+msgstr "Ingresos y gastos"
+
+#: data/resources/plugins/MiAZOikos/miazoikos.py:262
+msgid "Enable more currencies in Metadata > Currencies"
+msgstr "Habilite más monedas en Metadatos > Monedas"
+
+#: data/resources/plugins/MiAZOikos/miazoikos.py:265
+msgid "Default currency"
+msgstr "Moneda predeterminada"
+
+#: data/resources/plugins/MiAZOikos/miazoikos.py:266
+msgid "Chosen for documents that have none yet"
+msgstr "La que se elige para los documentos que aún no tienen ninguna"
+
+#: data/resources/plugins/MiAZOikos/oikos/chart.py:153
+#: data/resources/plugins/MiAZOikos/oikos/editor.py:75
+#: data/resources/plugins/MiAZOikos/oikos/view.py:163
+msgid "Income"
+msgstr "Ingreso"
+
+#: data/resources/plugins/MiAZOikos/oikos/chart.py:153
+#: data/resources/plugins/MiAZOikos/oikos/editor.py:75
+#: data/resources/plugins/MiAZOikos/oikos/view.py:164
+msgid "Expense"
+msgstr "Gasto"
+
+#: data/resources/plugins/MiAZOikos/oikos/chart.py:222
+#, python-brace-format
+msgid "Income: {amount}"
+msgstr "Ingreso: {amount}"
+
+#: data/resources/plugins/MiAZOikos/oikos/chart.py:223
+#, python-brace-format
+msgid "Expense: {amount}"
+msgstr "Gasto: {amount}"
+
+#: data/resources/plugins/MiAZOikos/oikos/chart.py:224
+#, python-brace-format
+msgid "Net: {amount}"
+msgstr "Neto: {amount}"
+
+#: data/resources/plugins/MiAZOikos/oikos/editor.py:77
+msgid "Neither"
+msgstr "Ninguno"
+
+#: data/resources/plugins/MiAZOikos/oikos/editor.py:132
+#: data/resources/plugins/MiAZOikos/oikos/vocabulary.py:20
+msgid "Currency"
+msgstr "Moneda"
+
+#: data/resources/plugins/MiAZOikos/oikos/editor.py:147
+msgid "Amount"
+msgstr "Importe"
+
+#: data/resources/plugins/MiAZOikos/oikos/editor.py:156
+msgid "Same amount for all documents"
+msgstr "Mismo importe para todos los documentos"
+
+#: data/resources/plugins/MiAZOikos/oikos/editor.py:308
+msgid "Whether this document is money coming in or going out, and how much"
+msgstr "Si este documento es dinero que entra o que sale, y cuánto"
+
+#: data/resources/plugins/MiAZOikos/oikos/money.py:28
+msgid "Argentine peso"
+msgstr "Peso argentino"
+
+#: data/resources/plugins/MiAZOikos/oikos/money.py:29
+msgid "Australian dollar"
+msgstr "Dólar australiano"
+
+#: data/resources/plugins/MiAZOikos/oikos/money.py:30
+msgid "Bulgarian lev"
+msgstr "Lev búlgaro"
+
+#: data/resources/plugins/MiAZOikos/oikos/money.py:31
+msgid "Brazilian real"
+msgstr "Real brasileño"
+
+#: data/resources/plugins/MiAZOikos/oikos/money.py:32
+msgid "Canadian dollar"
+msgstr "Dólar canadiense"
+
+#: data/resources/plugins/MiAZOikos/oikos/money.py:33
+msgid "Swiss franc"
+msgstr "Franco suizo"
+
+#: data/resources/plugins/MiAZOikos/oikos/money.py:34
+msgid "Chilean peso"
+msgstr "Peso chileno"
+
+#: data/resources/plugins/MiAZOikos/oikos/money.py:35
+msgid "Chinese yuan"
+msgstr "Yuan chino"
+
+#: data/resources/plugins/MiAZOikos/oikos/money.py:36
+msgid "Colombian peso"
+msgstr "Peso colombiano"
+
+#: data/resources/plugins/MiAZOikos/oikos/money.py:37
+msgid "Czech koruna"
+msgstr "Corona checa"
+
+#: data/resources/plugins/MiAZOikos/oikos/money.py:38
+msgid "Danish krone"
+msgstr "Corona danesa"
+
+#: data/resources/plugins/MiAZOikos/oikos/money.py:39
+msgid "Euro"
+msgstr "Euro"
+
+#: data/resources/plugins/MiAZOikos/oikos/money.py:40
+msgid "Pound sterling"
+msgstr "Libra esterlina"
+
+#: data/resources/plugins/MiAZOikos/oikos/money.py:41
+msgid "Hong Kong dollar"
+msgstr "Dólar de Hong Kong"
+
+#: data/resources/plugins/MiAZOikos/oikos/money.py:42
+msgid "Hungarian forint"
+msgstr "Forinto húngaro"
+
+#: data/resources/plugins/MiAZOikos/oikos/money.py:43
+msgid "Indonesian rupiah"
+msgstr "Rupia indonesia"
+
+#: data/resources/plugins/MiAZOikos/oikos/money.py:44
+msgid "Israeli new shekel"
+msgstr "Nuevo séquel israelí"
+
+#: data/resources/plugins/MiAZOikos/oikos/money.py:45
+msgid "Indian rupee"
+msgstr "Rupia india"
+
+#: data/resources/plugins/MiAZOikos/oikos/money.py:46
+msgid "Icelandic króna"
+msgstr "Corona islandesa"
+
+#: data/resources/plugins/MiAZOikos/oikos/money.py:47
+msgid "Japanese yen"
+msgstr "Yen japonés"
+
+#: data/resources/plugins/MiAZOikos/oikos/money.py:48
+msgid "South Korean won"
+msgstr "Won surcoreano"
+
+#: data/resources/plugins/MiAZOikos/oikos/money.py:49
+msgid "Moroccan dirham"
+msgstr "Dírham marroquí"
+
+#: data/resources/plugins/MiAZOikos/oikos/money.py:50
+msgid "Mexican peso"
+msgstr "Peso mexicano"
+
+#: data/resources/plugins/MiAZOikos/oikos/money.py:51
+msgid "Norwegian krone"
+msgstr "Corona noruega"
+
+#: data/resources/plugins/MiAZOikos/oikos/money.py:52
+msgid "New Zealand dollar"
+msgstr "Dólar neozelandés"
+
+#: data/resources/plugins/MiAZOikos/oikos/money.py:53
+msgid "Peruvian sol"
+msgstr "Sol peruano"
+
+#: data/resources/plugins/MiAZOikos/oikos/money.py:54
+msgid "Philippine peso"
+msgstr "Peso filipino"
+
+#: data/resources/plugins/MiAZOikos/oikos/money.py:55
+msgid "Polish złoty"
+msgstr "Esloti polaco"
+
+#: data/resources/plugins/MiAZOikos/oikos/money.py:56
+msgid "Romanian leu"
+msgstr "Leu rumano"
+
+#: data/resources/plugins/MiAZOikos/oikos/money.py:57
+msgid "Swedish krona"
+msgstr "Corona sueca"
+
+#: data/resources/plugins/MiAZOikos/oikos/money.py:58
+msgid "Singapore dollar"
+msgstr "Dólar de Singapur"
+
+#: data/resources/plugins/MiAZOikos/oikos/money.py:59
+msgid "Thai baht"
+msgstr "Baht tailandés"
+
+#: data/resources/plugins/MiAZOikos/oikos/money.py:60
+msgid "Turkish lira"
+msgstr "Lira turca"
+
+#: data/resources/plugins/MiAZOikos/oikos/money.py:61
+msgid "Ukrainian hryvnia"
+msgstr "Grivna ucraniana"
+
+#: data/resources/plugins/MiAZOikos/oikos/money.py:62
+msgid "US dollar"
+msgstr "Dólar estadounidense"
+
+#: data/resources/plugins/MiAZOikos/oikos/money.py:63
+msgid "Uruguayan peso"
+msgstr "Peso uruguayo"
+
+#: data/resources/plugins/MiAZOikos/oikos/money.py:64
+msgid "South African rand"
+msgstr "Rand sudafricano"
+
+#: data/resources/plugins/MiAZOikos/oikos/view.py:104
+msgid "Group by"
+msgstr "Agrupar por"
+
+#: data/resources/plugins/MiAZOikos/oikos/view.py:137
+msgid "Set for these…"
+msgstr "Establecer para estos…"
+
+#: data/resources/plugins/MiAZOikos/oikos/view.py:165
+msgid "Net"
+msgstr "Neto"
+
+#: data/resources/plugins/MiAZOikos/oikos/view.py:238
+msgid "No documents selected"
+msgstr "No hay documentos seleccionados"
+
+#: data/resources/plugins/MiAZOikos/oikos/view.py:239
+msgid ""
+"Select documents in Details, Grid or Timeline to see their income and "
+"expenses here."
+msgstr ""
+"Seleccione documentos en Detalles, Cuadrícula o Cronología para ver aquí sus "
+"ingresos y gastos."
+
+#: data/resources/plugins/MiAZOikos/oikos/view.py:243
+msgid "No income or expenses yet"
+msgstr "Todavía no hay ingresos ni gastos"
+
+#: data/resources/plugins/MiAZOikos/oikos/view.py:244
+#, python-brace-format
+msgid "The selected document has no income or expense recorded."
+msgid_plural ""
+"None of the {count} selected documents has an income or expense recorded."
+msgstr[0] ""
+"El documento seleccionado no tiene ningún ingreso o gasto registrado."
+msgstr[1] ""
+"Ninguno de los {count} documentos seleccionados tiene un ingreso o gasto "
+"registrado."
+
+#: data/resources/plugins/MiAZOikos/oikos/view.py:251
+#, python-brace-format
+msgid "{counted} of {count} selected document counted"
+msgid_plural "{counted} of {count} selected documents counted"
+msgstr[0] "{counted} de {count} documento seleccionado contabilizado"
+msgstr[1] "{counted} de {count} documentos seleccionados contabilizados"
+
+#: data/resources/plugins/MiAZOikos/oikos/view.py:260
+#, python-brace-format
+msgid "{count} selected document has no income or expense and is not counted."
+msgid_plural ""
+"{count} selected documents have no income or expense and are not counted."
+msgstr[0] ""
+"{count} documento seleccionado no tiene ingreso ni gasto y no se contabiliza."
+msgstr[1] ""
+"{count} documentos seleccionados no tienen ingreso ni gasto y no se "
+"contabilizan."
+
+#: data/resources/plugins/MiAZOikos/oikos/vocabulary.py:66
+msgid "Code"
+msgstr "Código"
+
+#: data/resources/plugins/MiAZOikos/oikos/editor.py:38
+msgid ""
+"These documents differ in type and in currency. Choose both for all of them; "
+"amounts are not converted."
+msgstr ""
+"Estos documentos difieren en tipo y en moneda. Elija ambos para todos ellos; "
+"los importes no se convierten."
+
+#: data/resources/plugins/MiAZOikos/oikos/editor.py:41
+msgid "These documents are not all the same type. Choose one for all of them."
+msgstr ""
+"No todos estos documentos son del mismo tipo. Elija uno para todos ellos."
+
+#: data/resources/plugins/MiAZOikos/oikos/editor.py:44
+msgid ""
+"These documents are not all in the same currency. Choose one for all of them;"
+" amounts are not converted."
+msgstr ""
+"No todos estos documentos están en la misma moneda. Elija una para todos "
+"ellos; los importes no se convierten."
 
 #~ msgid "year"
 #~ msgstr "año"
