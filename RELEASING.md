@@ -151,7 +151,10 @@ scripts/packaging/build_all.sh
 
 RPM, DEB and AppImage, all from one export of one commit so they cannot
 disagree about their own version. They land in `dist/`, with a build log per
-format in `dist/logs/`. A format whose toolchain is not installed is skipped
+format in `dist/logs/`. The AppImage brings its `.zsync` along, because the
+image carries `gh-releases-zsync` update information and the updater looks for
+that file on the release. It was left behind in the repository root until
+2026-09-30, so 0.4.0 is the first release where the build collects it. A format whose toolchain is not installed is skipped
 rather than failed, and so is the Flatpak: its sandbox cannot reach `ocrmypdf`
 or `scanimage`, so no release ships one. `MIAZ_ALLOW_FLATPAK=1` builds it
 anyway.
@@ -194,11 +197,14 @@ gh release create v0.3.0 \
     dist/miaz-0.3.0-1.fc44.noarch.rpm \
     dist/miaz_0.3.0-1_all.deb \
     dist/MiAZ-0.3.0-x86_64.AppImage \
+    dist/MiAZ-0.3.0-x86_64.AppImage.zsync \
     dist/INSTALL.txt
 ```
 
 `INSTALL.txt` is attached because it names the install command per format and
-is written by the build, so it always matches the files beside it. The src.rpm
+is written by the build, so it always matches the files beside it. The `.zsync`
+is attached because the AppImage advertises `gh-releases-zsync` update
+information: without it beside the image, an updater finds nothing. The src.rpm
 stays out unless somebody asks for it: it rebuilds the same noarch package.
 
 The rpm is not signed. Say so on the release page rather than letting `dnf`
