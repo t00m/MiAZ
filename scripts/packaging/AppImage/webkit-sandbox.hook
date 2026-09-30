@@ -1,0 +1,22 @@
+#!/bin/sh
+# Sourced by the AppImage's AppRun.sh before MiAZ starts.
+#
+# WebKitGTK runs its web process inside a bubblewrap sandbox, which needs
+# unprivileged user namespaces. Where the host forbids them (Ubuntu 24.04 and
+# later restrict them through AppArmor for binaries without a profile, and
+# most containers do too) WebKit does not fall back: it aborts the whole
+# process the first time a web view is created.
+#
+# So try the bundled bwrap once. If it cannot create a namespace, run WebKit
+# without its sandbox rather than crash, and say so on stderr. MiAZ's web
+# views show local content (its own pages, notes, plugin reports served from
+# 127.0.0.1); the generic browser page is the one that may load remote pages.
+# A value the user exported themselves is left alone.
+
+if [ -z "${WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS+set}" ] \
+  && [ -x "$APPDIR"/bin/bwrap ] \
+  && ! "$APPDIR"/bin/bwrap --ro-bind / / --unshare-user --unshare-pid true >/dev/null 2>&1; then
+	export WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS=1
+	>&2 echo "MiAZ: this system does not allow unprivileged user namespaces;"
+	>&2 echo "MiAZ: WebKit's web process sandbox is disabled for this session."
+fi

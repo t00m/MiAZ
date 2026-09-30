@@ -50,6 +50,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **The AppImage is self-contained.** It used to carry only MiAZ's own code and borrow Python, PyGObject, GTK, libadwaita, libpeas and WebKitGTK from the host, which only worked where the host already had all of them at recent enough versions. The AppImageHub catalog tests on Ubuntu 22.04, and there 0.3.1 crashed on start with `ValueError: Namespace Peas not available`, because 22.04 has no libpeas 2 (nor libadwaita 1.7, nor WebKitGTK 6.0).
+
+  It now carries its whole stack, taken from Ubuntu 26.04, with the glibc and dynamic linker it was built against, so it depends on nothing but the host kernel, FUSE and a display. `scripts/packaging/AppImage/build_appimage.sh` builds it inside a throwaway `ubuntu:26.04` container (docker or podman) with pkgforge's `quick-sharun`, and packs it as SquashFS with the standard type 2 runtime, which is the only kind AppImageHub accepts. Every download the build makes is pinned by checksum. It is about 180 MB. `test_appimage.sh` checks a build on a clean Ubuntu 22.04 the way the catalog does, and the catalog's own test script passes against it.
+
+  The AppImage now carries update information (`gh-releases-zsync`), so the `.zsync` file the build writes next to it has to be uploaded to the release too.
+
 - **CI runs three UI test files on a push and all of them on a pull request or a tag.** The UI tests share the job with lint, the unit suite and the metadata validators, and they are about twenty-six minutes of a twenty-eight minute job: 373 tests driving the real application, against fifty seconds for 1483 unit tests. Every push waited for an answer that lint and the unit suite already had after two minutes.
 
   They are now their own job, so the fast answers no longer queue behind them, and what runs depends on the event. A push to a branch runs `test_ui_startup_work`, `test_ui_plugins` and `test_ui_repository`, about ninety seconds: the application starts and finishes its startup work, the plugins load, a repository opens and switches. That is the set that fails when the application is unusable rather than merely wrong in one widget. A pull request, a tag and a manual run get all 373.

@@ -531,7 +531,7 @@ Both rename paths use it. The single rename (`widgets/rename.py`) prefills the d
 
 `extract(path) -> ExtractResult(text, method)` gets a document's text: `pdftotext` for a PDF with a text layer, falling back to `pdftoppm` + `tesseract` OCR when there is none; `tesseract` directly for an image; the file's own bytes for plain text/Markdown. `ExtractResult.is_useful` gates on a minimum length and at least one letter, the same bar `MiAZAIAssistant` used before this module existed (it now delegates to it — `miazai/extractor.py` calls `MiAZ.backend.extract.extract()` for every format except `.docx`, which stays plugin-only since `python-docx` is not a core dependency). `match_vocab(text, used)` returns the key of a repository's used vocabulary (`MiAZConfig.load_used()`, key → description) whose description occurs in `text`, longest description first so a specific match does not lose to a shorter coincidental one.
 
-`pdftotext`/`pdftoppm` (poppler-utils) and `tesseract` are **hard package dependencies** (`miaz.spec` `Requires`, `debian/control` `Depends`), not optional like `MiAZOCR`'s `ocrmypdf`. `missing_tools()` still checks for them at call time, because a dev install or the AppImage (which has no dependency resolution of its own, see `scripts/packaging/AppImage/build_appimage.sh`) can be missing them regardless of what the packages declare; `widgets/rename.py::_notify_missing_tools` shows the same install-command dialog shape as `MiAZOCR`'s.
+`pdftotext`/`pdftoppm` (poppler-utils) and `tesseract` are **hard package dependencies** (`miaz.spec` `Requires`, `debian/control` `Depends`), not optional like `MiAZOCR`'s `ocrmypdf`. `missing_tools()` still checks for them at call time, because a dev install can be missing them regardless of what the packages declare (the AppImage carries its own copies, see below); `widgets/rename.py::_notify_missing_tools` shows the same install-command dialog shape as `MiAZOCR`'s.
 
 `widgets/rename.py` exposes `detect_country()`, `detect_sentby()`, `detect_sentto()` (one `extract()` + `match_vocab()` pass each, backgrounded through `run_in_background`) and `detect_all()` (one extraction, every field applied together). Group, Purpose and Concept are deliberately not guessed: they are open vocabulary, where a wrong guess is harder to notice than a missing one, unlike Country/SentBy/SentTo which only ever resolve to something already in the repository's used list. `services/actions.py::build_detect_menu()` builds the five `rename-detect-*` actions as one shared `Gio.Menu`, built once and cached the same way `MiAZMassRename.build_menu()` is: each callback resolves the *current* rename widget (`app.get_widget('rename-widget')`) rather than closing over one, since the menu outlives any single dialog. The `Gtk.MenuButton` ("Detect") sits in the rename dialog's action bar next to Suggest/Preview.
 
@@ -875,6 +875,17 @@ ninja -C _build install
 # Run without installing
 PYTHONPATH=. python -m MiAZ.miaz
 ```
+
+## AppImage
+
+`scripts/packaging/AppImage/build_appimage.sh` builds a **self-contained** AppImage: it carries Python, PyGObject, GTK 4, libadwaita, libpeas 2, WebKitGTK 6.0, libsecret, poppler-utils and tesseract, plus the glibc and dynamic linker they were built with, and takes nothing from the host but the kernel, FUSE and a display. It runs on Ubuntu 22.04, which is what the AppImageHub catalog tests on; the earlier AppImage borrowed the host's Python and GTK and failed there (`Namespace Peas not available`).
+
+- The stack comes from **Ubuntu 26.04**, so `build_appimage.sh` runs `build_in_container.sh` inside a throwaway `ubuntu:26.04` container (docker or podman). The host needs only a container engine.
+- Deployment is pkgforge's `quick-sharun` (sharun): every bundled binary, WebKit's helper processes included, runs through the bundled linker. The script is pinned by commit and checksum, as are `appimagetool` and the type 2 runtime.
+- The image is **SquashFS** with the standard type 2 runtime, because AppImageHub only mounts that. `quick-sharun`'s own packer makes DwarFS and is not used.
+- `quick-sharun` assumes the Arch Linux layout. `build_in_container.sh` bridges the Debian differences it trips over: the stdlib staged into the arch lib dir, `dist-packages` kept in Debian's place, glycin's loaders passed from `libexec`, and ensurepip pointed at a pip wheel it carries.
+- Hooks in `AppDir/bin/*.hook` run before MiAZ starts. `ca-certs.hook` points the bundled OpenSSL at the host's CA bundle (without it Python trusts no certificate on non-Debian hosts). `webkit-sandbox.hook` is opt-in (`MIAZ_WEBKIT_SANDBOX_FALLBACK=1` at build time): where unprivileged user namespaces are blocked (Ubuntu 24.04+ AppArmor), WebKit's bubblewrap sandbox cannot start and WebKit aborts the process when the first web view loads; the hook runs WebKit without its sandbox there instead.
+- `test_appimage.sh` smoke-tests an image on a clean `ubuntu:22.04`: `--help`, then a window on Xvfb.
 
 ## Existing plugins (17 with `.plugin` metadata)
 

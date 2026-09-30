@@ -195,8 +195,8 @@ fi
 
 # ── AppImage ─────────────────────────────────────────────────────────────────
 log "--- Building AppImage package ---"
-if ! have meson ninja patchelf wget; then
-    log "meson, ninja, patchelf or wget not found, skipping AppImage build."
+if ! have docker && ! have podman; then
+    log "neither docker nor podman found, skipping AppImage build (it builds in a container)."
 elif "$SCRIPT_DIR/AppImage/build_appimage.sh" 2>&1 | tee "$LOG_DIR/appimage.log"; then
     FOUND=0
     while IFS= read -r pkg; do

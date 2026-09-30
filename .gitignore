@@ -25,6 +25,8 @@ build/
 dist/
 sdist/
 *.AppImage
+*.AppImage.zsync
+MiAZ-*-test.png
 linuxdeploy-*.AppDir/
 .flatpak-builder/
 

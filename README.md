@@ -187,6 +187,8 @@ sudo dnf install ./miaz-*.rpm
 
 ### AppImage
 
+The AppImage is self-contained: Python, GTK 4, libadwaita, WebKitGTK, poppler and tesseract travel inside it, so there is nothing to install first. It is tested on Ubuntu 22.04 (x86_64). The OCR plugin still needs `ocrmypdf` from your distribution.
+
 Download the `.AppImage` package from the [latest release](https://github.com/t00m/MiAZ/releases) and install:
 
 - From file browser:
