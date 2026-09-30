@@ -26,9 +26,13 @@ Two things make this work, and both were learned the hard way:
    snapshots to nothing, and a kept one hands back the first frame it ever saw,
    which silently produces identical screenshots.
 """
-import os, sys
+import os
+import sys
+
 import gi
-gi.require_version('Gtk', '4.0'); gi.require_version('Adw', '1'); gi.require_version('Gsk', '4.0')
+gi.require_version('Gtk', '4.0')
+gi.require_version('Adw', '1')
+gi.require_version('Gsk', '4.0')
 from gi.repository import GLib, Gtk, Gsk, Adw
 
 OUT = '/home/t00m/Documents/testing/MiAZ/screenshots'

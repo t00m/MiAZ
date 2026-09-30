@@ -1,0 +1,35 @@
+#!/bin/sh
+# Sourced by the AppImage's AppRun.sh before MiAZ starts.
+#
+# WebKitGTK runs its web process inside a bubblewrap sandbox, which needs
+# unprivileged user namespaces. Ubuntu 24.04 and later block those through
+# AppArmor for binaries with no profile, which includes anything inside an
+# AppImage.
+#
+# WebKit gives up its sandbox by itself in only two cases, both checked by
+# WTF::shouldUseBubblewrap(): inside Flatpak (/.flatpak-info) and inside a
+# container (/run/.containerenv). Anywhere else it aborts the whole process
+# the first time a web view is created. Measured on Ubuntu 22.04 with
+# namespaces refused and neither marker present: SIGABRT, exit 134.
+#
+# So try the bundled bwrap once. If it cannot create a namespace, run WebKit
+# without its sandbox rather than crash, and say so on stderr. MiAZ's web
+# views show local content (its own pages, notes, plugin reports served from
+# 127.0.0.1); the generic browser page is the one that may load remote pages.
+# A value the user exported themselves is left alone.
+#
+# Falling back to the host /usr/bin/bwrap instead was considered and does not
+# work. Ubuntu grants userns per application binary, not to bubblewrap: the
+# apparmor package ships no bwrap profile, only profiles naming an absolute
+# application path (profile wike /usr/bin/wike flags=(unconfined) { userns, }).
+# An AppImage runs from /tmp/.mount_XXXXXX, which no profile can match. There
+# is no environment variable for the bwrap path either; it is compile-time,
+# and quick-sharun has already rewritten it to /tmp/<mapped>/bwrap.
+
+if [ -z "${WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS+set}" ] \
+  && [ -x "$APPDIR"/bin/bwrap ] \
+  && ! "$APPDIR"/bin/bwrap --ro-bind / / --unshare-user --unshare-pid true >/dev/null 2>&1; then
+	export WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS=1
+	>&2 echo "MiAZ: this system does not allow unprivileged user namespaces;"
+	>&2 echo "MiAZ: WebKit's web process sandbox is disabled for this session."
+fi

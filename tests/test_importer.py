@@ -243,3 +243,84 @@ def test_nothing_to_import_is_not_an_error(tmp_path):
     docs = str(tmp_path / 'repo')
     os.makedirs(docs)
     assert import_paths(util(), docs, []) == ([], [])
+
+
+# ---------------------------------------------------------------------------
+# Reporting: a massive import is one job, so it has to say where it has got to
+# ---------------------------------------------------------------------------
+
+def test_importing_reports_each_document(tmp_path):
+    """Without this a 1322 document import shows "1 running" for minutes."""
+    docs = tmp_path / 'repo'
+    docs.mkdir()
+    sources = []
+    for index in range(3):
+        source = tmp_path / f'20260101-ES-HOU-ACME-INV-doc{index}-JOHNDOE.pdf'
+        source.write_text('x')
+        sources.append(str(source))
+
+    said = []
+    import_paths(util(), str(docs), sources,
+                 report=lambda message, fraction: said.append(
+                     (message, fraction)))
+
+    assert len(said) == 3, f'reported {len(said)} times for 3 documents'
+    assert said[-1][1] == 1.0, 'the last document is not the whole of it'
+
+
+def test_importing_without_a_reporter_still_works(tmp_path):
+    """`miaz add` passes none, and must not have to."""
+    docs = tmp_path / 'repo'
+    docs.mkdir()
+    source = tmp_path / '20260101-ES-HOU-ACME-INV-doc-JOHNDOE.pdf'
+    source.write_text('x')
+    imported, failed = import_paths(util(), str(docs), [str(source)])
+    assert len(imported) == 1
+    assert failed == []
+
+
+def test_the_message_says_how_far_along_the_import_is(tmp_path):
+    """"340 of 1322" is the whole point of reporting per document. Without the
+    count the popover says "Importing something.pdf" and the user has no idea
+    whether that is the first document or the last."""
+    docs = tmp_path / 'repo'
+    docs.mkdir()
+    sources = []
+    for index in range(3):
+        source = tmp_path / f'20260101-ES-HOU-ACME-INV-doc{index}-JOHNDOE.pdf'
+        source.write_text('x')
+        sources.append(str(source))
+
+    said = []
+    import_paths(util(), str(docs), sources,
+                 report=lambda message, fraction: said.append(
+                     (message, fraction)))
+
+    counts = [message.split(':')[0].strip() for message, _fraction in said]
+    assert counts == ['1 of 3', '2 of 3', '3 of 3'], \
+        f'the messages carry no count: {said}'
+
+
+def test_the_bar_does_not_fill_before_the_last_document_lands(tmp_path):
+    """Reporting used to happen before each copy, so the last report said
+    fraction 1.0 while the final document was still being written."""
+    docs = tmp_path / 'repo'
+    docs.mkdir()
+    sources = []
+    for index in range(3):
+        source = tmp_path / f'20260101-ES-HOU-ACME-INV-doc{index}-JOHNDOE.pdf'
+        source.write_text('x')
+        sources.append(str(source))
+
+    seen = []
+
+    def report(_message, fraction):
+        seen.append((fraction, len(os.listdir(str(docs)))))
+
+    import_paths(util(), str(docs), sources, report=report)
+
+    for fraction, arrived in seen:
+        if fraction == 1.0:
+            assert arrived == 3, \
+                f'the bar said 100% with {arrived} of 3 documents copied'
+    assert seen[-1][0] == 1.0, 'the import never reported itself finished'

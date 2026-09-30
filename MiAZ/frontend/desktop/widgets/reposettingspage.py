@@ -6,6 +6,8 @@
 from gettext import gettext as _
 
 from gi.repository import Adw
+from gi.repository import Gio
+from gi.repository import GLib
 from gi.repository import Gtk
 
 from MiAZ.backend.log import MiAZLog
@@ -197,6 +199,52 @@ class MiAZRepoSettingsPage(MiAZSidebarStack):
         # it by editing a label would leave the documents behind.
         group.add(row_path)
         self.app.add_widget('repository-settings-row-location', row_path)
+
+        row_remote = Adw.SwitchRow(title=_('Remote repository'))
+        row_remote.set_subtitle(
+            _('Disables the grid, timeline and conversation views and the '
+              'duplicate scan. Those read every document, which is slow over '
+              'a network.'))
+        row_remote.set_active(repository.remote)
+        self._sid_remote = row_remote.connect('notify::active',
+                                              self._on_remote_toggled)
+        group.add(row_remote)
+        self.app.add_widget('repository-settings-row-remote', row_remote)
+        # The flag can move from elsewhere, so the switch follows it rather
+        # than being the only thing that knows where it is.
+        repository.connect('remote-changed', self._on_remote_changed)
+
+        row_detected = Adw.ActionRow(title=_('Detected'))
+        row_detected.set_subtitle(self._detection_summary(repository.docs))
+        # Shown, never acted on. GIO reports an rclone mount as local and a
+        # gocryptfs directory on a local disk as fuse, so this is a fact for
+        # the user to weigh, not a decision MiAZ can make.
+        group.add(row_detected)
+        self.app.add_widget('repository-settings-row-detected', row_detected)
+
+    def _on_remote_toggled(self, row, _pspec):
+        self.app.get_service('repo').set_remote(row.get_active())
+
+    def _on_remote_changed(self, _repository, remote):
+        """Follow the flag without writing it back and looping."""
+        row = self.app.get_widget('repository-settings-row-remote')
+        if row is None or row.get_active() == remote:
+            return
+        with row.handler_block(self._sid_remote):
+            row.set_active(remote)
+
+    def _detection_summary(self, path):
+        """What the filesystem says about this path, for the user to weigh."""
+        util = self.app.get_service('util')
+        try:
+            gfile = Gio.File.new_for_path(path)
+            info = gfile.query_filesystem_info('filesystem::type', None)
+            fstype = info.get_attribute_string('filesystem::type') or _('unknown')
+        except GLib.Error:
+            fstype = _('unknown')
+        reported = _('remote') if util.is_remote_path(path) else _('local')
+        return _('Filesystem {fstype}, reported as {reported}').format(
+            fstype=fstype, reported=reported)
 
     def _on_name_applied(self, row):
         repository = self.app.get_service('repo')

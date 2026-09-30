@@ -141,7 +141,8 @@ class MiAZAutoScanPlugin(MiAZExtension):
             self._detect_sources,
             on_done=self._build_source_menu,
             on_error=self._on_detect_failed,
-            name='autoscan-detect')
+            name='autoscan-detect',
+            label=_('Looking for a scanner'))
 
     def _detect_sources(self):
         devices = self._list_devices()
@@ -286,7 +287,9 @@ class MiAZAutoScanPlugin(MiAZExtension):
         run_in_background(
             lambda: self._do_scan(source_override=source_override),
             on_error=self._on_scan_crashed,
-            name='autoscan-scan')
+            name='autoscan-scan',
+            label=_('Scanning'),
+            queued=True)
 
     def _on_scan_crashed(self, error):
         """The scan died outside its own error handling.

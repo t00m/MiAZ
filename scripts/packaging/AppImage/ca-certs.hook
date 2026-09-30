@@ -1,0 +1,25 @@
+#!/bin/sh
+# Sourced by the AppImage's AppRun.sh before MiAZ starts.
+#
+# The bundled OpenSSL comes from Ubuntu and looks for CA certificates where
+# Debian keeps them (/usr/lib/ssl). Fedora, RHEL, Arch and openSUSE keep them
+# elsewhere, and there Python's ssl module would trust no certificate at all:
+# pip (installing plugin dependencies) and every HTTPS request from a plugin
+# would fail verification. Point OpenSSL at the host's bundle instead.
+# A value the user exported themselves is left alone.
+
+if [ -z "${SSL_CERT_FILE:-}" ]; then
+	for _miaz_ca in \
+		/etc/ssl/certs/ca-certificates.crt \
+		/etc/pki/tls/certs/ca-bundle.crt \
+		/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem \
+		/etc/ssl/cert.pem \
+		/var/lib/ca-certificates/ca-bundle.pem \
+		/etc/ssl/ca-bundle.pem; do
+		if [ -f "$_miaz_ca" ]; then
+			export SSL_CERT_FILE="$_miaz_ca"
+			break
+		fi
+	done
+	unset _miaz_ca
+fi

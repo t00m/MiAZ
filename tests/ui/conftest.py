@@ -253,8 +253,18 @@ def miaz(sandbox):
 
 @pytest.fixture
 def clean_view(miaz):
-    """Reset the filters, so one test cannot leave another one blind."""
+    """Reset the filters and the view, so one test cannot leave another blind.
+
+    The view belongs here for the same reason the filters do. The application
+    is session scoped, tests in four files call show_view, and three tests in
+    test_ui_widgets.py open by asserting they start on Details. Leaving each
+    test to put back the view it changed arms the same trap for the next one
+    written; guaranteeing the starting state once covers all of them.
+    """
     def reset():
+        workspace = getattr(miaz, 'workspace', None)
+        if workspace is not None and workspace.get_current_view() != 'details':
+            workspace.show_view('details')
         for gtype_name in ('Country', 'Group', 'SentBy', 'Purpose', 'SentTo'):
             try:
                 miaz.select_dropdown_value(gtype_name, 'Any')
@@ -271,3 +281,53 @@ def clean_view(miaz):
     reset()
     yield miaz
     reset()
+
+
+def _probe_focus_is_observable(driver):
+    """Whether grab_focus() on the document list is reflected in
+    window.get_focus(), which is the only thing the strict focus assertions
+    can actually observe.
+
+    Focus routing needs the toplevel to be window-manager active, and a
+    process spawned under Xvfb without a window manager never becomes one.
+    GTK 4.20 then does not advance window.get_focus() for a plain
+    grab_focus(), which is exactly what test_ui_shortcut_scope's probe does.
+    On a real desktop this returns True and the strict assertions run; in a
+    headless session they are skipped.
+
+    This MOVES the focus, so it is private and reached only through the
+    focus_observable fixture. Called in the middle of a test it destroys the
+    very thing that test is about to assert: the first version of this guard
+    sat between 'activate the search action' and 'assert the search entry has
+    focus', and turned two passing tests into two failures on a real desktop.
+    A fixture cannot make that mistake, because pytest resolves it before the
+    test body starts.
+    """
+    target = driver.widget('workspace-view').cv
+    target.grab_focus()
+    driver.pump()
+    focus = driver.widget('window').get_focus()
+    while focus is not None:
+        if focus is target:
+            return True
+        focus = focus.get_parent()
+    return False
+
+
+@pytest.fixture(scope='session')
+def focus_observable(miaz):
+    """True when this environment reflects grab_focus() in window.get_focus().
+
+    Session scoped: the answer is a property of the display, not of a test,
+    and the probe moves the focus, so it runs once rather than before every
+    test that asks.
+    """
+    return _probe_focus_is_observable(miaz)
+
+
+def skip_unless_focus_observable(observable):
+    """Skip with the one explanation every caller would otherwise repeat."""
+    if not observable:
+        pytest.skip('focus cannot be observed in this environment (Xvfb '
+                    'without a window manager: grab_focus never advances '
+                    'window.get_focus())')

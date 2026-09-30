@@ -87,17 +87,27 @@ def parse(path):
         return ast.parse(handler.read(), filename=path)
 
 
-def imports_desktop_frontend(tree):
-    """True when this module imports anything from MiAZ.frontend.desktop."""
+def imports_a_package(tree, prefix):
+    """True when this module imports anything whose name starts with prefix."""
     for node in ast.walk(tree):
         if isinstance(node, ast.ImportFrom) and node.module:
-            if node.module.startswith('MiAZ.frontend.desktop'):
+            if node.module.startswith(prefix):
                 return True
         elif isinstance(node, ast.Import):
             for alias in node.names:
-                if alias.name.startswith('MiAZ.frontend.desktop'):
+                if alias.name.startswith(prefix):
                     return True
     return False
+
+
+def imports_desktop_frontend(tree):
+    """True when this module imports anything from MiAZ.frontend.desktop."""
+    return imports_a_package(tree, 'MiAZ.frontend.desktop')
+
+
+def imports_any_frontend(tree):
+    """True when this module imports anything from MiAZ.frontend."""
+    return imports_a_package(tree, 'MiAZ.frontend')
 
 
 def gui_namespaces_imported(tree):
@@ -152,6 +162,19 @@ def test_desktop_detector_allows_the_backend():
     assert imports_desktop_frontend(tree) is False
 
 
+def test_frontend_detector_finds_either_frontend():
+    """Both front-ends, and both import forms."""
+    console = ast.parse('from MiAZ.frontend.console.app import MiAZConsoleApp')
+    desktop = ast.parse('import MiAZ.frontend.desktop.app')
+    assert imports_any_frontend(console) is True
+    assert imports_any_frontend(desktop) is True
+
+
+def test_frontend_detector_allows_the_backend():
+    tree = ast.parse('from MiAZ.backend.util import MiAZUtil')
+    assert imports_any_frontend(tree) is False
+
+
 def test_fs_detector_finds_a_direct_call():
     tree = ast.parse('import os\nos.unlink(path)\n')
     assert direct_fs_calls(tree) == [('os.unlink', 2)]
@@ -197,6 +220,28 @@ def test_backend_imports_no_gui_toolkit():
     assert offenders == {}, (
         f"Backend modules importing a GUI toolkit: {offenders}. "
         f"Move the widget code to MiAZ/frontend/desktop/widgets/.")
+
+
+def test_backend_imports_no_frontend():
+    """The backend must not import either front-end.
+
+    The toolkit rule above catches a backend module that draws. It does not
+    catch one that imports MiAZ.frontend.desktop for a dialog or a factory,
+    which is the same dependency with one more step in it: the backend would
+    then need a front-end to be importable, and the command line would pull the
+    window in behind it.
+    """
+    offenders = []
+    checked = 0
+    for path in python_files(BACKEND):
+        checked += 1
+        if imports_any_frontend(parse(path)):
+            offenders.append(path.replace(os.sep, '/'))
+    # A rule that walks the wrong directory finds nothing and passes for ever.
+    assert checked >= 20, f'expected the backend package under {BACKEND}, saw {checked} files'
+    assert offenders == [], (
+        f"Backend modules importing a front-end: {offenders}. "
+        f"The dependency goes one way: front-ends import the backend.")
 
 
 def test_console_frontend_runs_without_a_display():

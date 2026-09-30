@@ -430,3 +430,26 @@ def test_the_button_follows_the_stack_however_the_page_changed(rename_dialog):
     widget.stack.set_visible_child_name('fields')
     driver.pump(0.3)
     assert widget._page_label.get_text() == 'Fields'
+
+
+def test_closing_the_dialog_cancels_the_pending_popover_popdown(clean_view):
+    """Leaving the concept entry defers a popdown by 120 ms so a click landing
+    on a popover row registers first. Closing the dialog inside that window
+    used to leave the timeout armed, and it fired on a popover that was gone.
+    """
+    actions = clean_view.service('actions')
+    actions._document_rename_single(DOCUMENT)
+    clean_view.wait_until(lambda: clean_view.widget('dialog-rename') is not None,
+                          message='the rename dialog')
+    dialog = clean_view.widget('dialog-rename')
+    widget = clean_view.widget('rename-widget')
+    clean_view.pump(0.3)
+
+    fired = []
+    widget._popdown_concept_popover = lambda *_a: fired.append(1) and False
+
+    widget._on_concept_focus_leave(None)
+    dialog.emit('response', 'cancel')
+    clean_view.pump(0.5)
+
+    assert fired == [], 'the popdown ran after the dialog was closed'

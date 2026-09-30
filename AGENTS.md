@@ -46,6 +46,7 @@ MiAZ/
 │   │   ├── duplicates.py         ← find_duplicates (documents with identical content)
 │   │   ├── extract.py            ← ExtractResult, extract (local, non-AI text extraction)
 │   │   ├── index.py              ← MiAZDocumentIndex (the parse: filename → MiAZItem)
+│   │   ├── jobs.py               ← MiAZJobQueue (what runs in the background)
 │   │   ├── log.py                ← MiAZLog (colored logging), debug_requested
 │   │   ├── query.py              ← DocumentQuery (the workspace filter, as a value)
 │   │   ├── tasks.py              ← run_in_background (thread + GLib.idle_add)
@@ -53,7 +54,8 @@ MiAZ/
 │   │   ├── repository.py         ← MiAZRepository (CRUD on file-based repo), REPO_FORMAT
 │   │   ├── secrets.py            ← plugin secret storage (libsecret, keyring fallback)
 │   │   ├── status.py             ← MiAZStatus (IntEnum: RUNNING=0, BUSY=1)
-│   │   ├── thumbnails.py         ← thumbnail_for, cached_thumbnail (preview images)
+│   │   ├── thumbnails.py         ← thumbnail_for, cached_thumbnail (preview image paths;
+│   │   │                          the decoded images live in frontend widgets/thumbnailcache.py)
 │   │   ├── util.py               ← MiAZUtil (file ops, JSON, normalization)
 │   │   ├── venv.py               ← MiAZVenv (per-user venv for plugin dependencies)
 │   │   ├── vocabhealth.py        ← what is wrong with a repository's vocabulary
@@ -78,16 +80,19 @@ MiAZ/
 │           │   ├── importdoc.py  ← MiAZImportDoc (core add-document service + menu items)
 │           │   ├── pluginsystem.py ← MiAZExtension, MiAZPlugin, MiAZPluginSystem
 │           │   ├── progress.py   ← MiAZProgress
+│           │   ├── shortcuts.py  ← the key table and the registry that holds it
 │           │   └── workflow.py   ← MiAZWorkflow (repo switching lifecycle)
 │           └── widgets/
 │               ├── assistant.py, browserpage.py, button.py, chip.py
 │               ├── columnview.py, configview.py, conversationview.py
 │               ├── dateentry.py, docpreview.py, dr.py, filenamesview.py
 │               ├── filetypebadge.py, gridview.py, mainwindow.py
-│               ├── markdownview.py, metadatapage.py, pages.py, pills.py
+│               ├── jobindicator.py, markdownview.py, metadatapage.py
+│               ├── pages.py, pills.py
 │               ├── rename.py, reposettingspage.py, selector.py
 │               ├── settings.py, sidebar.py, sidebarstack.py
-│               ├── timelineview.py, views.py, webbrowser.py, window.py
+│               ├── thumbnailcache.py, timelineview.py, views.py
+│               ├── webbrowser.py, window.py
 │               └── workspace.py
 │                 (no searchbar.py: search is a registered 'searchentry' widget)
 ├── data/
@@ -526,7 +531,7 @@ Both rename paths use it. The single rename (`widgets/rename.py`) prefills the d
 
 `extract(path) -> ExtractResult(text, method)` gets a document's text: `pdftotext` for a PDF with a text layer, falling back to `pdftoppm` + `tesseract` OCR when there is none; `tesseract` directly for an image; the file's own bytes for plain text/Markdown. `ExtractResult.is_useful` gates on a minimum length and at least one letter, the same bar `MiAZAIAssistant` used before this module existed (it now delegates to it — `miazai/extractor.py` calls `MiAZ.backend.extract.extract()` for every format except `.docx`, which stays plugin-only since `python-docx` is not a core dependency). `match_vocab(text, used)` returns the key of a repository's used vocabulary (`MiAZConfig.load_used()`, key → description) whose description occurs in `text`, longest description first so a specific match does not lose to a shorter coincidental one.
 
-`pdftotext`/`pdftoppm` (poppler-utils) and `tesseract` are **hard package dependencies** (`miaz.spec` `Requires`, `debian/control` `Depends`), not optional like `MiAZOCR`'s `ocrmypdf`. `missing_tools()` still checks for them at call time, because a dev install or the AppImage (which has no dependency resolution of its own, see `scripts/packaging/AppImage/build_appimage.sh`) can be missing them regardless of what the packages declare; `widgets/rename.py::_notify_missing_tools` shows the same install-command dialog shape as `MiAZOCR`'s.
+`pdftotext`/`pdftoppm` (poppler-utils) and `tesseract` are **hard package dependencies** (`miaz.spec` `Requires`, `debian/control` `Depends`), not optional like `MiAZOCR`'s `ocrmypdf`. `missing_tools()` still checks for them at call time, because a dev install can be missing them regardless of what the packages declare (the AppImage carries its own copies, see below); `widgets/rename.py::_notify_missing_tools` shows the same install-command dialog shape as `MiAZOCR`'s.
 
 `widgets/rename.py` exposes `detect_country()`, `detect_sentby()`, `detect_sentto()` (one `extract()` + `match_vocab()` pass each, backgrounded through `run_in_background`) and `detect_all()` (one extraction, every field applied together). Group, Purpose and Concept are deliberately not guessed: they are open vocabulary, where a wrong guess is harder to notice than a missing one, unlike Country/SentBy/SentTo which only ever resolve to something already in the repository's used list. `services/actions.py::build_detect_menu()` builds the five `rename-detect-*` actions as one shared `Gio.Menu`, built once and cached the same way `MiAZMassRename.build_menu()` is: each callback resolves the *current* rename widget (`app.get_widget('rename-widget')`) rather than closing over one, since the menu outlives any single dialog. The `Gtk.MenuButton` ("Detect") sits in the rename dialog's action bar next to Suggest/Preview.
 
@@ -570,9 +575,9 @@ The menu is exposed from two places, both reusing the one stored `massrename-men
 
 ### Add documents
 
-`MiAZImportDoc` (`services/importdoc.py`, service `importdoc`) adds documents to the repository from the local filesystem via `Gtk.FileDialog`. It was the `MiAZImportDoc` plugin and is now core, because every repository needs a way to add its first document and that action should not be behind an optional, togglable plugin. `__init__` builds its `Gio.MenuItem` once (`factory.create_menuitem`, action `import-doc`, shortcut `<Control>Insert`) and stores it as `self.menuitem`; `import_files`/`_on_filechooser_response` resolve the chosen files and hand their paths to `import_paths(paths)`, which does the actual copy (`util.filename_normalize` + `util.filename_import`) and reports successes and failures via toast/error dialog.
+`MiAZImportDoc` (`services/importdoc.py`, service `importdoc`) adds documents to the repository from the local filesystem via `Gtk.FileDialog`. It was the `MiAZImportDoc` plugin and is now core, because every repository needs a way to add its first document and that action should not be behind an optional, togglable plugin. `__init__` builds its `Gio.MenuItem` once (`factory.create_menuitem`, action `import-doc`, shortcut `<Control>i`) and stores it as `self.menuitem`; `import_files`/`_on_filechooser_response` resolve the chosen files and hand their paths to `import_paths(paths)`, which does the actual copy (`util.filename_normalize` + `util.filename_import`) and reports successes and failures via toast/error dialog.
 
-`import_directory()` opens a folder chooser and hands the chosen path to `import_dropped()`, so a chosen folder and a dropped one raise the same question about subfolders and answer it once. It has its own menu item (`self.menuitem_dir`, action `import-dir`, shortcut `<Shift>Insert`), appended to the headerbar Add menu right after the first one. It was the `MiAZAddFromDir` plugin, moved into the core for the same reason `MiAZImportDoc` was: adding documents is not optional.
+`import_directory()` opens a folder chooser and hands the chosen path to `import_dropped()`, so a chosen folder and a dropped one raise the same question about subfolders and answer it once. It has its own menu item (`self.menuitem_dir`, action `import-dir`, shortcut `<Control><Shift>i`), appended to the headerbar Add menu right after the first one. It was the `MiAZAddFromDir` plugin, moved into the core for the same reason `MiAZImportDoc` was: adding documents is not optional.
 
 Every entry point goes through `import_paths`, so a document added by dropping it is the same operation, with the same reporting, as one picked from a chooser. Above `BATCH_THRESHOLD` (20) files it takes the batched route instead (`needs_batch`): the workspace is held back with `suspend_updates()`, the watcher is turned off, and the copy runs through `run_in_background`, so a hundred files cause one refresh rather than a hundred. Both are released from the main loop in `_copy_batch`'s `finally`, which is what stops a failure halfway through leaving the workspace suspended for the session. The batched call returns `None`, since it reports later, from the main loop. The drop entry point is `import_dropped(paths)`: plain files are imported straight away; if any dropped path is a folder it asks first, since how many documents a folder means depends on whether its subfolders count. The question dialog (`_ask_recursive`) carries an **Include subfolders** `Gtk.CheckButton` (`import-drop-recursive`) and a label (`import-drop-count`) that recounts on every toggle, so the user sees how many files each answer would import before answering. The counting itself is the module-level, side-effect-free `expand_dropped(paths, recursive=False)`: folders are replaced by the files they hold (direct children, or the whole tree when recursive), everything else is kept as it is (including a path that does not exist, which the import then reports as failed rather than dropping silently), symlinked folders are not followed, order is the order dropped and each file appears once. Covered by `tests/test_importdoc.py` (the expansion) and `tests/ui/test_ui_dnd.py` (the drop target, the dialog and both answers).
 
@@ -870,6 +875,17 @@ ninja -C _build install
 # Run without installing
 PYTHONPATH=. python -m MiAZ.miaz
 ```
+
+## AppImage
+
+`scripts/packaging/AppImage/build_appimage.sh` builds a **self-contained** AppImage: it carries Python, PyGObject, GTK 4, libadwaita, libpeas 2, WebKitGTK 6.0, libsecret, poppler-utils and tesseract, plus the glibc and dynamic linker they were built with, and takes nothing from the host but the kernel, FUSE and a display. It runs on Ubuntu 22.04, which is what the AppImageHub catalog tests on; the earlier AppImage borrowed the host's Python and GTK and failed there (`Namespace Peas not available`).
+
+- The stack comes from **Ubuntu 26.04**, so `build_appimage.sh` runs `build_in_container.sh` inside a throwaway `ubuntu:26.04` container (docker or podman). The host needs only a container engine.
+- Deployment is pkgforge's `quick-sharun` (sharun): every bundled binary, WebKit's helper processes included, runs through the bundled linker. The script is pinned by commit and checksum, as are `appimagetool` and the type 2 runtime.
+- The image is **SquashFS** with the standard type 2 runtime, because AppImageHub only mounts that. `quick-sharun`'s own packer makes DwarFS and is not used.
+- `quick-sharun` assumes the Arch Linux layout. `build_in_container.sh` bridges the Debian differences it trips over: the stdlib staged into the arch lib dir, `dist-packages` kept in Debian's place, glycin's loaders passed from `libexec`, and ensurepip pointed at a pip wheel it carries.
+- Hooks in `AppDir/bin/*.hook` run before MiAZ starts. `ca-certs.hook` points the bundled OpenSSL at the host's CA bundle (without it Python trusts no certificate on non-Debian hosts). `webkit-sandbox.hook` ships by default (`MIAZ_WEBKIT_SANDBOX_FALLBACK=0` at build time leaves it out): where unprivileged user namespaces are blocked (Ubuntu 24.04+ AppArmor), WebKit's bubblewrap sandbox cannot start and WebKit aborts the process when the first web view loads (SIGABRT, exit 134); the hook probes the bundled `bwrap` once and, only if it is refused, runs WebKit without its sandbox instead. Where namespaces work (Fedora, Arch, openSUSE, Debian, Ubuntu up to 23.10) the sandbox stays on. Pointing WebKit at the host `/usr/bin/bwrap` is not an alternative: Ubuntu grants `userns` per application binary path and ships no `bwrap` profile, and the bwrap path is compile-time, already rewritten by quick-sharun.
+- `test_appimage.sh` smoke-tests an image on a clean `ubuntu:22.04`: `--help`, then a window on Xvfb.
 
 ## Existing plugins (17 with `.plugin` metadata)
 

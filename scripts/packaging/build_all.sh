@@ -195,8 +195,8 @@ fi
 
 # ── AppImage ─────────────────────────────────────────────────────────────────
 log "--- Building AppImage package ---"
-if ! have meson ninja patchelf wget; then
-    log "meson, ninja, patchelf or wget not found, skipping AppImage build."
+if ! have docker && ! have podman; then
+    log "neither docker nor podman found, skipping AppImage build (it builds in a container)."
 elif "$SCRIPT_DIR/AppImage/build_appimage.sh" 2>&1 | tee "$LOG_DIR/appimage.log"; then
     FOUND=0
     while IFS= read -r pkg; do
@@ -205,6 +205,13 @@ elif "$SCRIPT_DIR/AppImage/build_appimage.sh" 2>&1 | tee "$LOG_DIR/appimage.log"
         FOUND=1
     done < <(find "$REPO_ROOT" -maxdepth 1 -name "MiAZ-${VERSION}*.AppImage" 2>/dev/null | sort)
     [[ $FOUND -eq 1 ]] || { log_err "AppImage built but no output file found"; FAILED+=("AppImage"); }
+    # The image carries gh-releases-zsync update information, so the .zsync has
+    # to reach the release beside it. Without this it stayed in the repository
+    # root and the updater pointed at a file nobody had uploaded.
+    while IFS= read -r meta; do
+        cp "$meta" "$DIST_DIR/"
+        log_ok "$(basename "$meta") -> dist/"
+    done < <(find "$REPO_ROOT" -maxdepth 1 -name "MiAZ-${VERSION}*.AppImage.zsync" 2>/dev/null | sort)
 else
     log_err "AppImage build failed, see $LOG_DIR/appimage.log"
     FAILED+=("AppImage")

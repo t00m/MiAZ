@@ -17,6 +17,7 @@ from MiAZ.frontend.desktop.services.notes import MiAZNotes
 from MiAZ.frontend.desktop.services.pluginsystem import MiAZPluginSystem
 from MiAZ.frontend.desktop.services.pluginsystem import format_load_failure_toast
 from MiAZ.frontend.desktop.services.icm import MiAZIconManager
+from MiAZ.frontend.desktop.services.shortcuts import MiAZShortcuts
 from MiAZ.frontend.desktop.services.factory import MiAZFactory
 from MiAZ.frontend.desktop.services.actions import MiAZActions
 from MiAZ.frontend.desktop.services.dialogs import MiAZDialog
@@ -39,6 +40,24 @@ from MiAZ.backend.dr import MiAZDR
 from MiAZ.backend.secrets import MiAZSecretStore
 from MiAZ.backend.venv import MiAZVenv
 from MiAZ.backend.webserver import MiAZWebServer
+from MiAZ.backend.jobs import MiAZJobQueue
+from MiAZ.backend.tasks import set_job_queue
+
+
+
+def remembered_size(width, height, maximized, previous):
+    """The window size to store for the next start.
+
+    A maximized window reports the screen as its width and height, and that is
+    also what GTK restores to when the user unmaximizes, because the next start
+    passes it to set_default_size. Saved while maximized, the restored window
+    covers the screen and the unmaximize button looks broken. So the size is
+    kept only while the window is not maximized, and what was stored last time
+    is carried forward otherwise.
+    """
+    if maximized:
+        return previous
+    return (width, height)
 
 
 class MiAZApp(Adw.Application):
@@ -48,24 +67,45 @@ class MiAZApp(Adw.Application):
         "application-started": (GObject.SignalFlags.RUN_LAST, None, ()),
         "application-finished": (GObject.SignalFlags.RUN_LAST, None, ()),
     }
-    _plugins_loaded = False
-    _miazobjs = {}  # MiAZ Objects
-    _config = {}    # Dictionary holding configurations
-    _status = MiAZStatus.BUSY
 
     def __init__(self, **kwargs):
-        """Set up env, UI and services used by the rest of modules."""
+        """Set up env, UI and services used by the rest of modules.
+
+        The registries below are built here rather than on the class. As class
+        attributes they were one dictionary shared by every instance, and
+        __init__ assigned into it rather than rebinding it, so a second MiAZApp
+        emptied the first one's widgets and services without a word.
+        """
         application_id = kwargs['application_id']
         Adw.Application.__init__(self, application_id=application_id)
-        self._miazobjs['widgets'] = {}
-        self._miazobjs['services'] = {}
-        self._miazobjs['actions'] = {}
+        self._plugins_loaded = False
+        self._status = MiAZStatus.BUSY
+        self._miazobjs = {'widgets': {}, 'services': {}, 'actions': {}}
+        self._config = {}  # Dictionary holding configurations
+        # Set before the crash handler, not after the services. Its excepthook
+        # asks the application for its environment, so a failure while the
+        # services were being built used to raise AttributeError inside the
+        # handler and hide the error it was there to report.
+        self._env = None
+        self.conf = None
         self.log = MiAZLog("MiAZ.App")
         # Install the desktop crash handler early so it can report failures
         # raised while the rest of the services are being set up.
         self.set_service('crash', MiAZCrashHandler(self)).install()
+        # Installed before any other service, because every one of them may
+        # start background work while being built. Registered as a service for
+        # anything holding the app, and as the module singleton that
+        # run_in_background reads: the same object either way, or the
+        # indicator would watch a queue nothing registers with.
+        set_job_queue(self.set_service('jobs', MiAZJobQueue()))
         self.set_service('util', MiAZUtil(self))
         self.set_service('icons', MiAZIconManager(self))
+        # Installed before the factory, because the factory asks it whether an
+        # accelerator may be set, and both MiAZActions and MiAZImportDoc claim
+        # one while the services are still being built. The core table loads
+        # here, before any plugin can load, which is what makes the first
+        # claim on a key the application's rather than a plugin's.
+        self.set_service('shortcuts', MiAZShortcuts(self)).register_core()
         self.set_service('factory', MiAZFactory(self))
         self.set_service('dialogs', MiAZDialog(self))
         self.set_service('actions', MiAZActions(self))
@@ -84,8 +124,6 @@ class MiAZApp(Adw.Application):
         self.set_service('massrename', MiAZMassRename(self))
         self.set_service('importdoc', MiAZImportDoc(self))
         self.set_service('document-tabs', MiAZDocumentTabs(self))
-        self._env = None
-        self.conf = None
 
     def get_status(self):
         """Return current app status.
@@ -171,6 +209,8 @@ class MiAZApp(Adw.Application):
                 window.maximize()
         window.set_icon_name('io.github.t00m.MiAZ')
         window.connect('close-request', self._on_window_close_request)
+        window.connect('map', self._on_window_visibility_changed, False)
+        window.connect('unmap', self._on_window_visibility_changed, True)
         window.set_default_icon_name('io.github.t00m.MiAZ')
 
         # Theme
@@ -192,14 +232,32 @@ class MiAZApp(Adw.Application):
         menubar = self.get_widget('window-menu-app')
         self.set_menubar(menubar)
 
+    def _on_window_visibility_changed(self, _window, paused):
+        """Pause the remote poll while the window is off screen.
+
+        A remote repository is listed on a timer, and each tick is a round
+        trip. Nothing is waiting for the answer while the window is unmapped,
+        so the poll is stopped rather than left running against the link.
+        Only the poll is affected: a local repository uses a file monitor,
+        which costs nothing to leave armed.
+        """
+        watcher = self.get_service('watcher')
+        if watcher is not None:
+            watcher.set_paused(paused)
+
     def _on_window_close_request(self, *args):
         self.log.debug("Close application requested")
         _settings = self._get_window_settings()
         if _settings is not None:
             window = self.get_widget('window')
-            _settings.set_int('window-width', window.get_width())
-            _settings.set_int('window-height', window.get_height())
-            _settings.set_boolean('window-maximized', window.is_maximized())
+            maximized = window.is_maximized()
+            width, height = remembered_size(
+                window.get_width(), window.get_height(), maximized,
+                (_settings.get_int('window-width'),
+                 _settings.get_int('window-height')))
+            _settings.set_int('window-width', width)
+            _settings.set_int('window-height', height)
+            _settings.set_boolean('window-maximized', maximized)
         actions = self.get_service('actions')
         actions.exit_app()
 
@@ -308,50 +366,35 @@ class MiAZApp(Adw.Application):
             return None
 
     def remove_widget(self, name: str):
-        """Remove widget from dictionary and dispose it."""
+        """Forget a widget, and say whether there was one to forget.
+
+        The registry entry is what goes. Both methods here used to call
+        widget.dispose() behind a hasattr guard, which never held: PyGObject
+        exposes run_dispose(), so the branch was dead and the widget was only
+        ever dropped from the dictionary.
+
+        run_dispose() is not the missing half. It breaks a GObject while other
+        code may still hold it, which on a widget that is still parented buys a
+        crash somewhere else later. A caller that knows a widget is finished
+        with should unparent it itself.
+        """
         deleted = False
         try:
-            widget = self._miazobjs['widgets'].pop(name)
-            if hasattr(widget, 'dispose'):
-                widget.dispose()
+            self._miazobjs['widgets'].pop(name)
             deleted = True
         except KeyError:
             self.log.debug(f"Widget '{name}' doesn't exists")
         return deleted
 
     def remove_widgets_with_prefix(self, prefix: str) -> int:
-        """Remove all widgets whose key starts with prefix. Returns count removed."""
+        """Forget every widget whose key starts with prefix. Returns how many."""
         keys = [k for k in list(self._miazobjs['widgets']) if k.startswith(prefix)]
         for key in keys:
-            widget = self._miazobjs['widgets'].pop(key)
-            if hasattr(widget, 'dispose'):
-                widget.dispose()
+            self._miazobjs['widgets'].pop(key)
         return len(keys)
 
     def get_logger(self):
         return self.log
-
-    def find_widget_by_type(self, widget, widget_type=None):
-        """
-        Recursively search for a widget inside `widget` by optional type and/or widget name (ID).
-
-        :param widget: The root Gtk.Widget to start the search from.
-        :param widget_type: The Gtk.Widget subclass to match (e.g., Gtk.Label), or None to match any type.
-        :return: The first matching Gtk.Widget, or None if not found.
-        """
-        self.log.debug(f"Looking for widget type {widget_type}) in {widget}")
-        type_matches = widget_type is None or isinstance(widget, widget_type)
-
-        if type_matches:
-            self.log.debug(f"Found widget of type {widget_type}: {widget}")
-            return widget
-
-        child = widget.get_first_child()
-        while child:
-            result = self.find_widget_by_type(child, widget_type)
-            if result:
-                return result
-            child = child.get_next_sibling()
 
     def find_widget(self, widget, widget_type=None, widget_id=None):
         """

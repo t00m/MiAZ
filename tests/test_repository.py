@@ -557,3 +557,66 @@ def test_setup_still_initialises_an_existing_directory(tmp_path):
     repo = MiAZRepository(app)
     assert repo.validate(repo.docs) is True
     assert (docs / '.conf' / 'repo.json').exists()
+
+
+# The remote flag on the repository service. The value lives in the
+# repositories config; this is the one path everything else asks.
+
+from MiAZ.frontend.console.app import MiAZConsoleApp
+
+
+def _opened(miaz_env, make_repo, register_repo, name='Work'):
+    register_repo(miaz_env, name, make_repo(name), current=True)
+    app = MiAZConsoleApp(miaz_env)
+    app.open_repository(None)
+    return app
+
+
+def test_remote_defaults_to_false(miaz_env, make_repo, register_repo):
+    app = _opened(miaz_env, make_repo, register_repo)
+
+    assert app.get_service('repo').remote is False
+
+
+def test_set_remote_is_readable_back(miaz_env, make_repo, register_repo):
+    repository = _opened(miaz_env, make_repo, register_repo).get_service('repo')
+
+    repository.set_remote(True)
+
+    assert repository.remote is True
+
+
+def test_set_remote_emits_remote_changed(miaz_env, make_repo, register_repo):
+    """The switch is the only way back from a disabled view, so the UI has to
+    hear about it without a restart."""
+    repository = _opened(miaz_env, make_repo, register_repo).get_service('repo')
+    heard = []
+    repository.connect('remote-changed', lambda _repo, value: heard.append(value))
+
+    repository.set_remote(True)
+    repository.set_remote(False)
+
+    assert heard == [True, False]
+
+
+def test_setting_the_same_value_emits_nothing(miaz_env, make_repo, register_repo):
+    """A rebuild of the view toolbar is not free; do it only on a real change."""
+    repository = _opened(miaz_env, make_repo, register_repo).get_service('repo')
+    repository.set_remote(True)
+    heard = []
+    repository.connect('remote-changed', lambda _repo, value: heard.append(value))
+
+    repository.set_remote(True)
+
+    assert heard == []
+
+
+def test_set_remote_without_a_registered_id_does_nothing(miaz_env, make_repo):
+    """A repository opened by bare path has no entry to write the flag into."""
+    app = MiAZConsoleApp(miaz_env)
+    app.open_repository(make_repo('Loose'))
+    repository = app.get_service('repo')
+
+    repository.set_remote(True)
+
+    assert repository.remote is False

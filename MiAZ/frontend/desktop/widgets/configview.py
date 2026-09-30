@@ -348,7 +348,11 @@ class MiAZRepositories(MiAZConfigView):
             item_type = self.config.model
             i_title = item_type.__title__
             if not is_used:
+                # Carry the flag back from the available pool: set_repo_used
+                # rebuilds the entry from the row, which does not hold it.
+                remote = self.config.get_remote(selected_item.id, used=False)
                 self.config.set_repo_used(selected_item.id, selected_item.title, selected_item.description)
+                self.config.set_remote(selected_item.id, remote, used=True)
                 body = _('{title} {item} ready to be used').format(title=i_title, item=selected_item.id)
                 self.log.debug(body)
             else:
@@ -383,9 +387,15 @@ class MiAZRepositories(MiAZConfigView):
 
             item_type = self.config.model
             i_title = item_type.__title__
+            # The entry is rebuilt from the selected row, which carries only
+            # the id, path and description. Without carrying the flag across,
+            # a repository marked remote would come back local when enabled
+            # again, and its disabled features with it.
+            remote = self.config.get_remote(selected_item.id, used=True)
             items_available[selected_item.id] = {
                 'path': selected_item.title,
-                'description': selected_item.description}
+                'description': selected_item.description,
+                'remote': remote}
             self.log.debug(f"{i_title} {selected_item.id} added back to the list of available items")
             del items_used[selected_item.id]
             self.log.debug(f"{i_title} {selected_item.id} removed from de list of used items")

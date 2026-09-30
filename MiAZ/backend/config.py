@@ -279,15 +279,30 @@ class MiAZConfig(GObject.GObject):
         return key in config
 
     def _add_batch(self, filepath: str, keysvalues: list):
+        """Add every key in the batch, and write only if that changed anything.
+
+        saved used to count the keys written into the dictionary rather than
+        the keys that differed, so a batch identical to what was already there
+        still wrote the file. The plugin list is handed to
+        add_available_batch on every startup, so plugins-available.json was
+        rewritten at every launch: the write read the previous contents to work
+        out the diff and invalidated the cache, turning one read into three
+        accesses and a write. On a remote repository that is three round trips
+        where one would do.
+
+        load() hands out the cached dictionary itself, so the comparison is
+        against a copy taken before the batch is applied.
+        """
         util = self.app.get_service('util')
         items = self.load(filepath)
+        previous = dict(items)
         saved = 0
         for key, value in keysvalues:
             if len(key.strip()) != 0:
                 key = util.valid_key(key)
                 items[key] = value
                 saved += 1
-        if saved > 0:
+        if saved > 0 and items != previous:
             self.save(filepath, items=items)
             self.log.info(f"{self.config_for} - Added {saved} keys to {filepath}")
 
@@ -411,7 +426,11 @@ class MiAZConfigRepositories(MiAZConfig):
     @staticmethod
     def _normalize_items(items: dict):
         """Convert the legacy {key: path} shape into the current
-        {key: {'path': path, 'description': desc}} shape.
+        {key: {'path': path, 'description': desc, 'remote': bool}} shape.
+
+        Every key an entry may carry is listed here, and anything not rebuilt
+        is dropped. A new per repository setting has to be added here and in
+        set_repo below, or it evaporates on the next load.
         """
         changed = False
         normalized = {}
@@ -419,12 +438,15 @@ class MiAZConfigRepositories(MiAZConfig):
             if isinstance(value, dict):
                 path = value.get('path', '')
                 desc = value.get('description', '')
-                normalized[key] = {'path': path, 'description': desc}
-                if 'path' not in value or 'description' not in value:
+                remote = bool(value.get('remote', False))
+                normalized[key] = {'path': path, 'description': desc,
+                                   'remote': remote}
+                if not {'path', 'description', 'remote'} <= set(value):
                     changed = True
             else:
                 # Legacy format: the value is the repository path string
-                normalized[key] = {'path': value or '', 'description': ''}
+                normalized[key] = {'path': value or '', 'description': '',
+                                   'remote': False}
                 changed = True
         return normalized, changed
 
@@ -455,10 +477,37 @@ class MiAZConfigRepositories(MiAZConfig):
             return entry.get('description', '')
         return ''
 
+    def get_remote(self, key: str, used: bool = True) -> bool:
+        """Whether this machine reaches that repository over a slow link.
+
+        Set by the user in repository settings and never guessed: GIO reports
+        an rclone mount as local, so detection cannot decide this.
+        """
+        items = self.load(self.used if used else self.available)
+        entry = items.get(key)
+        if isinstance(entry, dict):
+            return bool(entry.get('remote', False))
+        return False
+
+    def set_remote(self, key: str, value: bool, used: bool = True) -> bool:
+        filepath = self.used if used else self.available
+        items = self.load(filepath)
+        entry = dict(items.get(key) or {})
+        entry.setdefault('path', '')
+        entry.setdefault('description', '')
+        entry['remote'] = bool(value)
+        items[key] = entry
+        return self.save(filepath, items)
+
     def set_repo(self, key: str, path: str, description: str = '', used: bool = True) -> bool:
         filepath = self.used if used else self.available
         items = self.load(filepath)
-        items[key] = {'path': path or '', 'description': description or ''}
+        # Merge, do not replace. Renaming a repository must not discard the
+        # settings that sit beside its name.
+        entry = dict(items.get(key) or {})
+        entry.update({'path': path or '', 'description': description or ''})
+        entry.setdefault('remote', False)
+        items[key] = entry
         return self.save(filepath, items)
 
     def set_repo_available(self, key: str, path: str, description: str = '') -> bool:

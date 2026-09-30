@@ -86,13 +86,18 @@ def documents_for(filenames, entries):
 
 
 def build_report(filenames, vocabularies, duplicates=None, unreadable=None,
-                 empty=None):
+                 empty=None, duplicates_checked=True):
     """Every finding, worst first.
 
     `duplicates` is the list of groups the duplicate scan returned, `empty` the
     documents of zero length and `unreadable` the ones that could not be read.
     A check with nothing to say is left out: a report should be what needs
     attention, not a list of things that are fine.
+
+    `duplicates_checked` is False when the scan was skipped, which is what a
+    remote repository does. The note saying so carries one item, because a
+    finding with none is filtered out below, and a report that did not look
+    must not read as a report that found nothing.
     """
     vocabulary = check_vocabulary(filenames, vocabularies)
     bad_names = check_names(filenames)
@@ -120,9 +125,14 @@ def build_report(filenames, vocabularies, duplicates=None, unreadable=None,
                 'Nothing was copied. Import them again.',
                 documents=empty),
         Finding('duplicates', WARNING,
-                'Groups of documents with identical content', duplicates,
+                'Groups of documents with identical content',
+                duplicates if duplicates_checked else [],
                 'Keep one of each group and delete the rest.',
                 documents=in_groups),
+        Finding('duplicates-skipped', NOTE,
+                'Duplicate check not run on a remote repository',
+                [] if duplicates_checked else ['Not checked'],
+                'Unmark the repository as remote to check for copies.'),
         Finding('undescribed-codes', WARNING,
                 'Values described by nothing but themselves',
                 vocabulary['undescribed'],

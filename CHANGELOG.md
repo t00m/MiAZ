@@ -8,6 +8,206 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-09-30
+
+### Added
+
+- **Every core action has a keyboard shortcut, and one registry holds them all.** MiAZ bound 16 keys before this. Five of the core ones took a combination the desktop or a GTK text entry already owns: `Ctrl+S` is Save, `Ctrl+Insert` and `Shift+Insert` are Copy and Paste, and `Ctrl+BackSpace` and `Ctrl+Delete` delete a word in any entry.
+
+  `MiAZ/frontend/desktop/services/shortcuts.py` holds the table and a registry that sits behind the two factory functions which are the only places MiAZ ever sets an accelerator. Every binding passes through it, plugins included, so a second claim on one key is refused and logged rather than silently winning. Keys are compared parsed, not as strings, because the codebase contained both `<Ctrl>N` and `<Control>n`.
+
+  The Keyboard Shortcuts window is built from that registry instead of from a second hand written list. The two had already drifted: the window never mentioned `Ctrl+N`, `Escape`, or any of the three keys MiAZProjectMgt declares.
+
+  `Return`, `F2`, `Delete`, `Ctrl+A` and `Escape` are installed on the document list rather than on the window, so they cannot fire while the sidebar search entry has focus. A global `Delete` would have removed documents while somebody was editing a filter, and a global `Escape` would have stopped `Adw.AlertDialog`, `Adw.Dialog` and `Gtk.Popover` from closing themselves: a global accelerator runs in GTK's capture phase, which fires before the bubble phase those widgets use to handle `Escape` on their own, so it would have swallowed the key before any open dialog or popover ever saw it. `Escape` clears filters only while the document list has focus, and `Return` opens a document only under the same condition, where the old hand written handler used to catch it anywhere in the window, so a stale reflex there does nothing rather than something surprising.
+
+  Seven keys change meaning: Settings moves from `Ctrl+S` to `Ctrl+,`; About loses `Ctrl+B` and has no key, as is conventional; adding documents moves from `Ctrl+Insert` and `Shift+Insert` to `Ctrl+I` and `Ctrl+Shift+I`; renaming moves from `Ctrl+BackSpace` to `F2`; deleting moves from `Ctrl+Delete` to `Delete`; and `Escape` now clears filters, with the sidebar toggle moving to `F9` and the document preview toggle moving to `F8`. None of them are rebound to a different MiAZ action, so a stale reflex does nothing rather than something surprising.
+
+- **A headerbar indicator for background work, and one lane for the long operations.** Two fixes in `94aa17f4` moved import and the ZIP export off the main loop, which stopped GNOME calling the window unresponsive and left the opposite problem: work happened with nothing on screen to say so, and nothing stopped a second import starting on top of the first.
+
+  `MiAZ/backend/jobs.py` records every job and serialises the ones asking for the lane. `run_in_background` registers with it, so all 20 call sites appear in the indicator without one of them being edited: every one already passed `name=`. Long operations opt into the lane with `queued=True`.
+
+  The indicator waits 500 ms before showing itself. Most background work in MiAZ is housekeeping that finishes well inside that, a workspace scan or an index reload, and a spinner appearing for each of them would flicker through ordinary browsing. They are recorded and counted and never seen.
+
+  A large import reports each document, so the popover reads "340 of 1322" rather than leaving one job sitting at "running" for minutes.
+
+- **A repository can be marked as remote, per machine.** The switch is in Repository Settings, and MiAZ never moves it by itself: GIO reports an rclone mount as local, so what was detected is shown beside the switch as a fact to weigh and decides nothing. A marked repository loses the grid, timeline and conversation views and the duplicate scan, which are the paths that read every document. Measured with `scripts/devel/fsprobe.py` on a 1322 document repository, opening the grid reads 386.8 MB and the duplicate scan reads 222.5 MB.
+
+  The flag lives in `~/.MiAZ/etc/repos-used.json` rather than inside the repository, because remoteness describes how this machine reaches it: the same repository is local on the machine holding the disk and remote on a laptop mounting it. Three places rebuilt a repository entry from scratch and would have dropped the flag, on load, on rename, and on disabling and re-enabling a repository; all three now carry it.
+
+  Each disabled feature is gated twice, at the affordance and at the work. The view buttons are not built and `show_view` refuses their names; the duplicate scan returns without starting. That second gate is not one place: MiAZDoctor calls `find_duplicates` directly while building its report, so it has a gate of its own, and its report says the check did not run rather than leaving it silently absent. Unmarking restores everything on the next frame, with no restart.
+
+  The watcher now takes its answer from the flag instead of sniffing the filesystem. That is also a correctness fix: a GIO file monitor on a FUSE mount reports nothing when a change is made on the far side, so a marked repository polls, which is the only mechanism that works there. The interval is 30 seconds rather than 2, and the poll stops while the window is off screen.
+
+- `scripts/devel/fsprobe.py` counts what each interaction costs on a remote repository, without needing a remote one. It patches `os.stat`, `os.lstat`, `os.scandir`, `os.listdir` and `builtins.open`, counts calls and bytes per scenario against the headless `MiAZConsoleApp`, ignores anything outside the repository directory, and projects a wall time for a link of a given round trip time and bandwidth. Patching `os.stat` alone catches `os.path.exists`, `isfile`, `isdir` and `getsize`, which all reach it through `genericpath`.
+
+  It also charges what helper processes read. `pdftoppm` reads its input outside Python, which is most of the traffic a thumbnail costs, so every repository file handed to `subprocess.run` is charged at its full size. That is an upper bound, since rendering page one of a linearised PDF may read less.
+
+  Run against FVM-test (1322 documents, 1055 MB), it says the listing and the index cost one directory enumeration and no bytes at all, and it found the two defects below.
+
+- **Two more architectural rules are tested rather than trusted.** A check of the front-end boundary found both holding in the code and resting on nobody breaking them.
+
+  `tests/test_boundaries.py` already refused a GUI toolkit in the backend. It now also refuses an import of either front-end there: a backend module importing `MiAZ.frontend.desktop` for a dialog is the same dependency with one more step in it, and the toolkit rule does not see it. The detector was already in the file, applied only to the console package.
+
+  `tests/test_no_toolkit.py` now runs `miaz ocr --help` with the Gtk, Gdk and Adw typelibs hidden. Plugin discovery reads `.plugin` files without importing anything, so a plugin command reaches the help text whatever its module does, but running one imports the module. MiAZOCR keeps its Adw and Gtk imports inside the methods that build the dialog, which is what lets `miaz ocr` work on a server, and until now that was a docstring with no test behind it.
+
+### Changed
+
+- **The AppImage is self-contained.** It used to carry only MiAZ's own code and borrow Python, PyGObject, GTK, libadwaita, libpeas and WebKitGTK from the host, which only worked where the host already had all of them at recent enough versions. The AppImageHub catalog tests on Ubuntu 22.04, and there 0.3.1 crashed on start with `ValueError: Namespace Peas not available`, because 22.04 has no libpeas 2 (nor libadwaita 1.7, nor WebKitGTK 6.0).
+
+  It now carries its whole stack, taken from Ubuntu 26.04, with the glibc and dynamic linker it was built against, so it depends on nothing but the host kernel, FUSE and a display. `scripts/packaging/AppImage/build_appimage.sh` builds it inside a throwaway `ubuntu:26.04` container (docker or podman) with pkgforge's `quick-sharun`, and packs it as SquashFS with the standard type 2 runtime, which is the only kind AppImageHub accepts. Every download the build makes is pinned by checksum. It is about 180 MB. `test_appimage.sh` checks a build on a clean Ubuntu 22.04 the way the catalog does, and the catalog's own test script passes against it.
+
+  The AppImage now carries update information (`gh-releases-zsync`), so the `.zsync` file the build writes next to it has to be uploaded to the release too.
+
+  It also ships `webkit-sandbox.hook`. WebKitGTK sandboxes its web process with bubblewrap, which needs unprivileged user namespaces, and Ubuntu 24.04 and later block those for binaries with no AppArmor profile, which includes anything inside an AppImage. WebKit gives up its sandbox by itself only inside Flatpak and inside a container; anywhere else it aborts the process the first time a web view is created, which for MiAZ means exiting at startup as soon as a repository is open and the workspace builds its Browser page. The hook probes the bundled `bwrap` once and runs WebKit without its sandbox only where that probe fails, printing a warning. Where namespaces work, which is Fedora, Arch, openSUSE, Debian and Ubuntu up to 23.10, the sandbox stays on. Build with `MIAZ_WEBKIT_SANDBOX_FALLBACK=0` to leave the hook out.
+
+  Using the host `/usr/bin/bwrap` instead would not help: Ubuntu grants `userns` per application binary path and ships no profile for bubblewrap, and an AppImage runs from a `/tmp/.mount_XXXXXX` path that no profile can match.
+
+- **CI runs three UI test files on a push and all of them on a pull request or a tag.** The UI tests share the job with lint, the unit suite and the metadata validators, and they are about twenty-six minutes of a twenty-eight minute job: 373 tests driving the real application, against fifty seconds for 1483 unit tests. Every push waited for an answer that lint and the unit suite already had after two minutes.
+
+  They are now their own job, so the fast answers no longer queue behind them, and what runs depends on the event. A push to a branch runs `test_ui_startup_work`, `test_ui_plugins` and `test_ui_repository`, about ninety seconds: the application starts and finishes its startup work, the plugins load, a repository opens and switches. That is the set that fails when the application is unusable rather than merely wrong in one widget. A pull request, a tag and a manual run get all 373.
+
+  The workflow now also triggers on `v[0-9]+.[0-9]+*` tags, which it did not before, so a release is checked against the full suite rather than against whatever the last push ran.
+
+### Fixed
+
+- **Startup filled each sidebar filter dropdown twice.** The sidebar creates the `ws-dropdowns` dictionary and fills all five from the configuration on `repository-switch-finished`. `MiAZWorkspace._setup_logic` filled the same five widgets a few lines earlier in the same `switch_finish` call, so the first fill was overwritten before a frame was drawn. Measured with a counting probe: 12 `dropdown_populate` calls at startup, 5 from the workspace, 5 from the sidebar, 2 from plugins filling dropdowns of their own.
+
+  The workspace now only connects the selection signal. The sidebar fill runs on every repository switch, where the workspace one ran once ever, so the sidebar is the path that has to stay.
+
+- **Every vocabulary change repopulated a sidebar dropdown for nothing.** `_setup_logic` connected `used-updated` on each of the five configurations to `update_dropdown_filter`, which reads the configuration and rebuilds the dropdown. The same signal also starts the debounced update, and that ends in `_update_dropdowns_after_filter`, which rebuilds those models from the filter and lands last. The configuration fill was always thrown away.
+
+  The connection is gone, along with `used_signals`, the dictionary that held the handler ids and that nothing ever read. `update_dropdown_filter` stays: it works, it is public, and a plugin that changes a vocabulary behind MiAZ's back can call it to show the result without waiting for a full update.
+
+- **Closing the rename dialog left two concept timers armed.** Leaving the concept entry defers a popover popdown by 120 ms so a click landing on a row registers first, and typing in it defers a refilter by 150 ms. Both callbacks touch the popover and its store. Closing the dialog inside either window ran them against widgets that were already gone.
+
+  Both are cancelled on `unmap` now. Cancelling there alone was not enough: closing the dialog also takes the focus off the entry, and that leave arrives after the unmap, so the close armed a fresh timer on its way out. `_on_concept_focus_leave` returns early when the widget is not mapped, which `get_mapped()` reports correctly again if the dialog is reopened.
+
+- **A document list row kept the destructive style after an inactive document scrolled past it.** `Gtk.SignalListItemFactory` builds its widget once in `setup` and hands the same widget to every item that later scrolls into that slot. `_on_factory_bind_subtitle` added `destructive-action` to the concept label for an inactive document and never took it off, so the next active document bound to that recycled row rendered as destructive. The markup was rewritten on each bind, which is why only the styling was wrong and the text always looked right.
+
+  An AST scan of every bind callback in `MiAZ/frontend/desktop/services` and `MiAZ/frontend/desktop/widgets` found this as the only case where a bind branch set widget state its sibling branch did not reset.
+
+- **One filter change rebuilt the filter tag banner three to six times.** `_update_filter_tags` is connected to both `workspace-view-filtered` and `workspace-view-updated`, and `_update_dropdowns_after_filter` calls it when it finishes. A single `workspace-view-updated` also runs `_on_filter_selected`, which refilters and emits `workspace-view-filtered` in turn, so the three paths compound. Each pass emptied the flowbox and built every chip again.
+
+  Measured in the running application: picking one country built 6 chips to show 2. Startup rebuilt the banner 4 times, and one config `used-updated` rebuilt it 6 times.
+
+  `_update_filter_tags` is now the scheduler and `_rebuild_filter_tags` does the work, coalesced onto an idle callback behind `_filter_tags_pending`, the way `_update_dropdowns_after_filter` already was. The cost never scaled with the number of documents, only with the number of active filters.
+
+- **`clear_filters` narrowed the dropdowns twice.** It called `_update_dropdowns_after_filter` inline while the other two call sites route through `_dropdown_update_pending` and `GLib.idle_add`. The comment at the call site in `set_query` already said why inline is wrong: it runs against a filter model that has not caught up, so the value just selected looks absent and the dropdown resets itself to `Any`. In `clear_filters` that outcome was harmless, everything was going to `Any` anyway, but skipping the pending flag meant a queued idle update still ran afterwards.
+
+- **The focus observability guard stole the focus it was guarding.** Three UI tests assert that focus lands somewhere after an action, and they fail under Xvfb without a window manager: the toplevel never becomes window-manager-active, so GTK 4.20 does not advance `window.get_focus()` for a plain `grab_focus()`. The guard added to skip them in that environment probed by calling `grab_focus()` on the document list, and it was called between the action and the assertion, so it moved the focus off the search entry a line before the test checked the search entry had it. Both tests passed on a real desktop before the guard and failed after it.
+
+  The probe is now a session scoped fixture. pytest resolves a fixture before the test body runs, so it cannot land in the middle of one, and it runs once for the session rather than before every test that asks. `test_focus_can_land_in_the_document_list` asserts `can_focus` on the document list before consulting the guard, because that is the invariant a real regression would break and it reads the same on any display; guarding the whole test on the probe would have turned that regression into a skip.
+
+- **`focus_is_observable` was called in a file that never imported it.** It is defined in `tests/ui/conftest.py`, and only fixtures reach a test module on their own. `ruff check` catches this as F821 and runs before pytest in CI, so the job would have failed at lint.
+
+- **The lane serialised nothing, so two imports could still copy into the same repository at once.** `run_in_background` asked the queue to start the job and then started the worker thread regardless. A queued job whose lane was busy stayed `pending` in the popover while its work was already running, which is both the bug the lane exists to prevent and a popover that lied about it. The queue now owns when a queued job begins: each job carries an event, `start` and the handover in `finish` are what set it, and the worker waits on it before calling its function. An unqueued job never waits, so a workspace scan still runs during an import. The wait is bounded at 30 minutes, after which the job runs anyway and says so in the log, because a worker parked for the rest of the session would be worse than two copies overlapping. The test that covers this counts how many workers ran at the same time; the previous tests asserted on job states, which read correctly while both workers were running.
+
+- **Nothing enforced the queue's one threading rule, and two races followed from it.** Jobs were mutated on whichever worker thread called in, with only the signal marshalled to the main loop. Taking the lane was an unguarded check-then-set, so two queued jobs starting together could both take it; and a `finish` that read another job as pending just as that job's own worker marked it done forced it back to running and pinned the lane on a job that had already gone, leaving every later queued job pending for the rest of the session. One lock now covers `add`, `start`, `report`, `finish` and the removal, signals are emitted after it is released, and a job that is not pending is never started.
+
+- **A failed job leaked and was invisible.** The queue scheduled its removal only for jobs that succeeded and nothing ever cleared the failures, so the list grew for the whole session with an exception and its traceback frames in each entry. The indicator made it worse: it derived busy from running and pending only, so a failure hid the spinner entirely and the popover never rendered it. Failures are now cleared when the next job is added, which is the retention the design asked for, and the indicator lists them under Failed with the error and keeps itself on screen while one is listed. A spinner that vanishes with no outcome is how a failure goes unnoticed.
+
+- **A large import never showed how far along it was, and its bar hit 100% early.** Each document was reported as "Importing something.pdf", which tells a user nothing about whether that is the first of 1322 or the last, and the report happened before the copy rather than after it, so the last document was announced as finished while it was still being written. The message now carries the count, "340 of 1322", and the fraction reaches 1.0 only once the final document has landed.
+
+- **A long import or a ZIP export made GNOME say the window had stopped responding.** The compositor puts up that dialog after about five seconds of a window not answering it, and both operations did their work on the main loop.
+
+  Import already had a worker path. It was chosen on the number of files, `count > 20`, which said nothing about the work: twenty 40 MB scans is 800 MB copied on the main loop and never reached the threshold. `needs_batch` now weighs the bytes as well, over 16 MB, which is about a second from a slow source. Either rule is enough on its own, because many small files are many workspace refreshes whatever they weigh and a few large ones are a long copy whatever they number.
+
+  `MiAZExport2Zip` did everything on the main loop, inside the file chooser's response handler: copy every selected document, compress the lot, rename the archive and delete the staging tree. It goes through the progress service now, the way `MiAZExport2Dir` already did: the names are gathered on the main loop, the worker touches no GTK, the bar names each document as it is copied, and the target directory is opened after the dialog is dismissed rather than while the copy is still running.
+
+  Export to text and to CSV were left alone. They only split filenames and never open a document.
+
+- **A document's own date was read out of the file every time it was asked for.** `dates_from_metadata` opens the document and scans it for the creation date it carries. Nothing was remembered, so asking twice read it twice: on the test repository ten documents came to 13.8 MB, and the second pass cost another 13.8 MB for an answer that cannot have changed.
+
+  `filename_guess_date` is `dates_from_metadata(filepath) or dates_from_text(concept_hint)`, so editing the concept in the rename dialog and pressing Detect date again is exactly that second ask, and it re-read the whole document although only the hint had changed.
+
+  The answer is kept against the path, size and modification time, the same three values the thumbnail cache uses, so a document edited in place is read again. Measured the same way afterwards, the second ask for ten documents is ten stat calls and no reads. An empty answer is kept too: re-reading to find nothing again costs the same as re-reading to find something.
+
+- **The projects plugin asked the filesystem about every document it had assigned.** `MiAZProjectMgt.check()` ran `os.path.exists` once per assignment to find documents that had been removed from the repository. On the 1322 document test repository that was 1322 stat calls at startup, the largest single source of them in the whole application, and on a remote repository one round trip each: about 53 seconds at a 40 ms round trip.
+
+  The listing two lines below answers the same question for every assignment at once, and `check()` was already taking it to count the documents in the repository. Measured the same way afterwards, a cold start makes 52 stat calls rather than 1374.
+
+  A repository that cannot be listed now produces no deletions at all. The old code stated each document, so a failed listing still produced a list of things to remove; the wipe guard caught the worst of that, and there is no longer anything for it to catch. Nothing is dropped on a guess.
+
+  Measured at the same time and left alone, because the index needs no work: one reload is a single directory listing, and 100000 lookups, rebuilding all 1322 items and a workspace refresh read nothing at all. `build_item` parses the filename and asks the cached configurations, so it never opens a document.
+
+- **A plugin read its settings file once per key, and the plugin list was rewritten at every launch.** Measured against the 1322 document test repository by counting every `open()` of a `.json` under `.conf`: a cold start made 16 reads of 16 files. It makes 13 now, one per file.
+
+  `MiAZPlugin.get_config_data` opened the file on every call, and every `get_config_key` goes through it. MiAZAutoScan reads four keys in four consecutive lines, which was four opens of one small file, and on a remote repository four round trips with nothing between them that could have changed it. The values are cached by file path now, so a repository switch still reads the settings of the repository being opened, and `set_config_data` refreshes the entry as it writes.
+
+  `MiAZConfig._add_batch` wrote whenever the batch was non-empty: `saved` counted the keys it put into the dictionary, not the keys that differed. The plugin list is handed to `add_available_batch` on every startup, so `plugins-available.json` was rewritten every launch, and the write read the previous contents for the diff and invalidated the cache. One logical read cost three accesses and a write. It compares first now.
+
+  What was already right, and is confirmed by the same measurement: the repository keys and descriptions are cached in memory and stay there. 14000 reads through the normal API cost six accesses, all of them the first touch of a file, and a workspace refresh costs none. One change to one field costs two accesses, a read of the previous contents for the diff and one refresh afterwards.
+
+- **The crash handler crashed instead of reporting, for the whole of application setup.** `MiAZApp.__init__` installs it on nearly its first line, with a comment saying it goes there so it can report failures raised while the services are built. Its excepthook asks the application for its environment, and `_env` was assigned on the last line of `__init__`, after every service. So a failure anywhere in between raised `AttributeError: 'MiAZApp' object has no attribute '_env'` inside the handler and took the real error with it. `_env` and `conf` are set before the handler is installed now.
+
+  Found while fixing the one below: the second application failed to build, and what reached the terminal was the excepthook's own AttributeError rather than the reason.
+
+- **A second MiAZActions could not be created.** `__init__` registered `settings-loaded` and `rename-dialog-built` with `GObject.signal_new`, which registers on the class, so the second instance raised `could not create signal`. They are declared in `__gsignals__` now, the way `MiAZApp` already declares its own.
+
+  Nothing in MiAZ builds two, which is why it never showed. It did make the instance registries untestable: the test that two applications keep their own widgets could not be written until this was fixed, and it is there now, running in a subprocess because building an application installs a crash excepthook that the test suite needs for itself.
+
+- **A maximized window was remembered as the size of the screen.** `_on_window_close_request` saved `get_width()` and `get_height()` whatever state the window was in. A maximized window reports the screen as its size, and that is also what GTK restores to when the user unmaximizes, because the next start hands it to `set_default_size`. So maximizing once and closing made the restored window cover the screen, and the unmaximize button looked broken. `remembered_size` keeps the size only while the window is not maximized and carries the previous one forward otherwise.
+
+- **Each MiAZApp now owns its registries, and two pieces of `app.py` that did nothing are gone.** `_miazobjs` and `_config` were class attributes holding mutable dictionaries, and `__init__` assigned into them rather than rebinding, so every instance shared one registry and a second application emptied the first one's widgets and services. Latent, since every entry point builds one, and unreachable in practice for a second reason: `MiAZActions.__init__` calls `GObject.signal_new`, which registers on the class, so a second instance raises `could not create signal` before it gets that far.
+
+  `remove_widget` and `remove_widgets_with_prefix` both called `widget.dispose()` behind a `hasattr` guard that never held: PyGObject exposes `run_dispose()`. The branch was dead, and the docstring said the widget was disposed when only the registry entry went. `run_dispose()` is not the missing half, since it breaks a GObject other code may still hold, so the dead code is gone and the docstrings say what happens. `find_widget_by_type` had no caller but its own recursion, and logged a debug line per widget visited; `find_widget` below it does the same job and is the one in use.
+
+- **Desktop startup did a quarter of its work for a window nobody opened, and the rest of it twice.** Against the 1322 document test repository, a cold start took 2221 ms to a loaded workspace. It now takes 1632 ms, measured the same way.
+
+  `MiAZWorkflow.switch_finish` built `MiAZRepoSettings` on every repository open and every switch, at 508 ms. The menu entry never used it: `show_repository_settings` builds its own. Its only reader was the auto-open for a repository whose configuration has no used entries, which builds one when it needs one now.
+
+  The other half was the Notes service. `workspace.update()` lists the repository, rebuilds the index and parses every filename, and Notes called it at startup to populate its column and again to refresh its filter, at 367 ms each. Both wanted the rows re-bound, which is what `view.refilter()` does and what the copy column has always used. `MiAZWorkspace.refresh_rows()` says so by name, and all three Notes call sites use it, including the only-with-notes switch, which was re-reading the repository to turn a filter on.
+
+  `index.reload` and `_parse_files_worker` now run once per startup rather than twice.
+
+- The duplicate prefilter called `os.path.isfile` and then `os.path.getsize`, two stat calls per document to answer one question. One `os.stat` now answers both, which is 1322 fewer round trips per scan on the test repository.
+
+- **Stepping back over a configuration change lost the redo.** `GitStore._rescue_pending` is careful about this. It commits a dirty working tree before a step overwrites it and appends that state at the end, keeping everything ahead reachable, precisely so no state is lost. `record()` truncates instead, on the text-editor rule that a change made after stepping back is a new branch of the user's work.
+
+  The two meet badly. A step that touched `.conf` ends in `reload()`, which reopens the repository and writes its configuration files out again. That leaves the tree dirty, `_start_recording` calls `catch_up()`, and `catch_up` records through `record()`. The redo the step just created is truncated away by MiAZ rewriting its own configuration, which is not the user starting a new branch of anything. The states read `[..., 'Added 1 document', 'Changed outside MiAZ']` with the index on the last one.
+
+  The index arithmetic in `step_back` and `step_forward` is right; this was never an off-by-one. `catch_up` now returns early while a redo is pending. Work found lying on disk is not the user starting a new branch, and leaving it costs nothing: the next step rescues it through `_rescue_pending`, which appends without truncating, and a real change by the user settles into `record()`, where truncating is right because by then the rule does apply.
+
+  Found by `scripts/checks/run_ui_tests.sh --shuffle` at seed 20. File order never reached it.
+
+- **Two more tests were leaning on the order they ran in, and the UI runner now says which order it wants.** `workspace.show_duplicates()` scans for copies and reveals the copy column. Three tests called it and none put it back, so `test_the_column_is_hidden_when_nothing_has_been_scanned` failed whenever one of them ran first. They clean up now, through a `forget_duplicates` helper.
+
+  That one is not fixed in `clean_view`, unlike the view. Two tests in that file assert the promise itself, that a user who never asks for copies pays nothing, so handing them a reset state from a fixture would make both assert the fixture. Whoever scans cleans up instead.
+
+  `tests/ui/test_ui_history.py` broke three of its own tests when shuffled, and its fixture said why: the tests build on the git history they record between them. They do not. Three documents were written under the same name by two tests each, so whichever ran second wrote bytes git already held. Its `settle()` recorded nothing about that document, and the assertion after it was about a state it had not made: an undo dialog naming a configuration change rather than the file, and a step back waiting forever for a document it was never going to remove. Each name belongs to one test now, and the fixture says what actually held the file together.
+
+  Two smaller leaks in the same file went with it. `test_stepping_back_takes_the_document_off_the_disk` was the only test there that left the store somewhere else, one state behind with a redo pending; it steps forward again now. And `_counts` is fed by the filesystem watcher and accumulates, so events from one test landed on the next one's hand-set tally and named a step `Deleted 2 documents` where it asked for `Added 2 documents`. The `history` fixture hands over a plugin with that drained.
+
+  `scripts/checks/run_ui_tests.sh` now pins file order by default and takes `--shuffle` to opt in. The reason is wall time and nothing else: `pytest-randomly` shuffles the moment it is installed, and a shuffled UI run takes 23 minutes against eight, because the tests drive one application for the whole run and repository switches stop batching. No file needs its order. `pytest-randomly` is declared as the `test` extra in `pyproject.toml`, and `RELEASING.md` lists both shuffled runs as pre-release checks.
+
+- **A log test passed only because two other tests happened to repair it first.** `cli.main` lowers the console handler to WARNING on purpose, so a command that prints filenames does not also narrate its startup. A real run exits afterwards; the suite does not, and fifteen tests across `test_cli.py` and `test_cli_plugins.py` call `main`, leaving the level down for everything after them.
+
+  `test_the_console_starts_at_info` asserts the default is INFO. The CLI tests sort before it alphabetically and always ran first, yet it passed, because two earlier tests in its own file set the level and restore it in a `finally`. The default was back by accident, for unrelated reasons. `tests/conftest.py` now restores it after every test, so the assertion reads the default it means to read whatever ran before it.
+
+  Found by installing `pytest-randomly` and running the suite under 25 seeds. Three seeds in the first ten failed; all 25 pass now. The plugin is not declared in `pyproject.toml`, which has no test extra.
+
+- **A UI test failed depending on which file ran before it.** `test_timeline_builds_nothing_while_another_page_is_shown` opens by asserting the workspace starts on Details. `tests/ui/test_ui_remote_mode.py` ends on Filenames, on purpose: one of its tests is that marking a repository remote does not yank the user off a view that survives. The application fixture is session scoped, so the second file inherited the first one leaving.
+
+  `clean_view` puts the view back now, alongside the filters and the search box it already reset. Its job was always to guarantee a known starting state, and the current view was the one part of that state nobody had claimed. Leaving each test to restore the view it changed would have fixed this collision and armed the same trap for the next test written: four UI files call `show_view`, and three tests open by asserting they start on Details.
+
+- **A preview already rendered was decoded again on every bind.** `MiAZ.backend.thumbnails` remembers which file holds the preview for a document, and it cannot remember more than that: decoded images are Gdk types and the backend imports no GUI toolkit. So the grid, the timeline, the conversation view and the preview panel each ended in `Gtk.Picture.set_filename`, which reads and decodes the PNG synchronously on the main thread. Scrolling back over rows already seen skipped `pdftoppm` and then paid for a full decode per cell anyway.
+
+  `MiAZ/frontend/desktop/widgets/thumbnailcache.py` holds the decoded `Gdk.Texture` instead, behind a `set_thumbnail(picture, path)` the four views share. It is an LRU capped by decoded bytes rather than by entry count, because the sizes differ by two orders of magnitude: a 256px grid cell is about 370 KB decoded and a 1920px preview about 21 MB. The budget is 64 MB, which covers a full screen of cells and the panel.
+
+  Two cases needed care. Images pass through unrendered at whatever size they are, so a photograph from a phone would spend the whole budget on one document; anything over 8 MB decoded is shown and then let go. And a plain image is its own preview, so it can be edited in place under the same path: entries are keyed by path, size and modification time, the same three values `thumbnail_key` is built from, so a stat of microseconds guards a decode of milliseconds. A file that cannot be decoded is remembered as having no image, so a corrupt document does not cost a failed decode on every bind.
+
+  The first decode still happens on the main thread. Moving it to a worker means loading a `GdkPixbuf` off the main loop and building the texture back on it, which is worth doing only if measurement says that first decode still hurts.
+
+- The preview sheet called `thumbnail_for` directly, skipping the shared in-memory cache and its cancellation, so reselecting a document rendered it again and arrowing down the list queued one render per keystroke. It now goes through `request_thumbnail`, and selection changes are debounced by 300 ms.
+
+- **A thumbnail already rendered still read the whole document to find itself.** Rendered images are named after the content digest of the document, so a renamed document keeps its image, which matters because renaming is what MiAZ does most. But `thumbnail_for` computed that digest, reading every byte, *before* checking whether the image it names was already on disk. A warm cache cost exactly as much reading as a cold one. Local storage hid it: a screen of 24 grid cells took 1.51s cold and 0.09s warm, because the page cache absorbed the reads.
+
+  The digest is now computed once per version of a document and remembered against its identity, `(st_dev, st_ino, st_size, st_mtime_ns)`, in an `index.json` beside the rendered images. A rename changes none of those four, so the image still resolves; an edit changes the last two, so a fresh one is rendered. The device and inode are part of the key because a repository synchronised with rclone or rsync carries second-precision modification times, which leaves size and mtime alone too weak to tell two documents apart.
+
+  Measured on FVM-test, a warm screen of grid cells went from 29.3 MB read to zero, and a warm preview walk from 12.8 MB to zero. A document whose bytes change without its size or modification time changing now keeps the old image, which is the trade every thumbnailer makes.
+
+- **The console shell built its configuration before registering the `util` service.** `MiAZConfig.setup()` writes a missing configuration file through `util.json_save`, and `save_data` logs the failure rather than raising it, so a first run with no `~/.MiAZ` wrote none of its configuration files and said so only as four `'NoneType' object has no attribute 'json_save'` lines in the log. The desktop shell has always registered `util` first. `MiAZConsoleApp.__init__` now does the same.
+
 ## [0.3.1] - 2026-09-14
 
 ### Added

@@ -182,20 +182,28 @@ class Doctor(MiAZExtension):
             if config is not None:
                 vocabularies[field] = config.load_used()
 
-        # find_duplicates answers per path, listing that path's twins. One
-        # group of three would otherwise be reported three times, so the paths
-        # are folded back into groups by their membership.
-        twins = find_duplicates(paths)
-        groups, seen = [], set()
-        for path in sorted(twins):
-            if path in seen:
-                continue
-            group = sorted([path] + twins[path])
-            seen.update(group)
-            groups.append([os.path.basename(member) for member in group])
-        duplicates = groups
+        # The scan reads every file in any same size group, so it never runs
+        # on a remote repository. This path does not go through the workspace,
+        # which has its own gate: find_duplicates is called here directly.
+        repository = self.app.get_service('repo')
+        remote = repository is not None and repository.remote
+        duplicates = []
+        if not remote:
+            # find_duplicates answers per path, listing that path's twins. One
+            # group of three would otherwise be reported three times, so the
+            # paths are folded back into groups by their membership.
+            twins = find_duplicates(paths)
+            groups, seen = [], set()
+            for path in sorted(twins):
+                if path in seen:
+                    continue
+                group = sorted([path] + twins[path])
+                seen.update(group)
+                groups.append([os.path.basename(member) for member in group])
+            duplicates = groups
         return build_report(filenames, vocabularies, duplicates=duplicates,
-                            unreadable=unreadable, empty=empty)
+                            unreadable=unreadable, empty=empty,
+                            duplicates_checked=not remote)
 
     def run(self, *args):
         self.srvdlg.show_toast(_('Examining the repository...'))

@@ -460,6 +460,11 @@ class PluginActionRegistry:
             except Exception as error:
                 self.log.warning(f"Could not remove action '{action_name}' "
                                  f"of '{owner}': {error}")
+        # Give the keys back, or re-enabling this plugin would be refused as a
+        # collision with the registration it left behind.
+        registry = app.get_service('shortcuts')
+        if registry is not None:
+            registry.unregister_owner(owner)
 
 
 class MiAZPlugin(GObject.GObject):
@@ -472,6 +477,9 @@ class MiAZPlugin(GObject.GObject):
         self.app = app
         self.log = MiAZLog('MiAZPlugin')
         self.util = self.app.get_service('util')
+        # This plugin's settings, by the file they came from. See
+        # get_config_data.
+        self._config_cache = {}
         # Filled in by register(). Defaulted here so anything reading them
         # early (an icon lookup, a log line) finds an empty value, not an
         # AttributeError.
@@ -609,7 +617,8 @@ class MiAZPlugin(GObject.GObject):
         gone, and the shortcut still fires its handler.
         """
         factory = self.app.get_service('factory')
-        menuitem = factory.create_menuitem(name, label, callback, data, shortcuts)
+        menuitem = factory.create_menuitem(name, label, callback, data,
+                                           shortcuts, owner=self.get_name())
         if callback is not None:
             registry = self._action_registry()
             if registry is not None:
@@ -679,12 +688,28 @@ class MiAZPlugin(GObject.GObject):
         return os.path.join(self.get_config_dir(), "default_available_data.json")
 
     def get_config_data(self):
+        """This plugin's settings, read from disk once per repository.
+
+        Every get_config_key call comes through here, and this used to open the
+        file each time: MiAZAutoScan reads four keys in four consecutive lines,
+        which was four opens of one small file, and on a remote repository four
+        round trips. Nothing between them can have changed it.
+
+        Keyed by the file path, so a repository switch reads the settings of the
+        repository being opened rather than serving the ones being left behind.
+        set_config_data is the only thing that can change them, and it refreshes
+        the entry as it writes.
+        """
         config_file = self.get_config_file()
+        cached = self._config_cache.get(config_file)
+        if cached is not None:
+            return cached
         try:
             config_data = self.util.json_load(config_file)
         except Exception:
             config_data = {}
             self.util.json_save(config_file, config_data)
+        self._config_cache[config_file] = config_data
         return config_data
 
     def get_config_key(self, key: str):
@@ -697,6 +722,7 @@ class MiAZPlugin(GObject.GObject):
     def set_config_data(self, config_data: {}):
         config_file = self.get_config_file()
         self.util.json_save(config_file, config_data)
+        self._config_cache[config_file] = config_data
 
     def set_config_key(self, key: str, value):
         config_file = self.get_config_file()
@@ -1143,7 +1169,16 @@ class MiAZPluginSystem(MiAZPluginCore):
         """
         already_loaded = self.is_plugin_loaded(plugin)
         loaded = super().load_plugin(plugin)
-        if not loaded or already_loaded:
+        if not loaded:
+            # A plugin that raised partway through do_activate() (its
+            # documented way of vetoing its own load, e.g. a missing external
+            # tool) may already have called install_menu_entries and claimed
+            # accelerators before it raised. The engine unloads it, but that
+            # only visits loaded plugins, so an owner that never finished
+            # loading would keep its keys forever. Give them back here.
+            self.actions.undo_all(plugin.get_name(), self.app)
+            return loaded
+        if already_loaded:
             return loaded
 
         pname = plugin.get_name()
@@ -1186,11 +1221,16 @@ class MiAZPluginSystem(MiAZPluginCore):
             self.menus.forget(plugin.get_name())
             self.settings.forget(plugin.get_name())
             self.widgets.undo_all(plugin.get_name())
-            self.actions.undo_all(plugin.get_name(), self.app)
             self.log.info(f"Plugin {pname} v{pvers} unloaded")
             self.emit('plugins-updated')
         except Exception as error:
             self.log.error(error)
+        finally:
+            # However much of the teardown above failed, the plugin's
+            # accelerators must come back. Otherwise they stay claimed
+            # forever and re-enabling the same plugin is refused as a
+            # collision with its own corpse.
+            self.actions.undo_all(plugin.get_name(), self.app)
 
     def unload_all(self) -> int:
         """Unload every loaded plugin. Returns how many were unloaded.

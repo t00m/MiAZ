@@ -19,9 +19,11 @@ from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.status import MiAZStatus
 
 
-# How often a remote repository is polled. Remote shares have no usable
-# file monitor, so the directory is listed on a timer instead.
-REMOTE_POLL_SECONDS = 2
+# How often a remote repository is polled, in seconds. Remote shares have no
+# usable file monitor, so the directory is listed on a timer instead. One tick
+# is one directory enumeration, about 0.6s on a 40 ms link for 1322 documents,
+# so the old 2 second interval occupied roughly a third of the link forever.
+REMOTE_POLL_SECONDS = 30
 
 
 class MiAZWatcher(GObject.GObject):
@@ -46,7 +48,7 @@ class MiAZWatcher(GObject.GObject):
     # Gio.FileMonitorEvent to a stable string nick.
     _EVENT_NICKS = None
 
-    def __init__(self, dirpath: str = None, remote=False):
+    def __init__(self, dirpath: str = None, remote=False, poll_seconds=None):
         """
         Initialize MiAZWatcher and signal"
         """
@@ -54,6 +56,9 @@ class MiAZWatcher(GObject.GObject):
         self.log = MiAZLog('MiAZ.Watcher')
         self.dirpath = dirpath
         self.remote = remote
+        self.poll_seconds = REMOTE_POLL_SECONDS if poll_seconds is None else poll_seconds
+        # A poll nobody is looking at is waste. The window sets this on unmap.
+        self._paused = False
         self.before = {}
         self.active = False
         self.status = MiAZStatus.RUNNING
@@ -65,7 +70,7 @@ class MiAZWatcher(GObject.GObject):
         self._pending = {}
         self.log.debug(f"Watching repository: {dirpath}")
         self.log.debug(f"Remote repository? {remote}")
-        self.log.debug(f"Timeout set to: {REMOTE_POLL_SECONDS}")
+        self.log.debug(f"Timeout set to: {self.poll_seconds}")
         # set_path arms the remote poll (or the local file monitor) itself.
         # Scheduling another one here left the first running with its id
         # overwritten, so nothing could stop it and the poll ran at twice the
@@ -232,7 +237,7 @@ class MiAZWatcher(GObject.GObject):
                     GLib.source_remove(self._timeout_id)
                     self._timeout_id = 0
                 self._timeout_id = GLib.timeout_add_seconds(
-                    REMOTE_POLL_SECONDS, self.monitor, self.dirpath, self.watch)
+                    self.poll_seconds, self.monitor, self.dirpath, self.watch)
             else:
                 self._setup_file_monitor()
 
@@ -291,8 +296,16 @@ class MiAZWatcher(GObject.GObject):
         self.status = MiAZStatus.RUNNING
         return True
 
+    def set_paused(self, paused: bool) -> None:
+        """Stop polling while nothing is on screen to show the answer."""
+        self._paused = bool(paused)
+
+    def get_paused(self) -> bool:
+        return self._paused
+
     def monitor(self, path, callback):
-        # ~ self.log.debug(f"Watcher active? {self.active}")
-        if self.active:
+        # Always True: returning False removes the GLib source, and a paused
+        # watcher would then never poll again once it was resumed.
+        if self.active and not self._paused:
             self.files_with_timestamp_async(path, callback)
         return True

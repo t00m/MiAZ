@@ -38,6 +38,7 @@ from MiAZ.frontend.desktop.widgets.gridview import MiAZGridView
 from MiAZ.frontend.desktop.widgets.pages import MiAZPageNotFound
 from MiAZ.frontend.desktop.widgets.pills import FIELD_COLORS
 from MiAZ.frontend.desktop.widgets.timelineview import MiAZTimelineView
+from MiAZ.frontend.desktop.services.shortcuts import LIST as SHORTCUT_LIST
 from MiAZ.frontend.desktop.widgets.dragout import (install_for_workspace_selection,
                                                    started_here)
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewWorkspace
@@ -126,13 +127,21 @@ class MiAZWorkspace(Gtk.Box):
         self.log.debug("Initializing widget Workspace!!")
         self.app = app
         self.config = self.app.get_config_dict()
-        self.used_signals = {}
         self._repo_switch_signals = {}
+        # Views a plugin registered, as name -> (icon_name, label). Needed
+        # before the toolbar is built: rebuilding it walks this.
+        self._extra_views = {}
+        # Armed by _update_preview so a burst of selection changes renders once.
+        self._preview_debounce_id = 0
         self._finish_config_done = False
         self._clearing_filters = False
         self._updating_dropdowns = False
         self._filter_in_progress = False
         self._dropdown_update_pending = False
+        # Same idea for the filter tag banner: one user action reaches
+        # _update_filter_tags up to six times, and each pass throws the chips
+        # away and builds them again.
+        self._filter_tags_pending = False
         # Must exist before _setup_logic(), which builds the date presets and
         # reads these. The presets encode absolute days derived from "now";
         # _date_presets_day tracks the day they were built for (so update() can
@@ -229,17 +238,20 @@ class MiAZWorkspace(Gtk.Box):
         self._sid_date_selected = dd_date.connect("notify::selected-item", self.update)
 
         ## Rest of dropdowns
+        # Only the selection signal. The sidebar owns 'ws-dropdowns' and fills
+        # all five from the configuration on 'repository-switch-finished',
+        # which switch_finish emits a few lines after it builds this page, so
+        # filling them here as well did the same work twice at startup.
+        #
+        # No 'used-updated' connection either. It ran dropdown_populate for
+        # every vocabulary change, and the debounced update that the same
+        # signal starts ends in _update_dropdowns_after_filter, which rebuilds
+        # these models from the filter and lands last. The config fill was
+        # always overwritten.
         for item_type in [Country, Group, SentBy, Purpose, SentTo]:
             i_type = item_type.__gtype_name__
-            i_title = _(item_type.__title__)
             dropdown = dropdowns[i_type]
-            actions.dropdown_populate(  config=self.config,
-                                        dropdown=dropdowns[i_type],
-                                        item_type=item_type,
-                                        any_value=True,
-                                        none_value=False)
             dropdown.connect("notify::selected-item", self._on_filter_selected)
-            self.used_signals[i_type] = self.config[i_type].connect('used-updated', self.update_dropdown_filter, item_type)
 
         # Connect Watcher service. 'repository-changed' carries the changed path
         # for a targeted, incremental update; 'repository-updated' is the full
@@ -258,6 +270,9 @@ class MiAZWorkspace(Gtk.Box):
         # Connect Repository
         repository = self.app.get_service('repo')
         repository.connect('repository-switched', self._update_dropdowns)
+        # Marking a repository remote takes views away; unmarking is the only
+        # way back, so it has to land without a restart.
+        repository.connect('remote-changed', self._on_remote_changed)
 
         # Observe config changes
         for node in self.config:
@@ -431,6 +446,12 @@ class MiAZWorkspace(Gtk.Box):
         self.selected_items = []
 
     def update_dropdown_filter(self, config, changed, item_type):
+        """Fill one sidebar dropdown from the configuration.
+
+        Nothing in core connects this any more, see _setup_logic. Kept because
+        it works and a plugin that changes a vocabulary behind MiAZ's back can
+        use it to show the result without waiting for a full update.
+        """
         # 'changed' is the key set the config signal carries. Repopulating reads
         # the whole file, so it is not needed here.
         actions = self.app.get_service('actions')
@@ -483,7 +504,15 @@ class MiAZWorkspace(Gtk.Box):
         Reads files, about 0.9s for 1336 documents, so it runs in a worker and
         only when something asks: review mode, or a caller wanting the copies
         told apart. A user who does neither pays nothing.
+
+        Never on a remote repository: the scan reads every file in any same
+        size group, measured at 222.5 MB on a 1322 document repository, and
+        review mode starts it without being asked.
         """
+        repository = self.app.get_service('repo')
+        if repository is not None and repository.remote:
+            self.log.debug("Duplicate scan skipped: the repository is remote")
+            return False
         index = self.app.get_service('index')
         if index is None or not index.duplicates_stale():
             return False
@@ -604,6 +633,7 @@ class MiAZWorkspace(Gtk.Box):
         frame = Gtk.Frame()
         self.view = MiAZColumnViewWorkspace(self.app)
         self.app.add_widget('workspace-view', self.view)
+        self._install_list_shortcuts()
         # Documents can be dragged out of the list into another application.
         # On the column view itself, so a drag started anywhere in a row works
         # rather than only over one column.
@@ -615,6 +645,35 @@ class MiAZWorkspace(Gtk.Box):
         frame.set_child(self.view)
 
         return frame
+
+    def _install_list_shortcuts(self):
+        """The bare keys, on the list rather than on the window.
+
+        Return, F2, Delete and Ctrl+A are what a file manager uses, and they
+        are also what a text entry uses. LOCAL scope means they fire only
+        while this list, or something inside it, has focus, so Delete cannot
+        remove documents while somebody is typing in the sidebar search.
+
+        The accelerators come from the registry, so the four keys are written
+        down in exactly one place, the same place the Keyboard Shortcuts
+        window reads.
+        """
+        registry = self.app.get_service('shortcuts')
+        if registry is None:
+            return
+        controller = Gtk.ShortcutController()
+        controller.set_scope(Gtk.ShortcutScope.LOCAL)
+        for binding in registry.bindings(scope=SHORTCUT_LIST):
+            trigger = Gtk.ShortcutTrigger.parse_string(binding.accelerator)
+            if trigger is None:
+                self.log.warning(f"'{binding.accelerator}' is not a trigger "
+                                 f"GTK can read, so '{binding.action}' has "
+                                 "no key on the document list")
+                continue
+            action = Gtk.NamedAction.new(f'app.{binding.action}')
+            controller.add_shortcut(Gtk.Shortcut.new(trigger, action))
+        self.view.cv.add_controller(controller)
+        self.app.add_widget('workspace-shortcut-controller', controller)
 
     def register_filter_view(self, name: str, callback):
         registered = False
@@ -775,6 +834,13 @@ class MiAZWorkspace(Gtk.Box):
         ('filenames', 'text-x-generic-symbolic', _('Filenames')),
     )
 
+    # Views that render one thumbnail per bound row, and bound is not visible:
+    # GTK keeps a buffer well past the screen. Measured on a 1322 document
+    # repository, opening the grid reads 386.8 MB. They are unreachable while
+    # the repository is marked remote. Details and filenames read nothing but
+    # the index, so they stay.
+    _REMOTE_DISABLED_VIEWS = ('grid', 'timeline', 'conversation')
+
     def _setup_view_toolbar(self):
         """The toolbar above the documents.
 
@@ -791,22 +857,10 @@ class MiAZWorkspace(Gtk.Box):
         linked = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
         linked.add_css_class('linked')
         self._view_buttons = {}
-        first = None
-        for name, icon_name, label in self._BUILTIN_VIEWS:
-            button = Gtk.ToggleButton()
-            button.set_icon_name(icon_name)
-            button.set_tooltip_text(label)
-            if first is None:
-                first = button
-            else:
-                button.set_group(first)
-            button.connect('toggled', self._on_view_button_toggled, name)
-            self._view_buttons[name] = button
-            linked.append(button)
         # Kept so a view added later joins the same radio group and the same box.
-        self._view_button_group = first
+        self._view_button_group = None
         self._view_button_box = linked
-        self._view_buttons['details'].set_active(True)
+        self._rebuild_view_buttons()
         # The Review toggle sits next to the views: it is another way of
         # choosing which documents are on screen. The main window makes it
         # and moves it here, the way it does with the document actions.
@@ -876,8 +930,62 @@ class MiAZWorkspace(Gtk.Box):
     def get_current_view(self):
         return self._view_stack.get_visible_child_name()
 
+    def _rebuild_view_buttons(self, keep=None):
+        """Build one toggle per view the repository allows.
+
+        Called again whenever the remote flag moves, so marking or unmarking a
+        repository takes effect on the next frame rather than the next run.
+        Views a plugin added are rebuilt too: they are not ours to judge, so
+        they are never disabled, but dropping their buttons on a rebuild would
+        take them away for good.
+        """
+        for button in list(self._view_buttons.values()):
+            self._view_button_box.remove(button)
+        self._view_buttons = {}
+        repository = self.app.get_service('repo')
+        remote = repository is not None and repository.remote
+        definitions = list(self._BUILTIN_VIEWS)
+        definitions += [(name, icon, label)
+                        for name, (icon, label) in self._extra_views.items()]
+        first = None
+        for name, icon_name, label in definitions:
+            if remote and name in self._REMOTE_DISABLED_VIEWS:
+                continue
+            button = Gtk.ToggleButton()
+            button.set_icon_name(icon_name)
+            button.set_tooltip_text(label)
+            if first is None:
+                first = button
+            else:
+                button.set_group(first)
+            button.connect('toggled', self._on_view_button_toggled, name)
+            self._view_buttons[name] = button
+            self._view_button_box.append(button)
+        self._view_button_group = first
+        wanted = keep if keep in self._view_buttons else 'details'
+        self._view_buttons[wanted].set_active(True)
+
+    def _on_remote_changed(self, _repository, _remote):
+        """Rebuild the toolbar and leave the user on a view that still exists."""
+        if not hasattr(self, '_view_button_box'):
+            return
+        current = self._view_stack.get_visible_child_name()
+        self._rebuild_view_buttons(keep=current)
+        if current not in self._view_buttons:
+            self.show_view('details')
+
     def show_view(self, name):
-        """Show one of details, grid, timeline, conversation or filenames."""
+        """Show one of details, grid, timeline, conversation or filenames.
+
+        A view the repository does not allow lands on Details instead. This is
+        the application's own policy, not a façade restricting plugins: a
+        plugin calling show_view('grid') gets what the toolbar would give it.
+        """
+        repository = self.app.get_service('repo')
+        if (repository is not None and repository.remote
+                and name in self._REMOTE_DISABLED_VIEWS):
+            self.log.debug(f"View '{name}' is disabled on a remote repository")
+            name = 'details'
         button = self._view_buttons.get(name)
         if button is not None:
             button.set_active(True)
@@ -906,6 +1014,9 @@ class MiAZWorkspace(Gtk.Box):
         self._view_button_box.append(button)
         self._view_stack.add_named(widget, name)
         self._views[name] = widget
+        # Remembered so _rebuild_view_buttons can put this button back: the
+        # rebuild throws every button away and a plugin view would not return.
+        self._extra_views[name] = (icon_name, label)
         self.log.debug(f"Workspace view added: {name}")
 
     def remove_view(self, name):
@@ -924,6 +1035,7 @@ class MiAZWorkspace(Gtk.Box):
         button = self._view_buttons.pop(name, None)
         if button is not None:
             self._view_button_box.remove(button)
+        self._extra_views.pop(name, None)
         self.log.debug(f"Workspace view removed: {name}")
 
     def _on_view_changed(self, *args):
@@ -967,17 +1079,29 @@ class MiAZWorkspace(Gtk.Box):
         self._update_preview()
 
     def _update_preview(self, *args):
-        """Feed the preview panel while it is open; do nothing when closed."""
+        """Feed the preview panel while it is open; do nothing when closed.
+
+        Debounced: arrowing down the list asked for a render on every
+        keystroke, and on a remote repository each render is a document
+        fetched. Only the selection the user settles on is rendered.
+        """
+        if self._preview_debounce_id > 0:
+            GLib.source_remove(self._preview_debounce_id)
+        self._preview_debounce_id = GLib.timeout_add(300, self._apply_preview)
+
+    def _apply_preview(self):
+        self._preview_debounce_id = 0
         preview = self.app.get_widget('workspace-preview')
         sheet = self.app.get_widget('workspace-preview-sheet')
         if preview is None or sheet is None or not sheet.get_open():
-            return
+            return False
         repo = self.app.get_service('repo')
         items = self.get_selected_items()
         if items:
             preview.set_document(os.path.join(repo.docs, os.path.basename(items[0].id)))
         else:
             preview.set_document(None)
+        return False
 
     def _setup_filter_tags_bar(self):
         """Banner shown above the document list with the currently active
@@ -1129,6 +1253,26 @@ class MiAZWorkspace(Gtk.Box):
             dropdown.set_selected(0)
 
     def _update_filter_tags(self, *args):
+        """Ask for one rebuild of the filter tags banner, on idle.
+
+        Three paths reach this for a single change: both 'workspace-view-filtered'
+        and 'workspace-view-updated' are connected to it, and
+        _update_dropdowns_after_filter calls it when it finishes. One
+        'workspace-view-updated' also runs _on_filter_selected, which refilters
+        and emits 'workspace-view-filtered' in turn. Rebuilding on each of them
+        destroyed and recreated every chip three to six times per click.
+        """
+        if self._filter_tags_pending:
+            return
+        self._filter_tags_pending = True
+        GLib.idle_add(self._idle_rebuild_filter_tags)
+
+    def _idle_rebuild_filter_tags(self):
+        self._filter_tags_pending = False
+        self._rebuild_filter_tags()
+        return False
+
+    def _rebuild_filter_tags(self):
         """Rebuild the active-filter tags banner from the current dropdown state."""
         flowbox = getattr(self, '_filter_tags_flowbox', None)
         if flowbox is None:
@@ -1323,7 +1467,12 @@ class MiAZWorkspace(Gtk.Box):
         self._refresh_filter_cache()
         self.view.refilter()
         self.emit('workspace-view-filtered')
-        self._update_dropdowns_after_filter()
+        # On idle, like every other caller. Inline it ran against a filter model
+        # that had not caught up, and it skipped the pending flag, so a queued
+        # update still ran afterwards and the dropdowns were narrowed twice.
+        if not self._dropdown_update_pending:
+            self._dropdown_update_pending = True
+            GLib.idle_add(self._idle_update_dropdowns)
 
     def _parse_files_worker(self, repo_docs, result_dict):
         """Run in a background thread: rebuild the index and hand back its items.
@@ -1488,6 +1637,17 @@ class MiAZWorkspace(Gtk.Box):
             on_done=self._apply_parse_results,
             on_error=self._on_scan_failed,
             name='workspace-scan')
+
+    def refresh_rows(self):
+        """Re-bind the visible rows without re-reading the repository.
+
+        update() lists the directory, rebuilds the index and parses every
+        filename. A caller that only needs its own column or highlight redrawn
+        wants none of that: refilter re-binds every visible row, which is what
+        re-runs each column's bind. _update_duplicate_column does the same
+        thing for the copy column.
+        """
+        self.view.refilter()
 
     def _on_scan_failed(self, error):
         """Let the next scan through when this one could not finish.

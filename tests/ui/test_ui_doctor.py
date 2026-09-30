@@ -309,3 +309,30 @@ def test_showing_another_finding_leaves_the_copy_column_alone(clean_view, doctor
     assert view.column_duplicate.get_visible() is False
     clean_view.workspace.clear_documents()
     clean_view.pump(0.3)
+
+
+def test_a_remote_repository_reports_the_duplicate_check_as_not_run(miaz, doctor):
+    """Skipping the scan silently would turn "not looked" into "found none".
+
+    This path never goes through the workspace gate: the plugin calls
+    find_duplicates itself while building the report, so it needs its own.
+    """
+    repository = miaz.service('repo')
+    repository.set_remote(True)
+    miaz.pump(0.3)
+    try:
+        report = doctor.examine()
+    finally:
+        repository.set_remote(False)
+        miaz.pump(0.3)
+
+    checks = {finding.check for finding in report}
+    assert 'duplicates-skipped' in checks
+    assert 'duplicates' not in checks
+
+
+def test_a_local_repository_still_checks_for_duplicates(miaz, doctor):
+    report = doctor.examine()
+
+    checks = {finding.check for finding in report}
+    assert 'duplicates-skipped' not in checks

@@ -217,8 +217,28 @@ class MiAZHistoryPlugin(MiAZExtension):
         self.disable_self()
 
     def catch_up(self):
-        """Record what changed while the plugin was off, as one step."""
+        """Record what changed while the plugin was off, as one step.
+
+        Not while a redo is pending. record() truncates everything ahead, on
+        the rule that a change made after stepping back is a new branch of the
+        user's work. Work found lying on disk is not that: it was already
+        there and was only never written down.
+
+        The case that made this matter is MiAZ reacting to its own step. A
+        step that touched .conf ends in reload(), which reopens the repository
+        and writes its configuration files out again, leaving the tree dirty
+        and bringing us straight back here. The redo the step had just created
+        was recorded away by MiAZ rewriting its own files.
+
+        Leaving it costs nothing. The next step rescues it through
+        _rescue_pending, which appends without truncating, and a real change by
+        the user settles into record(), where truncating is right because by
+        then the user really has started a new branch.
+        """
         if not self._ready or not self.store.is_dirty():
+            return
+        if self.store.can_redo():
+            self.log.debug('Not recording found work: a redo is waiting')
             return
         run_in_background(
             lambda: self.store.record(_('Changed outside MiAZ')),

@@ -18,6 +18,7 @@ import threading
 import functools
 import subprocess
 import mimetypes
+from collections import OrderedDict
 import struct
 import zipfile
 import zlib
@@ -78,6 +79,9 @@ _PDF_SCAN_EDGE = 8 * 1024 * 1024
 # found nothing. These keep it from turning into a scan of every embedded image.
 _PDF_MAX_STREAMS = 64
 _PDF_MAX_STREAM_BYTES = 4 * 1024 * 1024
+
+# How many documents' dates to keep. Each entry is a path and at most one date.
+_METADATA_DATE_CACHE = 4096
 
 
 def _as_date(year: int, month: int, day: int) -> str:
@@ -331,6 +335,9 @@ class MiAZUtil(GObject.GObject):
         super().__init__()
         self.log = MiAZLog('MiAZ.Backend.Util')
         self.app = app
+        # Dates already read out of a document, by what the document was when
+        # they were read. See dates_from_metadata.
+        self._metadata_dates = OrderedDict()
 
     def extract_variable_from_python_module(self, filepath, variable_name):
         with open(filepath, "r", encoding='utf-8') as f:
@@ -519,7 +526,24 @@ class MiAZUtil(GObject.GObject):
         ImportError: return ''`, and since neither is a dependency of MiAZ the
         whole branch was dead on any normal install. The date silently became
         the file mtime, which is the day the document was downloaded.
+
+        Answered from memory for a document already read. Finding the date
+        means reading the file, and on the test repository ten documents came
+        to 13.8 MB: asking twice cost 27.6 MB for an answer that cannot have
+        changed. filename_guess_date is dates_from_metadata(filepath) or
+        dates_from_text(concept_hint), so editing the concept and pressing
+        Detect date again is exactly that second ask.
+
+        Keyed by size and modification time as well as the path, the same three
+        values the thumbnail cache uses, so a document edited in place is read
+        again. A document whose bytes change without either moving keeps the
+        date it had, which is the trade every cache of this shape makes.
         """
+        key = self._metadata_key(filepath)
+        if key is not None and key in self._metadata_dates:
+            self._metadata_dates.move_to_end(key)
+            return list(self._metadata_dates[key])
+
         mime = self.filename_get_mimetype(filepath) or ''
         try:
             if mime == 'application/pdf':
@@ -531,11 +555,33 @@ class MiAZUtil(GObject.GObject):
                 # rather than by listing a dozen mime types.
                 dates = self._dates_from_zip_document(filepath)
             else:
-                return []
+                dates = []
         except OSError as error:
             self.log.debug(f"Could not read {filepath} for its date: {error}")
             return []
-        return [min(dates)] if dates else []
+        found = [min(dates)] if dates else []
+        if key is not None:
+            self._remember_metadata_dates(key, found)
+        return list(found)
+
+    def _metadata_key(self, filepath: str):
+        """What identifies one version of one document, or None when it is gone."""
+        try:
+            status = os.stat(filepath)
+        except OSError:
+            return None
+        return (filepath, status.st_mtime_ns, status.st_size)
+
+    def _remember_metadata_dates(self, key, dates):
+        """Keep the answer, oldest forgotten first.
+
+        An entry is a path and at most one date string, so the limit is about
+        holding a bounded number of them rather than about bytes. A repository
+        of any size passes through here one document at a time.
+        """
+        self._metadata_dates[key] = list(dates)
+        while len(self._metadata_dates) > _METADATA_DATE_CACHE:
+            self._metadata_dates.popitem(last=False)
 
     def _read_for_scan(self, filepath: str) -> bytes:
         """The bytes worth scanning for metadata: all of them, unless the file

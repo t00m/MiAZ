@@ -6,6 +6,7 @@
 # Description: Run work off the main loop and marshal the result back
 """
 
+import inspect
 import threading
 
 from gi.repository import GLib
@@ -14,8 +15,29 @@ from MiAZ.backend.log import MiAZLog
 
 log = MiAZLog('MiAZ.Tasks')
 
+# The job queue, when there is one. The desktop application installs it at
+# startup; the console frontend does not, and gets the behaviour this module
+# had before there was a queue at all.
+#
+# It lives here rather than in jobs.py so that the dependency runs one way:
+# jobs.py imports run_on_main from this module, and this module never imports
+# jobs.py. It holds the instance and calls methods on it.
+_JOB_QUEUE = None
 
-def run_in_background(fn, on_done=None, on_error=None, name=None):
+
+def set_job_queue(queue):
+    """Install the queue every background job registers with, or None."""
+    global _JOB_QUEUE
+    _JOB_QUEUE = queue
+
+
+def job_queue():
+    """The installed queue, or None when nothing is watching."""
+    return _JOB_QUEUE
+
+
+def run_in_background(fn, on_done=None, on_error=None, name=None,
+                      label=None, queued=False):
     """Run fn in a daemon thread, then call back on the main loop.
 
     GTK may only be touched from the main loop, so on_done and on_error are
@@ -26,23 +48,119 @@ def run_in_background(fn, on_done=None, on_error=None, name=None):
     thread dies where nobody sees it unless every caller remembers to wrap its
     own body, and most did not.
 
+    When a queue is installed the work registers as a job, which is what puts
+    it in the headerbar indicator. `label` is what the user reads, falling back
+    to `name`. `queued` asks for the lane: the job waits until no other queued
+    job is running, which is how two imports are kept off the same repository.
+
+    A fn that takes a `report` parameter is given one, bound to its job, with
+    the same (message, fraction) signature MiAZProgress uses. A fn that does
+    not is called with no arguments, which is all twenty existing callers.
+
     Returns the Thread, so a caller that needs to wait can join it.
     """
-    def worker():
+    queue = job_queue()
+    job = None
+    if queue is not None:
         try:
-            result = fn()
+            job = queue.add(name or 'work', label=label, queued=queued)
         except Exception as error:
+            # A broken indicator must never stop the work it is watching.
+            log.warning(f"Could not register job '{name}': {error}")
+
+    wants_report = _accepts_report(fn)
+    # Whether the queue was asked to start the job. When that call failed the
+    # job will never be released, so the worker must not wait for it.
+    asked_to_start = False
+
+    def report(message, fraction=None):
+        if queue is not None and job is not None:
+            try:
+                queue.report(job, message, fraction)
+            except Exception as error:
+                log.warning(f"Could not report progress for '{name}': {error}")
+
+    def worker():
+        failure = None
+        try:
+            if asked_to_start:
+                _wait_for_lane(queue, job, name)
+            result = fn(report=report) if wants_report else fn()
+            if on_done is not None:
+                GLib.idle_add(_call_once, on_done, result)
+        except Exception as error:
+            failure = error
             if on_error is not None:
                 GLib.idle_add(_call_once, on_error, error)
             else:
                 log.exception(f"Background task '{thread.name}' failed: {error}")
-            return
-        if on_done is not None:
-            GLib.idle_add(_call_once, on_done, result)
+        finally:
+            # In the finally, not the success path: a job whose worker died
+            # without finishing would hold the lane for the rest of the
+            # session.
+            if queue is not None and job is not None:
+                try:
+                    queue.finish(job, failure)
+                except Exception as error:
+                    log.warning(f"Could not finish job '{name}': {error}")
 
-    thread = threading.Thread(target=worker, name=name, daemon=True)
-    thread.start()
+    try:
+        thread = threading.Thread(target=worker, name=name, daemon=True)
+        if queue is not None and job is not None:
+            try:
+                queue.start(job)
+                asked_to_start = True
+            except Exception as error:
+                log.warning(f"Could not start job '{name}': {error}")
+        thread.start()
+    except Exception as error:
+        # thread.start() can fail after queue.start(job) already succeeded.
+        # worker() never ran, so its own finally never ran either: without
+        # this, the job would stay registered and running for the rest of
+        # the session, holding the lane forever if queued=True.
+        if queue is not None and job is not None:
+            try:
+                queue.finish(job, error)
+            except Exception as finish_error:
+                log.warning(f"Could not finish job '{name}': {finish_error}")
+        raise
     return thread
+
+
+def _wait_for_lane(queue, job, name):
+    """Hold the worker until the queue says the job may run.
+
+    The queue owns when a queued job begins. Without this the thread ran the
+    moment it was created whatever the queue had decided, so a queued job
+    whose lane was busy stayed pending in the popover while its work was
+    already copying: two imports into one repository, which is the thing the
+    lane exists to prevent.
+
+    An unqueued job returns from here at once. A queue with no await_start, a
+    test double or a queue of somebody else's, means no waiting, which is the
+    behaviour this module had before there was a lane.
+    """
+    waiter = getattr(queue, 'await_start', None)
+    if waiter is None:
+        return
+    try:
+        waiter(job)
+    except Exception as error:
+        # A broken queue must never stop the work it is watching, and it must
+        # never park it either.
+        log.warning(f"Could not wait for the lane for '{name}': {error}")
+
+
+def _accepts_report(fn) -> bool:
+    """Whether fn wants a progress reporter passed to it.
+
+    Asked once, before the thread starts, so a signature that cannot be read
+    (a builtin, a C function) simply means no reporter rather than a failure.
+    """
+    try:
+        return 'report' in inspect.signature(fn).parameters
+    except (TypeError, ValueError):
+        return False
 
 
 def run_on_main(callback, *args, **kwargs):

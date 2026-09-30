@@ -1,0 +1,165 @@
+#!/usr/bin/python3
+
+"""UI: what a repository marked remote takes away, and gives back."""
+
+import pytest
+
+
+@pytest.fixture
+def local_again(miaz):
+    """Always hand the session fixture back a local repository.
+
+    The miaz fixture is session scoped, so a test that left the flag on would
+    blind every test after it.
+    """
+    yield miaz
+    miaz.service('repo').set_remote(False)
+    miaz.pump(0.4)
+
+
+@pytest.fixture
+def settings_open(local_again):
+    """The Repository Settings window, open, so its rows are registered.
+
+    The window is built when something asks for it rather than on every
+    repository open, which is where 508 ms of startup went. Its rows are
+    registered while it is built, so a test that reads one has to open it
+    first. Opening it is also what a user does to reach the switch.
+    """
+    local_again.service('actions').show_repository_settings()
+    local_again.pump(0.6)
+    window = local_again.widget('window-repo-settings')
+    assert window is not None, 'the repository settings window did not open'
+    yield local_again
+    window.close()
+    local_again.pump(0.3)
+
+
+def test_thumbnail_views_are_gone_when_remote(local_again):
+    """Grid, timeline and conversation each render one thumbnail per row."""
+    workspace = local_again.workspace
+
+    local_again.service('repo').set_remote(True)
+    local_again.pump(0.4)
+
+    assert 'grid' not in workspace._view_buttons
+    assert 'timeline' not in workspace._view_buttons
+    assert 'conversation' not in workspace._view_buttons
+
+
+def test_the_cheap_views_survive(local_again):
+    """Details and filenames read nothing but the index, so they stay."""
+    workspace = local_again.workspace
+
+    local_again.service('repo').set_remote(True)
+    local_again.pump(0.4)
+
+    assert 'details' in workspace._view_buttons
+    assert 'filenames' in workspace._view_buttons
+
+
+def test_show_view_grid_lands_on_details_when_remote(local_again):
+    """A plugin calling show_view('grid') gets what the toolbar would give."""
+    workspace = local_again.workspace
+    local_again.service('repo').set_remote(True)
+    local_again.pump(0.4)
+
+    workspace.show_view('grid')
+    local_again.pump(0.3)
+
+    assert workspace._view_stack.get_visible_child_name() == 'details'
+
+
+def test_unmarking_restores_the_views_without_a_restart(local_again):
+    """Hard disable means the switch is the only way back."""
+    workspace = local_again.workspace
+    local_again.service('repo').set_remote(True)
+    local_again.pump(0.4)
+    assert 'grid' not in workspace._view_buttons
+
+    local_again.service('repo').set_remote(False)
+    local_again.pump(0.4)
+
+    assert 'grid' in workspace._view_buttons
+    workspace.show_view('grid')
+    local_again.pump(0.3)
+    assert workspace._view_stack.get_visible_child_name() == 'grid'
+
+
+def test_marking_remote_moves_off_a_disabled_view(local_again):
+    """The user is looking at the grid when the switch goes on."""
+    workspace = local_again.workspace
+    workspace.show_view('grid')
+    local_again.pump(0.3)
+    assert workspace._view_stack.get_visible_child_name() == 'grid'
+
+    local_again.service('repo').set_remote(True)
+    local_again.pump(0.4)
+
+    assert workspace._view_stack.get_visible_child_name() == 'details'
+
+
+def test_a_surviving_view_is_kept_across_the_switch(local_again):
+    """Filenames is not disabled, so marking remote must not yank the user
+    back to Details for no reason."""
+    workspace = local_again.workspace
+    workspace.show_view('filenames')
+    local_again.pump(0.3)
+
+    local_again.service('repo').set_remote(True)
+    local_again.pump(0.4)
+
+    assert workspace._view_stack.get_visible_child_name() == 'filenames'
+
+
+def test_review_mode_starts_no_duplicate_scan_when_remote(local_again):
+    """222.5 MB on the test repository, and nobody asked for it."""
+    workspace = local_again.workspace
+    local_again.service('repo').set_remote(True)
+    local_again.pump(0.3)
+
+    assert workspace._scan_duplicates() is False
+
+
+def test_the_duplicate_scan_still_runs_when_local(local_again):
+    """The gate must not disable the scan for everyone."""
+    workspace = local_again.workspace
+    index = local_again.service('index')
+    index._invalidate_duplicates()
+
+    try:
+        assert workspace._scan_duplicates() is True
+        local_again.pump(0.6)
+    finally:
+        # A scan reveals the copy column, and test_ui_duplicates asserts it is
+        # hidden until something has been scanned.
+        index._invalidate_duplicates()
+        local_again.widget('workspace-view').column_duplicate.set_visible(False)
+
+
+def test_the_settings_switch_writes_the_flag(settings_open):
+    row = settings_open.widget('repository-settings-row-remote')
+    assert row is not None, 'the repository settings page has no remote row'
+
+    row.set_active(True)
+    settings_open.pump(0.4)
+
+    assert settings_open.service('repo').remote is True
+
+
+def test_the_settings_switch_follows_the_flag(settings_open):
+    """Set from anywhere else, the switch still shows the truth."""
+    row = settings_open.widget('repository-settings-row-remote')
+
+    settings_open.service('repo').set_remote(True)
+    settings_open.pump(0.4)
+
+    assert row.get_active() is True
+
+
+def test_the_detection_hint_is_shown(settings_open):
+    """Shown, never acted on: GIO calls an rclone mount local."""
+    row = settings_open.widget('repository-settings-row-detected')
+
+    assert row is not None
+    assert row.get_subtitle()

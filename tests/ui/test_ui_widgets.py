@@ -281,7 +281,7 @@ def test_preview_leads_with_the_concept_then_the_date(clean_view):
     clean_view.pump(0.3)
     clean_view.select_documents('20260612-ES-FIN-BANKX-INV-mortgage-JOHNDOE.pdf')
     preview = clean_view.widget('workspace-preview')
-    clean_view.wait_until(lambda: preview.label_title.get_text() != '',
+    clean_view.wait_until(lambda: preview.label_title.get_text() == 'mortgage',
                           message='the preview names the document')
     assert preview.label_title.get_text() == 'mortgage'
     assert preview.label_subtitle.get_text() == '12/06/2026'
@@ -1061,3 +1061,32 @@ def test_a_view_can_be_added_and_taken_away(clean_view):
     assert 'probe' not in workspace.get_views()
     assert stack.get_child_by_name('probe') is None
     assert stack.get_visible_child_name() == 'details'
+
+
+def test_the_preview_is_debounced(clean_view):
+    """Arrowing down the list must not ask for a render per keystroke.
+
+    The preview used to render on every selection change, and on a remote
+    repository each render is a document fetched.
+    """
+    button = clean_view.widget('headerbar-button-preview')
+    button.set_active(True)
+    clean_view.pump(0.4)
+    workspace = clean_view.workspace
+    preview = clean_view.widget('workspace-preview')
+
+    asked = []
+    real_set_document = preview.set_document
+    preview.set_document = lambda path: (asked.append(path),
+                                         real_set_document(path))[1]
+    try:
+        for _ in range(5):
+            workspace._update_preview()
+        clean_view.pump(0.1)
+        assert asked == [], 'the preview rendered before the burst settled'
+        clean_view.pump(0.6)
+        assert len(asked) == 1, f'{len(asked)} renders for one settled selection'
+    finally:
+        preview.set_document = real_set_document
+        button.set_active(False)
+        clean_view.pump(0.3)

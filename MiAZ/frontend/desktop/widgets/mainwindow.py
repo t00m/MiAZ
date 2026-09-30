@@ -6,7 +6,6 @@
 from gettext import gettext as _
 
 from gi.repository import Adw
-from gi.repository import Gdk
 from gi.repository import Gio
 from gi.repository import GLib
 from gi.repository import GObject
@@ -17,6 +16,7 @@ from MiAZ.frontend.desktop.widgets.pages import MiAZWelcome
 from MiAZ.frontend.desktop.widgets.webbrowser import MiAZWebBrowser
 from MiAZ.frontend.desktop.widgets.sidebar import MiAZSidebar
 from MiAZ.frontend.desktop.widgets.workspace import MiAZWorkspace
+from MiAZ.frontend.desktop.widgets.jobindicator import MiAZJobIndicator
 
 
 class MiAZMainWindow(Gtk.Box):
@@ -56,8 +56,8 @@ class MiAZMainWindow(Gtk.Box):
 
         # Sidebar visibility is core behaviour (formerly the MiAZSidebarTB
         # plugin). On first run the sidebar starts hidden; afterwards the last
-        # state is remembered. The headerbar reveal button and the Escape key
-        # both toggle it (see _setup_headerbar_start and _on_key_pressed).
+        # state is remembered. The headerbar reveal button toggles it (see
+        # _setup_headerbar_start).
         appconf = self.app.get_config('App')
         if appconf is not None and appconf.exists('sidebar-visible'):
             show_sidebar = bool(appconf.get('sidebar-visible'))
@@ -107,8 +107,13 @@ class MiAZMainWindow(Gtk.Box):
 
     def _setup_event_listener(self):
         """Setup an event listener for mainwindow"""
+        # MiAZ's own keys now live in the shortcut registry (GLOBAL
+        # accelerators on the application, LIST accelerators on the document
+        # list). This controller carries none of them any more; it stays
+        # registered as 'window-event-controller' purely as an extension
+        # point that plugins attach to, for example MiAZFullscreen connecting
+        # F11 to toggle fullscreen.
         evk = Gtk.EventControllerKey.new()
-        evk.connect('key-pressed', self._on_key_pressed)
         self.app.add_widget('window-event-controller', evk)
         self.win.add_controller(evk)
         plugin_system = self.app.get_service('plugin-system')
@@ -119,27 +124,6 @@ class MiAZMainWindow(Gtk.Box):
         workflow = self.app.get_service('workflow')
         if workflow is not None:
             workflow.connect('repository-switch-finished', self._update_window_title)
-
-    def _on_key_pressed(self, controller, keyval, keycode, state):
-        actions = self.app.get_service('actions')
-        ctrl = state & Gdk.ModifierType.CONTROL_MASK
-        if keyval == Gdk.KEY_Return:
-            actions.document_display_selected()
-            return True
-        if ctrl and keyval == Gdk.KEY_BackSpace:
-            actions.document_rename()
-            return True
-        if ctrl and keyval in (Gdk.KEY_Delete, Gdk.KEY_KP_Delete):
-            actions.document_delete()
-            return True
-        if keyval == Gdk.KEY_Escape:
-            # Toggle the sidebar without consuming the event, so Escape keeps
-            # working for other widgets (search entry, popovers).
-            split_view = self.app.get_widget('main-split-view')
-            if split_view is not None:
-                split_view.set_show_sidebar(not split_view.get_show_sidebar())
-            return False
-        return False
 
     def _on_sidebar_visibility_changed(self, split_view, gparam):
         """Persist sidebar visibility so it is remembered across runs."""
@@ -168,7 +152,7 @@ class MiAZMainWindow(Gtk.Box):
         sidebar_toggle.add_css_class('flat')
         sidebar_toggle.set_tooltip_text(_(
             'Show or hide the sidebar.\n'
-            'Press Escape to toggle it.\n'
+            'Press F9 to toggle it.\n'
             'You can hide this button in Settings ▸ User Interface.'))
         split_view.bind_property(
             'show-sidebar', sidebar_toggle, 'active',
@@ -219,6 +203,12 @@ class MiAZMainWindow(Gtk.Box):
         # Primary menu (rightmost)
         menubutton = self._setup_menu_system()
         headerbar.pack_end(menubutton)
+
+        # What is running in the background, beside the primary menu. It hides
+        # itself when there is nothing to say, which is most of the time.
+        jobs = MiAZJobIndicator(self.app)
+        self.app.add_widget('headerbar-widget-jobs', jobs)
+        headerbar.pack_end(jobs)
 
         # What acts on documents belongs with the documents, not up in the
         # header bar: the toolbar above the list is where the user is looking.
@@ -694,23 +684,35 @@ class MiAZMainWindow(Gtk.Box):
     def _setup_menu_system(self):
         actions = self.app.get_service('actions')
         factory = self.app.get_service('factory')
+        srvsct = self.app.get_service('shortcuts')
         menu = self.app.add_widget('window-menu-app', Gio.Menu.new())
         section_common = self.app.add_widget('app-menu-section-common', Gio.Menu.new())
         section_bottom = self.app.add_widget('app-menu-section-common-bottom', Gio.Menu.new())
         menu.append_section(None, section_common)
         menu.append_section(None, section_bottom)
-        menuitem = factory.create_menuitem('app-settings', _('Settings'), actions.show_app_settings, None, ['<Control>s'])
+        menuitem = factory.create_menuitem(
+            'app-settings', _('Settings'), actions.show_app_settings, None,
+            srvsct.accelerators_for('app-settings'))
         section_common.append_item(menuitem)
-        menuitem = factory.create_menuitem('app-shortcuts', _('Keyboard Shortcuts'), actions.show_app_shortcuts, None, ['<Control>question'])
+        menuitem = factory.create_menuitem(
+            'app-shortcuts', _('Keyboard Shortcuts'), actions.show_app_shortcuts,
+            None, srvsct.accelerators_for('app-shortcuts'))
         section_common.append_item(menuitem)
         # F1 is listed in the shortcuts window, so it has to do something. It
         # opens that same window: MiAZ has no separate manual, and a shortcut
         # advertised and bound to nothing is worse than one that is honest.
-        menuitem = factory.create_menuitem('app-help', _('Help'), actions.show_app_help, None, ['F1'])
+        menuitem = factory.create_menuitem(
+            'app-help', _('Help'), actions.show_app_help, None,
+            srvsct.accelerators_for('app-help'))
         section_common.append_item(menuitem)
-        menuitem = factory.create_menuitem('app-about', _('About MiAZ'), actions.show_app_about, None, ['<Control>b'])
+        # About has no accelerator. Ctrl+B used to open it, which is Bold in
+        # every editor, and MiAZ has a notes editor.
+        menuitem = factory.create_menuitem(
+            'app-about', _('About MiAZ'), actions.show_app_about, None, None)
         section_common.append_item(menuitem)
-        menuitem = factory.create_menuitem('app-quit', _('Quit'), actions.exit_app, None, ['<Control>q'])
+        menuitem = factory.create_menuitem(
+            'app-quit', _('Quit'), actions.exit_app, None,
+            srvsct.accelerators_for('app-quit'))
         section_bottom.append_item(menuitem)
 
         menubutton = Gtk.MenuButton()

@@ -206,6 +206,13 @@ class MiAZSidebar(Adw.Bin):
 
     def clear_filters(self, *args):
         workspace = self.app.get_widget('workspace')
+        if workspace is None:
+            # The sidebar is built unconditionally, but the workspace page
+            # only exists after a repository switch finishes. On the Welcome
+            # page, or a repository pointing at a missing directory, there is
+            # nothing to clear yet.
+            self.log.debug("Workspace not built yet, nothing to clear")
+            return
         self.log.debug(f"Workspace loaded? {workspace.is_loaded()}")
         if workspace.is_loaded():
             workspace.clear_filters()

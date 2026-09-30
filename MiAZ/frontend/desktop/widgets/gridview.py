@@ -15,6 +15,7 @@ from MiAZ.frontend.desktop.widgets.dragout import install_for_workspace_selectio
 from MiAZ.env import ENV
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.thumbnails import request_thumbnail
+from MiAZ.frontend.desktop.widgets.thumbnailcache import set_thumbnail
 from MiAZ.frontend.desktop.widgets.filetypebadge import MiAZFileTypeBadge
 
 # Thumbnail widths, in order. The page is rendered at the size it is shown at,
@@ -186,12 +187,11 @@ class GridCell(Gtk.Box):
         # The cell may have been recycled for another document meanwhile.
         if doc != self._doc:
             return
-        if path is None:
+        if path is None or not set_thumbnail(self.picture, path):
             self.badge.set_filepath(doc)
             self.badge.set_visible(True)
             self.icon.set_visible(False)
             return
-        self.picture.set_filename(path)
         self.icon.set_visible(False)
 
 

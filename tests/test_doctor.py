@@ -121,3 +121,41 @@ def test_the_same_document_is_not_listed_twice_for_one_finding():
     checks = {finding.check: finding for finding in report}
     assert checks['undescribed-codes'].count == 2, 'two values are undescribed'
     assert checks['undescribed-codes'].documents == [name()], 'one document'
+
+
+def test_a_skipped_duplicate_check_is_reported_not_hidden():
+    """A report that did not look must not read as a report that found nothing.
+
+    build_report drops every finding with no items, so the note has to carry
+    one or it disappears exactly where it matters.
+    """
+    report = build_report([name()], VOCABULARY, duplicates_checked=False)
+
+    checks = {finding.check for finding in report}
+    assert 'duplicates-skipped' in checks
+    assert 'duplicates' not in checks
+
+
+def test_the_skip_note_is_only_a_note():
+    """Not looking is not a problem with the repository."""
+    report = build_report([name()], VOCABULARY, duplicates_checked=False)
+
+    skipped = [f for f in report if f.check == 'duplicates-skipped'][0]
+    assert skipped.severity == NOTE
+
+
+def test_a_checked_report_has_no_skip_note():
+    report = build_report([name()], VOCABULARY, duplicates=[['a.pdf', 'b.pdf']])
+
+    checks = {finding.check for finding in report}
+    assert 'duplicates-skipped' not in checks
+    assert 'duplicates' in checks
+
+
+def test_a_checked_report_that_found_nothing_stays_silent():
+    """Checked and clean says nothing, which is the whole point of the report."""
+    report = build_report([name()], VOCABULARY, duplicates=[])
+
+    checks = {finding.check for finding in report}
+    assert 'duplicates-skipped' not in checks
+    assert 'duplicates' not in checks

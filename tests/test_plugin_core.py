@@ -394,3 +394,88 @@ def test_a_direct_import_records_no_failure(tmp_path):
     assert module is not None
     assert core.get_load_failures() == {}
     assert core.get_load_error('demo') is None
+
+
+# ---------------------------------------------------------------------------
+# A plugin's own settings file is read once, not once per key
+# ---------------------------------------------------------------------------
+
+def test_plugin_settings_are_read_once_not_once_per_key(tmp_path, monkeypatch):
+    """get_config_data opened the file on every call, and every get_config_key
+    calls it.
+
+    MiAZAutoScan reads four keys in four consecutive lines, which was four
+    opens of one small file. On a remote repository each is a round trip, and
+    nothing between them can have changed the file. The values are cached until
+    set_config_data writes, which is the only thing that can change them.
+    """
+    import gi
+    gi.require_version('Gtk', '4.0')
+    gi.require_version('Adw', '1')
+    from MiAZ.frontend.desktop.services.pluginsystem import MiAZPlugin
+
+    config_file = tmp_path / 'Plugin-Fake.json'
+    config_file.write_text('{"device": "scanner", "mode": "Color"}', encoding='utf-8')
+
+    reads = []
+
+    class Util:
+        def json_load(self, filepath):
+            reads.append(filepath)
+            import json
+            with open(filepath, encoding='utf-8') as handle:
+                return json.load(handle)
+
+        def json_save(self, filepath, data):
+            import json
+            with open(filepath, 'w', encoding='utf-8') as handle:
+                json.dump(data, handle)
+
+    class App:
+        def get_service(self, name):
+            return Util() if name == 'util' else None
+
+    plugin = MiAZPlugin(App())
+    plugin.util = Util.__new__(Util)
+    plugin.util.json_load = Util().json_load
+    plugin.util.json_save = Util().json_save
+    monkeypatch.setattr(plugin, 'get_config_file', lambda: str(config_file))
+
+    assert plugin.get_config_key('device') == 'scanner'
+    assert plugin.get_config_key('mode') == 'Color'
+    assert plugin.get_config_key('device') == 'scanner'
+    assert len(reads) == 1, f'the settings file was read {len(reads)} times'
+
+
+def test_writing_plugin_settings_makes_the_next_read_see_them(tmp_path, monkeypatch):
+    """The cache must not outlive the write that invalidates it."""
+    import gi
+    gi.require_version('Gtk', '4.0')
+    gi.require_version('Adw', '1')
+    from MiAZ.frontend.desktop.services.pluginsystem import MiAZPlugin
+
+    config_file = tmp_path / 'Plugin-Fake.json'
+    config_file.write_text('{"autorun": false}', encoding='utf-8')
+
+    import json as _json
+
+    class Util:
+        def json_load(self, filepath):
+            with open(filepath, encoding='utf-8') as handle:
+                return _json.load(handle)
+
+        def json_save(self, filepath, data):
+            with open(filepath, 'w', encoding='utf-8') as handle:
+                _json.dump(data, handle)
+
+    class App:
+        def get_service(self, name):
+            return Util() if name == 'util' else None
+
+    plugin = MiAZPlugin(App())
+    plugin.util = Util()
+    monkeypatch.setattr(plugin, 'get_config_file', lambda: str(config_file))
+
+    assert plugin.get_config_key('autorun') is False
+    plugin.set_config_key('autorun', True)
+    assert plugin.get_config_key('autorun') is True

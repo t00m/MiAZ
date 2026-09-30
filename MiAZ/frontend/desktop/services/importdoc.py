@@ -16,15 +16,43 @@ from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.tasks import run_in_background
 from MiAZ.backend.tasks import run_on_main
 
-# Above this many files an import holds the workspace back, turns the watcher
-# off and runs off the main loop. Below it the copy is quick enough that the
-# machinery would cost more than it saves.
+# Above this many files, or this many bytes, an import holds the workspace
+# back, turns the watcher off and runs off the main loop. Below both the copy
+# is quick enough that the machinery would cost more than it saves.
 BATCH_THRESHOLD = 20
 
+# The count alone said nothing about the work. Twenty 40 MB scans is 800 MB
+# copied on the main loop and never reached a threshold of twenty files, so
+# GNOME put up its "not responding" dialog, which it does after about five
+# seconds of a window not answering the compositor. 16 MB is roughly a second
+# from a slow source, which is under that with room to spare, and on a local
+# disk it is fast enough that taking the worker path costs nothing noticeable.
+BATCH_BYTES = 16 * 1024 * 1024
 
-def needs_batch(count: int) -> bool:
-    """Whether an import of `count` files is worth the batch treatment."""
-    return count > BATCH_THRESHOLD
+
+def needs_batch(count: int, total_bytes: int = 0) -> bool:
+    """Whether an import is worth the batch treatment.
+
+    Either rule is enough on its own. Many small files are many workspace
+    refreshes and many watcher events whatever they weigh; a few large ones are
+    a long copy whatever they number.
+    """
+    return count > BATCH_THRESHOLD or total_bytes > BATCH_BYTES
+
+
+def total_size(paths) -> int:
+    """Bytes an import will copy, as far as they can be counted.
+
+    A path that cannot be measured counts as nothing: it vanished between the
+    chooser and here, and reporting that is the copy's job, not this one's.
+    """
+    total = 0
+    for path in paths:
+        try:
+            total += os.path.getsize(path)
+        except OSError:
+            pass
+    return total
 
 
 class MiAZImportDoc(GObject.GObject):
@@ -45,12 +73,15 @@ class MiAZImportDoc(GObject.GObject):
         self.factory = app.get_service('factory')
         self.repository = app.get_service('repo')
         self.srvdlg = app.get_service('dialogs')
+        srvsct = app.get_service('shortcuts')
         self.menuitem = self.factory.create_menuitem(
             name='import-doc', label=_('Add new document(s)'),
-            callback=self.import_files, shortcuts=['<Control>Insert'])
+            callback=self.import_files,
+            shortcuts=srvsct.accelerators_for('import-doc'))
         self.menuitem_dir = self.factory.create_menuitem(
             name='import-dir', label=_('Add documents from a directory'),
-            callback=self.import_directory, shortcuts=['<Shift>Insert'])
+            callback=self.import_directory,
+            shortcuts=srvsct.accelerators_for('import-dir'))
 
     def import_files(self, *args):
         self.factory.create_filechooser_for_files(self._on_filechooser_response)
@@ -120,18 +151,18 @@ class MiAZImportDoc(GObject.GObject):
         chooser.
 
         A big import goes to a worker instead, with the workspace held back
-        and the watcher off (see needs_batch). That path reports from the main
-        loop when it ends and returns None, since there is nothing to return
-        yet.
+        and the watcher off. Big means many files or many bytes: see
+        needs_batch. That path reports from the main loop when it ends and
+        returns None, since there is nothing to return yet.
         """
-        if needs_batch(len(paths)):
+        if needs_batch(len(paths), total_size(paths)):
             self._import_batch(paths)
             return None
         imported, failed = self._copy_all(paths)
         self._report(imported, failed)
         return imported, failed
 
-    def _copy_all(self, paths):
+    def _copy_all(self, paths, report=None):
         """Copy every path, counting what worked and naming what did not.
 
         The copying itself is MiAZ.backend.importer, which `miaz add` calls
@@ -139,7 +170,7 @@ class MiAZImportDoc(GObject.GObject):
         arrive the same way. No GTK here: this is the half the worker runs.
         """
         imported, failed = importer.import_paths(
-            self.util, self.repository.docs, paths)
+            self.util, self.repository.docs, paths, report=report)
         return len(imported), failed
 
     def _report(self, imported, failed):
@@ -168,13 +199,15 @@ class MiAZImportDoc(GObject.GObject):
             watcher.set_active(False)
         self.log.debug(f"Importing {len(paths)} documents in the background")
         run_in_background(
-            lambda: self._copy_batch(paths, suspend, watcher),
+            lambda report: self._copy_batch(paths, suspend, watcher, report),
             on_error=self._on_batch_failed,
-            name='importdoc-batch')
+            name='importdoc-batch',
+            label=_('Importing documents'),
+            queued=True)
 
-    def _copy_batch(self, paths, suspend, watcher):
+    def _copy_batch(self, paths, suspend, watcher, report=None):
         try:
-            imported, failed = self._copy_all(paths)
+            imported, failed = self._copy_all(paths, report=report)
             GLib.idle_add(self._report, imported, failed)
         finally:
             workspace = self.app.get_widget('workspace')

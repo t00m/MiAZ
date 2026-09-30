@@ -11,6 +11,13 @@
 #
 #   --keep      leave the sandbox behind and print where it is
 #   --headless  start a virtual display even when one is available
+#   --shuffle   randomise the order instead of running in file order
+#
+# File order is the default because shuffling triples the wall time: these tests
+# drive one application for the whole run, so repository switches and
+# review-mode toggles stop batching, and 8 minutes becomes 23. That is the only
+# reason. No file here needs its order, and --shuffle is how you find out when
+# one starts to: it is worth running before a release, not before every commit.
 #
 # With no display and no headless tool it says so and exits 2, rather than
 # failing 40 tests for the same reason.
@@ -24,12 +31,14 @@ die() { echo "[uitests] ERROR: $*" >&2; exit 2; }
 
 KEEP=0
 FORCE_HEADLESS=0
+SHUFFLE=0
 PYTEST_ARGS=()
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --keep)     KEEP=1; shift ;;
         --headless) FORCE_HEADLESS=1; shift ;;
-        -h|--help)  sed -n '2,17p' "$0"; exit 0 ;;
+        --shuffle)  SHUFFLE=1; shift ;;
+        -h|--help)  sed -n '2,23p' "$0"; exit 0 ;;
         *)          PYTEST_ARGS+=("$1"); shift ;;
     esac
 done
@@ -90,10 +99,16 @@ for arg in "${PYTEST_ARGS[@]+"${PYTEST_ARGS[@]}"}"; do
 done
 [[ ${#TARGETS[@]} -eq 0 ]] && PYTEST_ARGS=("tests/ui" "${PYTEST_ARGS[@]+"${PYTEST_ARGS[@]}"}")
 
+# pytest-randomly shuffles as soon as it is installed, so file order has to be
+# asked for rather than assumed. Harmless when the plugin is absent.
+ORDER=(-p no:randomly)
+[[ $SHUFFLE -eq 1 ]] && ORDER=()
+
 HOME="$SANDBOX" \
 MIAZ_UI_SANDBOX=1 \
 PYTHONPATH="$REPO_ROOT${USER_SITE:+:$USER_SITE}" \
-    "$PYTEST" -m pytest -p no:cacheprovider "${PYTEST_ARGS[@]}"
+    "$PYTEST" -m pytest -p no:cacheprovider \
+    "${ORDER[@]+"${ORDER[@]}"}" "${PYTEST_ARGS[@]}"
 STATUS=$?
 
 if [[ $STATUS -eq 0 ]]; then

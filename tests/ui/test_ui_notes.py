@@ -68,3 +68,32 @@ def test_switching_repository_before_the_workspace_exists_is_not_a_crash(
 
     assert early_notes.store.data_dir == notes_dir(miaz.service('repo').docs)
     assert os.path.isdir(early_notes.store.data_dir)
+
+
+def test_refreshing_the_notes_filter_does_not_rescan_the_repository(clean_view):
+    """The notes column is painted by re-binding rows, not by re-reading.
+
+    workspace.update() lists the repository, rebuilds the index and parses
+    every filename. Notes called it twice at startup, once to populate its
+    column and once to refresh its filter, and each call was a full scan:
+    367 ms of a 2.2 second startup on the 1322 document test repository, to
+    paint a column whose cell reads a dictionary the service already holds.
+    refilter re-binds every visible row, which is what the duplicate column
+    uses for the same purpose.
+    """
+    notes = clean_view.service('notes')
+    workspace = clean_view.workspace
+    scans = []
+    original = workspace._parse_files_worker
+
+    def counting(*args, **kwargs):
+        scans.append(True)
+        return original(*args, **kwargs)
+
+    workspace._parse_files_worker = counting
+    try:
+        notes._refresh_notes_filter()
+        clean_view.pump(0.8)
+        assert scans == [], 'refreshing the notes filter re-read the repository'
+    finally:
+        workspace._parse_files_worker = original

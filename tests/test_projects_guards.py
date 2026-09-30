@@ -217,3 +217,50 @@ def test_saving_into_a_repository_that_is_no_longer_open_is_refused(repository, 
     service.save()
 
     assert read_projects(conf)['AOK'] == names, 'it wrote to the wrong repository'
+
+
+# ---------------------------------------------------------------------------
+# check() asks the filesystem once, not once per assignment
+# ---------------------------------------------------------------------------
+
+def test_the_consistency_check_lists_once_instead_of_stating_each_document(
+        repository, monkeypatch):
+    """One os.path.exists per assigned document is one round trip each.
+
+    Measured on the 1322 document test repository, this was 1322 stats at
+    startup, the largest single source of them. The listing two lines below
+    answers the same question for every assignment at once, and check() was
+    already taking it to count the documents in the repository.
+    """
+    docs, conf, names = repository
+    stats = []
+    real_exists = os.path.exists
+    monkeypatch.setattr(os.path, 'exists',
+                        lambda p: (stats.append(p), real_exists(p))[1])
+
+    app = FakeApp(FakeRepository(str(docs), str(conf)))
+    service = MiAZProject(app)
+    service.check()
+
+    touched = [p for p in stats if os.path.basename(p) in names]
+    assert touched == [], f'{len(touched)} documents were stated one by one'
+
+
+def test_a_repository_that_cannot_be_listed_deletes_nothing(repository, monkeypatch):
+    """Without a listing there is no evidence a document is gone.
+
+    The old code stated each document, so a listing that failed still produced
+    deletions. Nothing is dropped on a guess now.
+    """
+    docs, conf, names = repository
+
+    app = FakeApp(FakeRepository(str(docs), str(conf)))
+    service = MiAZProject(app)
+
+    def refuse(_dirpath):
+        raise OSError('the repository cannot be listed')
+
+    monkeypatch.setattr(service.util, 'get_files', refuse)
+    service.check()
+
+    assert read_projects(conf)['AOK'] == names, 'assignments were dropped blind'

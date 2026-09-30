@@ -151,5 +151,6 @@ class MiAZProgress:
         run_in_background(lambda: work(report),
                           on_done=_on_done,
                           on_error=_on_error,
-                          name='progress-dialog')
+                          name='progress-dialog',
+                          label=title)
         return dialog

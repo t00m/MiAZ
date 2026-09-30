@@ -9,6 +9,7 @@ it cannot have.
 """
 
 import json
+import os
 
 import gi
 gi.require_version('GLib', '2.0')
@@ -30,6 +31,24 @@ def test_services_are_registered(miaz_env, make_repo, register_repo):
     assert app.get_service('util') is not None
     assert app.get_service('repo') is not None
     assert len(app.get_service('index').documents()) == 2
+
+
+def test_cold_start_writes_its_configuration(miaz_env):
+    """A first run with no ~/.MiAZ has to create its own configuration files.
+
+    MiAZConfig.setup() creates a missing file through util.json_save, so the
+    util service must be registered before any config is built. The console
+    shell built its two configs first, and save_data logs the resulting
+    AttributeError rather than raising it, so a cold start wrote nothing and
+    said so only in the log.
+    """
+    etc = miaz_env['LPATH']['ETC']
+
+    MiAZConsoleApp(miaz_env)
+
+    assert os.path.exists(miaz_env['FILE']['CONF'])
+    assert os.path.exists(os.path.join(etc, 'repos-available.json'))
+    assert os.path.exists(os.path.join(etc, 'repos-used.json'))
 
 
 def test_named_repository_wins_over_current(miaz_env, make_repo, register_repo):

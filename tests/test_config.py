@@ -332,3 +332,200 @@ def test_available_updated_carries_its_own_diff(tmp_path):
     cfg.connect('available-updated', lambda _c, changed: seen.append(changed))
     cfg.save_available({'ES': 'Spain', 'FR': 'France'})
     assert seen == [{'FR'}]
+
+
+# MiAZConfigRepositories: the per-repository entries, and the remote flag.
+#
+# Two things rebuild an entry from scratch and drop any key they do not know:
+# _normalize_items on every load, and set_repo on every rename. A per
+# repository setting has to survive both.
+
+import json
+
+from MiAZ.frontend.console.app import MiAZConsoleApp
+
+
+def _repos_file(miaz_env):
+    return os.path.join(miaz_env['LPATH']['ETC'], 'repos-used.json')
+
+
+def _repos_config(miaz_env):
+    return MiAZConsoleApp(miaz_env).get_config('Repository')
+
+
+def test_normalize_keeps_the_remote_flag(miaz_env):
+    """A flag written to disk survives the next load."""
+    with open(_repos_file(miaz_env), 'w', encoding='utf-8') as handler:
+        json.dump({'Work': {'path': '/tmp/work', 'description': 'Work',
+                            'remote': True}}, handler)
+
+    assert _repos_config(miaz_env).get_remote('Work') is True
+
+
+def test_normalize_defaults_remote_to_false(miaz_env):
+    """An entry written before the flag existed reads as local."""
+    with open(_repos_file(miaz_env), 'w', encoding='utf-8') as handler:
+        json.dump({'Work': {'path': '/tmp/work', 'description': 'Work'}}, handler)
+
+    assert _repos_config(miaz_env).get_remote('Work') is False
+
+
+def test_a_legacy_string_entry_reads_as_local(miaz_env):
+    """The oldest shape is {key: path}, with no dict to carry a flag."""
+    with open(_repos_file(miaz_env), 'w', encoding='utf-8') as handler:
+        json.dump({'Work': '/tmp/work'}, handler)
+    config = _repos_config(miaz_env)
+
+    assert config.get_remote('Work') is False
+    assert config.get_path('Work') == '/tmp/work'
+
+
+def test_an_old_entry_is_migrated_once(miaz_env):
+    """The first load writes the missing key, the second writes nothing.
+
+    Counted rather than timed: two writes inside one filesystem timestamp tick
+    would make an mtime comparison pass for the wrong reason.
+    """
+    with open(_repos_file(miaz_env), 'w', encoding='utf-8') as handler:
+        json.dump({'Work': {'path': '/tmp/work', 'description': 'Work'}}, handler)
+    config = _repos_config(miaz_env)
+    config.load(config.used)
+
+    util = config.app.get_service('util')
+    real_save = util.json_save
+    writes = []
+    util.json_save = lambda path, items: (writes.append(path), real_save(path, items))[1]
+    config._invalidate(config.used)
+    config.load(config.used)
+
+    assert writes == [], 'a migrated file was rewritten on every load'
+
+
+def test_renaming_a_repository_keeps_the_remote_flag(miaz_env):
+    """set_repo rebuilds the entry, and dropped everything it did not know."""
+    config = _repos_config(miaz_env)
+    config.set_repo('Work', '/tmp/work', 'Work')
+    config.set_remote('Work', True)
+
+    config.set_repo('Work', '/tmp/work', 'Renamed')
+
+    assert config.get_description('Work') == 'Renamed'
+    assert config.get_remote('Work') is True
+
+
+def test_set_remote_persists_to_disk(miaz_env):
+    config = _repos_config(miaz_env)
+    config.set_repo('Work', '/tmp/work', 'Work')
+
+    config.set_remote('Work', True)
+
+    with open(_repos_file(miaz_env), encoding='utf-8') as handler:
+        assert json.load(handler)['Work']['remote'] is True
+
+
+def test_the_flag_is_per_repository(miaz_env):
+    config = _repos_config(miaz_env)
+    config.set_repo('Work', '/tmp/work', 'Work')
+    config.set_repo('Home', '/tmp/home', 'Home')
+
+    config.set_remote('Work', True)
+
+    assert config.get_remote('Work') is True
+    assert config.get_remote('Home') is False
+
+
+def test_disabling_and_re_enabling_keeps_the_remote_flag(miaz_env):
+    """The entry is rebuilt on both moves, so the flag has to be carried.
+
+    MiAZRepositories moves a repository between the available and used pools
+    by rebuilding the entry from the selected row, which carries only the id,
+    path and description. Without help the flag is lost, and a hard disabled
+    repository would quietly come back enabled.
+    """
+    config = _repos_config(miaz_env)
+    config.set_repo_used('Work', '/tmp/work', 'Work')
+    config.set_remote('Work', True, used=True)
+
+    # Disable: used entry moves to available.
+    remembered = config.get_remote('Work', used=True)
+    config.set_repo_available('Work', '/tmp/work', 'Work')
+    config.set_remote('Work', remembered, used=False)
+
+    assert config.get_remote('Work', used=False) is True
+
+    # Enable again: available entry moves back to used.
+    remembered = config.get_remote('Work', used=False)
+    config.set_repo_used('Work', '/tmp/work', 'Work')
+    config.set_remote('Work', remembered, used=True)
+
+    assert config.get_remote('Work', used=True) is True
+
+
+# ---------------------------------------------------------------------------
+# _add_batch writes only when the batch changes something
+# ---------------------------------------------------------------------------
+
+def test_adding_a_batch_that_changes_nothing_writes_nothing(tmp_path):
+    """The plugin list is handed to add_available_batch on every startup.
+
+    saved counted the keys written into the dictionary, not the keys that
+    differed, so with 20 plugins it was 20 every time and the file was rewritten
+    at every launch. The write cost a read of the previous contents for the diff
+    and invalidated the cache, so one logical read of plugins-available.json
+    became three accesses and a write. On a remote repository that is three
+    round trips instead of one.
+    """
+    cfg = make_config(tmp_path)
+    batch = [('one', 'One'), ('two', 'Two')]
+    cfg.add_available_batch(batch)
+
+    written = []
+    original = cfg.save
+
+    def counting_save(*args, **kwargs):
+        written.append(True)
+        return original(*args, **kwargs)
+
+    cfg.save = counting_save
+    try:
+        cfg.add_available_batch(batch)
+    finally:
+        cfg.save = original
+    assert written == [], 'the same batch was written again'
+
+
+def test_adding_a_batch_that_changes_something_still_writes(tmp_path):
+    """The guard must not stop a real change from reaching the disk."""
+    cfg = make_config(tmp_path)
+    cfg.add_available_batch([('one', 'One')])
+
+    written = []
+    original = cfg.save
+
+    def counting_save(*args, **kwargs):
+        written.append(True)
+        return original(*args, **kwargs)
+
+    cfg.save = counting_save
+    try:
+        cfg.add_available_batch([('one', 'One'), ('two', 'Two')])
+    finally:
+        cfg.save = original
+    assert written == [True], 'a new key was not written'
+    assert 'two' in cfg.load_available()
+
+
+def test_a_batch_that_changes_a_description_is_written(tmp_path):
+    """Same keys, different values: still a change."""
+    cfg = make_config(tmp_path)
+    cfg.add_available_batch([('one', 'One')])
+
+    written = []
+    original = cfg.save
+    cfg.save = lambda *a, **k: (written.append(True), original(*a, **k))[1]
+    try:
+        cfg.add_available_batch([('one', 'Uno')])
+    finally:
+        cfg.save = original
+    assert written == [True], 'a changed description was not written'
+    assert cfg.load_available()['one'] == 'Uno'

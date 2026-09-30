@@ -12,6 +12,7 @@ from gi.repository import Gtk
 from gi.repository import Pango
 
 from MiAZ.backend.log import MiAZLog
+from MiAZ.frontend.desktop.services.shortcuts import GLOBAL as SHORTCUT_GLOBAL
 from MiAZ.frontend.desktop.widgets.button import MiAZPopoverButton
 
 
@@ -459,14 +460,50 @@ class MiAZFactory:
             label.set_markup(text)
         return label
 
-    def create_menu_action(self, name, callback, shortcuts=None):
+    def _shortcuts(self):
+        """The shortcut registry, or None when nothing installed one.
+
+        The console frontend has no registry, and neither do the tests that
+        build a factory against a stub application. Both get the behaviour
+        this factory had before the registry existed.
+        """
+        getter = getattr(self.app, 'get_service', None)
+        return None if getter is None else getter('shortcuts')
+
+    def _granted(self, name, shortcuts, owner, label):
+        """The accelerators the registry allowed this action to keep.
+
+        Anything it refused is dropped here rather than passed to GTK. The
+        menu item is built either way: losing a key must not lose the command.
+        """
+        registry = self._shortcuts()
+        if registry is None:
+            return list(shortcuts)
+        granted = []
+        for accelerator in shortcuts:
+            if not registry.register(owner, name, accelerator, label=label):
+                continue
+            # register() treats a same-owner same-action reclaim as
+            # idempotent and returns True regardless of scope. A LIST scoped
+            # action must never reach set_accels_for_action: that would put a
+            # bare key back on the window, which is exactly what scoping
+            # exists to prevent.
+            if registry.scope_of(accelerator) != SHORTCUT_GLOBAL:
+                continue
+            granted.append(accelerator)
+        return granted
+
+    def create_menu_action(self, name, callback, shortcuts=None, owner='core'):
         action = Gio.SimpleAction.new(name, None)
         action.connect('activate', callback)
         self.app.add_action(action)
         if shortcuts:
-            self.app.set_accels_for_action(f'app.{name}', shortcuts)
+            granted = self._granted(name, shortcuts, owner, name)
+            if granted:
+                self.app.set_accels_for_action(f'app.{name}', granted)
 
-    def create_menuitem(self, name, label, callback, data=None, shortcuts=None):
+    def create_menuitem(self, name, label, callback, data=None,
+                        shortcuts=None, owner='core'):
         menuitem = Gio.MenuItem.new()
         menuitem.set_label(label=label)
         action = Gio.SimpleAction.new(name, None)
@@ -475,8 +512,10 @@ class MiAZFactory:
             action.set_enabled(True)
             self.app.add_action(action)
             menuitem.set_detailed_action(detailed_action=f'app.{name}')
-            if shortcuts is not None:
-                self.app.set_accels_for_action(f'app.{name}', shortcuts)
+            if shortcuts:
+                granted = self._granted(name, shortcuts, owner, label)
+                if granted:
+                    self.app.set_accels_for_action(f'app.{name}', granted)
         return menuitem
 
     def create_notebook_label(self, icon_name: str, title: str) -> Gtk.Widget:

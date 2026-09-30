@@ -264,7 +264,7 @@ class MiAZAppSettings(Adw.PreferencesDialog):
         row = Adw.SwitchRow(title=_('Display sidebar toggle button'))
         row.set_subtitle(_('Show the headerbar icon that reveals or hides the '
                            'sidebar. The sidebar can also be toggled with the '
-                           'Escape key.'))
+                           'F9 key.'))
         row.set_active(bool(visible))
         row.connect('notify::active', self._on_sidebar_toggle_visibility)
         group.add(row)

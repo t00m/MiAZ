@@ -176,7 +176,12 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         label.set_tooltip_text(item.subtitle)
         label.set_ellipsize(True)
         label.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
+        # The factory builds this label once and hands it to every item that
+        # scrolls into the slot, so the class an inactive item adds has to come
+        # off again for the next one. Without this, one inactive document makes
+        # every later document in that row render destructive.
         if item.active:
+            label.remove_css_class('destructive-action')
             label.set_markup(f"<b>{GLib.markup_escape_text(item.subtitle)}</b>")
         else:
             label.set_markup(
