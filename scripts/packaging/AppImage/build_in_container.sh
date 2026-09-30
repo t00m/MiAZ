@@ -158,8 +158,9 @@ sed -i '/^StartupWMClass=/d' "$APPDIR/$APP_ID.desktop"
 # Point the bundled OpenSSL at the host's CA certificates (see the hook).
 cp "$SRC/scripts/packaging/AppImage/ca-certs.hook" "$APPDIR/bin/10-ca-certs.hook"
 
-# Opt-in, off by default: see webkit-sandbox.hook for what it does and why.
-if [[ "${MIAZ_WEBKIT_SANDBOX_FALLBACK:-0}" == 1 ]]; then
+# On by default: without it MiAZ aborts at startup wherever unprivileged user
+# namespaces are blocked. See webkit-sandbox.hook for what it costs.
+if [[ "${MIAZ_WEBKIT_SANDBOX_FALLBACK:-1}" == 1 ]]; then
     cp "$SRC/scripts/packaging/AppImage/webkit-sandbox.hook" "$APPDIR/bin/20-webkit-sandbox.hook"
 fi
 
