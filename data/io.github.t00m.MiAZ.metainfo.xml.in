@@ -67,9 +67,24 @@
     </screenshot>
   </screenshots>
   <releases>
-    <release version="0.4.0" date="2026-09-16" urgency="medium">
+    <release version="0.4.0" date="2026-09-30" urgency="medium">
       <description>
-        <p>See CHANGELOG.md for details.</p>
+        <p>An AppImage that runs anywhere, background work you can watch instead of guess at, a keyboard shortcut for every action, and a faster start.</p>
+        <ul>
+          <li>The AppImage carries its own Python, GTK, libadwaita, libpeas and WebKit, so it runs on distributions that ship none of them. It also knows how to update itself</li>
+          <li>Background work has a place in the header bar: what is running, how far it has got, and what failed. A job that failed used to disappear without saying anything</li>
+          <li>A large import says which document it is on and how many are left, and its bar no longer reaches the end with work still to do</li>
+          <li>Long imports and ZIP exports no longer make the desktop offer to close the window</li>
+          <li>Two imports can no longer copy into the same repository at the same time</li>
+          <li>Every core action has a keyboard shortcut, and the ones that used to take a combination the desktop or a text entry already owns have been moved. The shortcuts window is built from the same table the keys come from, so the two cannot drift apart</li>
+          <li>A repository can be marked as remote, per machine, so MiAZ stops treating a mounted drive as if it were a local folder</li>
+          <li>MiAZ starts faster: it no longer does a quarter of its startup work for a window nobody opened, nor the rest of it twice</li>
+          <li>The document list scrolls better: a preview already rendered is not decoded again, and a document's date is not read out of the file every time something asks for it</li>
+          <li>A maximized window comes back maximized, instead of as the size of the screen</li>
+          <li>Stepping back over a configuration change keeps the redo</li>
+          <li>A crash while MiAZ is starting now shows the crash dialog, instead of crashing the crash handler</li>
+          <li>A row no longer keeps the style of an inactive document after that document has scrolled past</li>
+        </ul>
       </description>
     </release>
     <release version="0.3.1" date="2026-09-14" urgency="medium">

@@ -1,6 +1,18 @@
 miaz (0.4.0-1) unstable; urgency=medium
 
-  * New release. See CHANGELOG.md for details.
+  * The AppImage carries its own Python, GTK, libadwaita, libpeas and WebKit, so it runs on distributions that ship none of them. It also knows how to update itself
+  * Background work has a place in the header bar: what is running, how far it has got, and what failed. A job that failed used to disappear without saying anything
+  * A large import says which document it is on and how many are left, and its bar no longer reaches the end with work still to do
+  * Long imports and ZIP exports no longer make the desktop offer to close the window
+  * Two imports can no longer copy into the same repository at the same time
+  * Every core action has a keyboard shortcut, and the ones that used to take a combination the desktop or a text entry already owns have been moved. The shortcuts window is built from the same table the keys come from, so the two cannot drift apart
+  * A repository can be marked as remote, per machine, so MiAZ stops treating a mounted drive as if it were a local folder
+  * MiAZ starts faster: it no longer does a quarter of its startup work for a window nobody opened, nor the rest of it twice
+  * The document list scrolls better: a preview already rendered is not decoded again, and a document's date is not read out of the file every time something asks for it
+  * A maximized window comes back maximized, instead of as the size of the screen
+  * Stepping back over a configuration change keeps the redo
+  * A crash while MiAZ is starting now shows the crash dialog, instead of crashing the crash handler
+  * A row no longer keeps the style of an inactive document after that document has scrolled past
 
  -- Tomás Vírseda <tomasvirseda@gmail.com>  Wed, 16 Sep 2026 16:35:11 +0200
 
