@@ -67,6 +67,11 @@
     </screenshot>
   </screenshots>
   <releases>
+    <release version="0.5.0" date="2026-10-02" urgency="medium">
+      <description>
+        <p>See CHANGELOG.md for details.</p>
+      </description>
+    </release>
     <release version="0.4.0" date="2026-09-30" urgency="medium">
       <description>
         <p>An AppImage that runs anywhere, background work you can watch instead of guess at, a keyboard shortcut for every action, and a faster start.</p>
