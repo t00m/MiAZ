@@ -1790,10 +1790,25 @@ class MiAZWorkspace(Gtk.Box):
         'this month' rather than the dates it meant when it was saved, and the
         sidebar entry supplies the range for today.
 
+        An explicit list (`only_ids`) has no sidebar control. The workspace
+        holds it, as show_documents does, and it shows as a removable tag. A
+        query without one drops a list shown earlier: this replaces the whole
+        query. Unlike show_documents it leaves the current view on screen.
+
+        `ignore_date` and `ignore_active` cannot be held the same way: nothing
+        on screen would say they are in effect or let the user remove them.
+        Outside an explicit list (which lifts both) they are reported as not
+        applied; a plugin that needs them registers a query hook.
+
         Returns the query fields it could not represent in the sidebar, empty
         when everything was applied.
         """
         unrepresented = self._write_widgets(query)
+        self._only_ids = None if query.only_ids is None else frozenset(query.only_ids)
+        self._only_label = ''
+        if query.only_ids is None:
+            unrepresented += [flag for flag in ('ignore_date', 'ignore_active')
+                              if getattr(query, flag)]
         self._query = self._read_query()
         self.view.refilter()
         self.emit('workspace-view-filtered')

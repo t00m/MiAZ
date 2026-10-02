@@ -347,7 +347,7 @@ workspace.set_query(query)                 # refilters and emits workspace-view-
 workspace.show_stack_page('workspace-default')
 ```
 
-`set_query` does not rewrite the filter widgets, so the next widget change rebuilds the query from them; call `clear_filters()` first for a clean base. `get_query()` returns the current one. `to_dict()` / `from_dict()` round-trip through JSON.
+`set_query` writes the query into the sidebar controls and reads it back, so the sidebar and the view agree and the next widget change builds on it. It returns the fields it could not represent, and logs them. `only_ids` has no control: the workspace holds it, as `show_documents()` does, and it shows as a removable tag; unlike `show_documents()`, `set_query` stays on the current view. A query without `only_ids` drops a list shown earlier. `ignore_date` and `ignore_active` are only honoured with `only_ids` (which lifts both); otherwise they come back as unrepresented, and a plugin that needs them uses `register_query_hook`. `get_query()` returns the current one. `to_dict()` / `from_dict()` round-trip through JSON.
 
 To adjust the query the widgets produced rather than replace it, register a hook:
 
