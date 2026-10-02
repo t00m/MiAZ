@@ -101,6 +101,7 @@ data/resources/plugins/MiAZInsights/insights/render.py
 data/resources/plugins/MiAZOCR/ocr.py
 data/resources/plugins/MiAZOikos/miazoikos.py
 data/resources/plugins/MiAZOikos/oikos/chart.py
+data/resources/plugins/MiAZOikos/oikos/column.py
 data/resources/plugins/MiAZOikos/oikos/editor.py
 data/resources/plugins/MiAZOikos/oikos/money.py
 data/resources/plugins/MiAZOikos/oikos/view.py

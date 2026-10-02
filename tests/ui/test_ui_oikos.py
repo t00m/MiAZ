@@ -204,3 +204,97 @@ def test_the_editor_writes_nothing_until_asked(oikos, clean_view):
     assert set(entries) == {MORTGAGE, ELECTRICITY}
     assert entries[MORTGAGE].amount == Decimal('1234.50')
     assert oikos.ledger.get(MORTGAGE) is None, 'the editor itself writes nothing'
+
+
+class _ListItem:
+    """Just enough of a Gtk.ListItem for a factory's setup and bind handlers."""
+
+    def __init__(self, doc_id):
+        self._child = None
+        self._item = type('Item', (), {'id': doc_id})()
+
+    def set_child(self, child):
+        self._child = child
+
+    def get_child(self):
+        return self._child
+
+    def get_item(self):
+        return self._item
+
+
+def _bound_label(column, doc_id):
+    """The label the Amount column shows for a document."""
+    list_item = _ListItem(doc_id)
+    column._on_setup(None, list_item)
+    column._on_bind(None, list_item)
+    return list_item.get_child()
+
+
+def test_the_amount_column_is_in_the_table_and_the_chooser(oikos, clean_view):
+    from oikos.column import COLUMN_NAME
+    workspace = clean_view.workspace
+    column = oikos.get_column().column
+    assert COLUMN_NAME in workspace.get_extra_columns()
+    columns = workspace.view.cv.get_columns()
+    assert any(columns.get_item(i) is column for i in range(columns.get_n_items()))
+    menu = workspace._columns_menu
+    labels = [menu.get_item_attribute_value(i, 'label').get_string()
+              for i in range(menu.get_n_items())]
+    assert column.get_title() in labels, 'the column has a chooser entry'
+
+
+def test_an_expense_is_negative_and_red_an_income_unsigned_and_green(oikos, clean_view):
+    from oikos.ledger import Entry
+    oikos.set_entries({
+        MORTGAGE: Entry('expense', '650.40', 'EUR'),
+        PERMIT: Entry('income', '20', 'USD'),
+    })
+    column = oikos.get_column()
+    expense = _bound_label(column, MORTGAGE)
+    income = _bound_label(column, PERMIT)
+    nothing = _bound_label(column, ELECTRICITY)
+    assert expense.get_text().startswith('−650') and expense.get_text().endswith(' EUR')
+    assert expense.has_css_class('error') and not expense.has_css_class('success')
+    assert not income.get_text().startswith(('+', '−'))
+    assert income.get_text().startswith('20') and income.get_text().endswith(' USD')
+    assert income.has_css_class('success') and not income.has_css_class('error')
+    assert nothing.get_text() == ''
+    assert not nothing.has_css_class('error') and not nothing.has_css_class('success')
+
+
+def test_the_amount_column_sorts_by_currency_then_amount(oikos, clean_view):
+    from gi.repository import Gtk
+    from oikos.ledger import Entry
+    oikos.set_entries({
+        MORTGAGE: Entry('expense', '650.40', 'EUR'),
+        ELECTRICITY: Entry('income', '84.10', 'EUR'),
+    })
+    column = oikos.get_column()
+
+    class Item:
+        def __init__(self, doc):
+            self.id = doc
+    compare = column._compare
+    assert compare(Item(MORTGAGE), Item(ELECTRICITY), None) == Gtk.Ordering.SMALLER
+    assert compare(Item(ELECTRICITY), Item(PERMIT), None) == Gtk.Ordering.SMALLER, \
+        'a document without an amount sorts last'
+
+
+def test_unloading_the_plugin_takes_the_column_away(clean_view):
+    from oikos.column import COLUMN_NAME
+    system = clean_view.service('plugin-system')
+    info = system.get_plugin_info('miazoikos')
+    assert system.load_plugin(info)
+    clean_view.wait_until(
+        lambda: COLUMN_NAME in clean_view.workspace.get_extra_columns(),
+        message='the column is added')
+    menu = clean_view.workspace._columns_menu
+    items_with = menu.get_n_items()
+    system.unload_plugin(info)
+    clean_view.pump(0.3)
+    assert COLUMN_NAME not in clean_view.workspace.get_extra_columns()
+    assert menu.get_n_items() == items_with - 1, 'the chooser entry goes too'
+    columns = clean_view.workspace.view.cv.get_columns()
+    titles = [columns.get_item(i).get_title() for i in range(columns.get_n_items())]
+    assert 'Amount' not in titles

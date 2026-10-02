@@ -255,3 +255,14 @@ def test_a_breakdown_by_field_puts_the_largest_first():
     assert [row.label for row in result['EUR']] == ['The Bank', 'The Shop']
     assert result['EUR'][1].totals.expense == Decimal('25')
     assert [row.key for row in result['USD']] == ['BANK']
+
+
+@pytest.mark.parametrize('point', ['.', ','])
+def test_the_amount_column_signs_expenses_and_not_incomes(monkeypatch, point):
+    import locale
+    from oikos.money import EXPENSE, INCOME, amount_cell
+    monkeypatch.setattr(locale, 'localeconv',
+                        lambda: {'decimal_point': point, 'thousands_sep': ''})
+    assert amount_cell(EXPENSE, Decimal('650.4'), 'EUR') == (f'−650{point}40 EUR', EXPENSE)
+    assert amount_cell(INCOME, Decimal('1500'), 'USD') == (f'1500{point}00 USD', INCOME)
+    assert amount_cell(EXPENSE, Decimal('0'), 'EUR')[0] == f'0{point}00 EUR', 'no −0'

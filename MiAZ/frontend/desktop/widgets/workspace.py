@@ -897,7 +897,10 @@ class MiAZWorkspace(Gtk.Box):
         menu always says what the table is actually doing.
         """
         menu = Gio.Menu.new()
+        self._columns_menu = menu
         self._column_actions = {}
+        # Columns a plugin added: name -> (column, action name).
+        self._extra_columns = {}
         for name, title in self._COLUMNS:
             column = getattr(self.view, name, None)
             if column is None:
@@ -919,6 +922,47 @@ class MiAZWorkspace(Gtk.Box):
     def _on_column_toggled(self, action, value, column):
         action.set_state(value)
         column.set_visible(value.get_boolean())
+
+    def add_column(self, name, title, column):
+        """Add a column to the document table, after the built-in ones.
+
+        It gets an entry in the column chooser like the columns MiAZ ships, so
+        it can be hidden and shown the same way. Adding a name twice replaces
+        the first column.
+        """
+        if name in self._extra_columns:
+            self.remove_column(name)
+        self.view.cv.append_column(column)
+        action_name = f'column-extra-{name}'
+        action = Gio.SimpleAction.new_stateful(
+            action_name, None, GLib.Variant.new_boolean(column.get_visible()))
+        action.connect('change-state', self._on_column_toggled, column)
+        self.app.add_action(action)
+        self._columns_menu.append(title, f'app.{action_name}')
+        self._extra_columns[name] = (column, action_name)
+        self.log.debug(f"Workspace column added: {name}")
+
+    def remove_column(self, name):
+        """Take a column added with add_column away, with its chooser entry."""
+        entry = self._extra_columns.pop(name, None)
+        if entry is None:
+            return
+        column, action_name = entry
+        if column.get_column_view() is not None:
+            self.view.cv.remove_column(column)
+        detailed = f'app.{action_name}'
+        for index in range(self._columns_menu.get_n_items()):
+            value = self._columns_menu.get_item_attribute_value(
+                index, Gio.MENU_ATTRIBUTE_ACTION, GLib.VariantType.new('s'))
+            if value is not None and value.get_string() == detailed:
+                self._columns_menu.remove(index)
+                break
+        self.app.remove_action(action_name)
+        self.log.debug(f"Workspace column removed: {name}")
+
+    def get_extra_columns(self):
+        """The names of the columns plugins added."""
+        return list(self._extra_columns)
 
     def _on_view_button_toggled(self, button, name):
         if button.get_active():

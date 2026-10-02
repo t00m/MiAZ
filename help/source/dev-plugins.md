@@ -99,6 +99,9 @@ when the plugin is turned off, so `do_deactivate` has nothing to undo for them:
 
 - `install_menu_entries` and `install_menu_entry`: menu items
 - `add_workspace_page`, `add_workspace_view`: a page or a document view
+- `add_workspace_column(column, name, title)`: a column in the Details table,
+  also listed in the column chooser; call `workspace.refresh_rows()` when the
+  data behind its cells changes
 - `add_sidebar_widget`, `add_headerbar_widget`, `add_sidebar_dropdown`
 - `register_document_tab`: a tab in the rename dialog
 - `install_settings_group`, `install_metadata_view`: Repository Settings

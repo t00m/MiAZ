@@ -46,6 +46,20 @@ Choose **Neither** to remove what was recorded. **Cancel** changes nothing.
     preselected. Choose both on purpose, so one click cannot turn a salary
     into a bill or dollars into euros.
 
+## The Amount column {#column}
+
+While the plugin is on, the **Details** table has an **Amount** column with
+each document's amount and currency:
+
+- an expense is negative and red: `−650,40 EUR`
+- an income has no sign and is green: `1500,00 EUR`
+- a document with nothing recorded shows nothing
+
+Click the header to sort: documents with an amount come first, grouped by
+currency, from the largest expense to the largest income. Hide or show the
+column with **Choose the columns to show**
+(<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>K</kbd>).
+
 ## Typing amounts {#amounts}
 
 Write the amount without a thousands separator. Both `1500,50` and `1500.50`

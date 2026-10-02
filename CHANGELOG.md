@@ -26,9 +26,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
   Amounts are `Decimal`, stored as strings, never floats, in `.conf/plugins/MiAZOikos/data/MiAZOikos.json`, and follow a document when it is renamed or deleted. A single separator is always the decimal one, in every locale, so `1.500` is one and a half; with both, the last one is. Amounts are therefore shown without a thousands separator (`1500,00 EUR`) in every locale: grouped, `1.500,00` copied back as `1.500` would have been read a thousand times smaller. The currencies are a vocabulary in Repository Settings, Metadata, and the default currency is a setting. `oikos/money.py`, `ledger.py` and `aggregate.py` have no GTK in them and carry the testing: 53 cases in `tests/test_oikos.py`, plus `tests/ui/test_ui_oikos.py` and the plugin cycle and signal census lists. Its help page is `help/source/plugin-miazoikos.md`, help id `plugin-oikos`.
 
+  The Details table gets an Amount column while the plugin is on: an expense is negative and red (`−650,40 EUR`), an income has no sign and is green (`1500,00 EUR`), using the libadwaita `error` and `success` styles so both follow the light and dark palettes. The minus sign tells the two apart without the colour. Sorting groups by currency, then runs from the largest expense to the largest income, and puts documents without an amount last.
+
 - **The help has a section for developers, and keeping the help current is a rule.** Four pages under "Developers" cover the essentials: how MiAZ is built (the file name as database, the three layers, services and signals), how to run, install and check it, how to write a plugin, and how to write these help pages. `AGENTS.md` now opens with the rule that every code change is checked against the user and developer pages, in the same commit.
 
   `tests/test_help.py` takes the mechanical part. It fails when a help page has frontmatter KB4IT cannot read, which KB4IT itself does not do: it drops the page and exits 0, which is how two of these pages first went missing over a colon in their summary. It also fails when a shortcut in `services/shortcuts.py` is missing from the shortcut reference, and when a plugin `Help=` link names a help id the contract does not list.
+
+- **Plugins can add a column to the Details table.** `MiAZPlugin.add_workspace_column(column, name, title)` appends a `Gtk.ColumnViewColumn` after the built-in columns and lists it in the column chooser, so it hides and shows like the others. The plugin system takes it away when the plugin is unloaded, as it does with views and pages. The notes column still installs itself the old way, since notes are a core service rather than a plugin.
 
 ### Changed
 

@@ -159,3 +159,15 @@ def format_amount(value: Decimal, places: int = 2, signed: bool = False,
 def format_money(value: Decimal, currency: str, signed: bool = False) -> str:
     """An amount with its currency code: 1500,00 EUR."""
     return f'{format_amount(value, signed=signed)} {currency}'
+
+
+def amount_cell(kind: str, amount: Decimal, currency: str):
+    """What the Amount column shows for one document: (text, kind).
+
+    An expense is negative (−650,40 EUR) and an income carries no sign
+    (1500,00 EUR). The minus sign says which way the money went on its own;
+    the colour the column adds (red for an expense, green for an income) is
+    a second cue, not the only one.
+    """
+    value = -amount if kind == EXPENSE else amount
+    return f'{format_amount(value)} {currency}', kind

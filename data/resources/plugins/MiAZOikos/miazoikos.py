@@ -48,7 +48,8 @@ class MiAZOikos(MiAZExtension):
     """Each document can be money in or money out.
 
     The user says which, how much and in what currency, for one document
-    (a tab in the rename dialog) or many at once (the Set dialog). A view
+    (a tab in the rename dialog) or many at once (the Set dialog). An
+    Amount column in the Details table shows each one, and a view
     beside Details, Grid and Timeline adds up whatever is selected there, or
     every document shown when nothing is selected, per currency, as tiles
     and a bar chart. Currencies are never converted:
@@ -70,6 +71,7 @@ class MiAZOikos(MiAZExtension):
         self.config = None
         self.ledger = None
         self._view = None
+        self._column = None
         self._handlers = []
 
         source_dir = os.path.dirname(os.path.abspath(__file__))
@@ -97,6 +99,8 @@ class MiAZOikos(MiAZExtension):
         if self._view is not None:
             self._view.dispose_view()
             self._view = None
+        # The plugin system takes the column out of the table.
+        self._column = None
         self.plugin.unregister_document_tabs()
         self.plugin.set_started(False)
 
@@ -134,6 +138,7 @@ class MiAZOikos(MiAZExtension):
             name='oikos', title=_('Income or expense'),
             factory=self._build_tab, weight=300)
         self._add_view()
+        self._add_column()
         self.plugin.set_started(started=True)
 
     # What other parts of the plugin call
@@ -240,9 +245,23 @@ class MiAZOikos(MiAZExtension):
     def get_view(self):
         return self._view
 
+    def _add_column(self):
+        from oikos.column import COLUMN_NAME, MiAZOikosColumn
+        self._column = MiAZOikosColumn(self)
+        self.plugin.add_workspace_column(self._column.column, COLUMN_NAME,
+                                         _('Amount'))
+        # Paint the new column without rescanning the repository.
+        self.workspace.refresh_rows()
+
+    def get_column(self):
+        return self._column
+
     def _refresh_view(self):
         if self._view is not None and self._view.is_showing():
             self._view.refresh()
+        # The Amount column reads the ledger when a row is bound; re-bind.
+        if self._column is not None:
+            self.workspace.refresh_rows()
 
     def _build_tab(self, app):
         from oikos.editor import MiAZOikosTab
