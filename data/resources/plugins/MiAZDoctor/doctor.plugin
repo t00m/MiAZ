@@ -6,7 +6,7 @@ Description=Run every repository health check in one pass and repair the vocabul
 Authors=Tomás Vírseda <tomasvirseda@gmail.com>
 Copyright=Copyright © 2026 Tomás Vírseda
 Website=http://github.com/t00m/MiAZ
-Help=https://github.com/t00m/MiAZ/blob/main/README.md
+Help=https://t00m.github.io/MiAZ/go.html?id=plugin-doctor
 Category=Repository
 Subcategory=Health
 MenuEntry-run=Run repository health check

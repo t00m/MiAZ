@@ -151,6 +151,22 @@ def test_the_shortcut_reference_lists_every_core_shortcut():
     assert missing == [], f'shortcuts missing from the help: {missing}'
 
 
+def test_every_bundled_plugin_links_to_its_help_page():
+    """A new plugin gets a help page; its Help key is how the page is found."""
+    plugins = os.path.join(REPO, 'data', 'resources', 'plugins')
+    missing = []
+    for folder in sorted(os.listdir(plugins)):
+        for name in os.listdir(os.path.join(plugins, folder)):
+            if not name.endswith('.plugin'):
+                continue
+            with open(os.path.join(plugins, folder, name), encoding='utf-8') as fh:
+                text = fh.read()
+            if not re.search(r'^Help=https://t00m\.github\.io/MiAZ/go\.html\?id=[a-z0-9._-]+$',
+                             text, re.M):
+                missing.append(folder)
+    assert missing == [], f'plugins without a help page link: {missing}'
+
+
 def test_plugin_help_links_name_ids_the_help_build_checks():
     plugins = os.path.join(REPO, 'data', 'resources', 'plugins')
     with open(os.path.join(REPO, 'help', 'config', 'contract.txt')) as fh:

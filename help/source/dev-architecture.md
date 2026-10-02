@@ -4,7 +4,7 @@ Feature: Development
 HelpId: dev-architecture
 Level: advanced
 Order: 910
-Section: Developers
+Section: For developers
 Summary: "How MiAZ is built: the filename as database, three layers, services and signals."
 ---
 

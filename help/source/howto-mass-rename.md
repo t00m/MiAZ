@@ -3,8 +3,8 @@ DocType: How-to guide
 Feature: Renaming
 HelpId: mass-rename
 Level: advanced
-Order: 320
-Section: Renaming
+Order: 230
+Section: Add and name documents
 Summary: Set the same field on many documents at once.
 ---
 

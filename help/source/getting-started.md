@@ -3,8 +3,8 @@ DocType: Tutorial
 Feature: Getting started
 HelpId: first-steps
 Level: basic
-Order: 10
-Section: Start
+Order: 110
+Section: Get started
 Summary: Create your first repository, add a document and give it a proper name.
 ---
 

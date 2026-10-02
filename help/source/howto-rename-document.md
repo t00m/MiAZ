@@ -3,8 +3,8 @@ DocType: How-to guide
 Feature: Renaming
 HelpId: rename-document
 Level: basic
-Order: 310
-Section: Renaming
+Order: 220
+Section: Add and name documents
 Summary: Rename a single document with the rename dialog, and let MiAZ detect fields for you.
 ---
 
@@ -20,7 +20,8 @@ Summary: Rename a single document with the rename dialog, and let MiAZ detect fi
 The **Detect** menu in the rename dialog reads the document and fills in what it
 can find:
 
-- **Date**: from the file's own metadata first, then from the original file name.
+- **Date**: from the file's own metadata first, then from the original file
+  name. See [Where the date comes from](explanation-filename-convention.md#date).
 - **Country**, **Sent by**, **Sent to**: by finding one of your enabled values in
   the document text.
 - **Every field**: all of the above in one pass.

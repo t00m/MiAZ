@@ -900,6 +900,27 @@ published to `https://t00m.github.io/MiAZ/` by `.github/workflows/help.yml`.
   `Feature` are required; `Feature` and `Level` values must be in the
   vocabulary in `help/config/repo.json`. Images go in
   `help/source/resources/images/`.
+- **Sections are user goals**, in this order, with `Order` ranges:
+
+| Order | Section | For |
+|---|---|---|
+| 1xx | Get started | first use, the naming idea |
+| 2xx | Add and name documents | adding, renaming, Review |
+| 3xx | Find documents | search, filters, views |
+| 4xx | Notes | notes on documents |
+| 5xx | Repositories | repositories, their settings, plugins on and off, backup |
+| 61x-67x | Plugins for documents | one page per plugin (Import, Export, Annotation, ...) |
+| 68x | Plugins for the repository | Health, History, Stats plugins |
+| 69x | Plugins for the window | Interface plugins |
+| 7xx | Reference | shortcuts, settings, command line, FAQ, tips |
+| 9xx | For developers | contributors |
+
+  Each section may hold any `DocType`. A tip or an FAQ answer lives on the page
+  of its topic; `tips.md` and `faq.md` keep a short version and a link.
+- **Every bundled plugin has a page** `plugin-<module>.md` with
+  `HelpId: plugin-<short name>`, and its `Help=` key (`.plugin` and
+  `plugin_info`) is `https://t00m.github.io/MiAZ/go.html?id=<id>`, listed in
+  `contract.txt`. `tests/test_help.py` fails for a plugin without one.
 - **Diátaxis.** Every page is exactly one `DocType`: `Tutorial`,
   `How-to guide`, `Reference` or `Explanation`, spelled exactly so. The theme
   leaves out a page without a valid one and fails the build; the old `Kind` key

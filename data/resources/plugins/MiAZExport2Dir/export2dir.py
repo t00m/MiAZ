@@ -25,7 +25,7 @@ plugin_info = {
         'Authors':       'Tomás Vírseda <tomasvirseda@gmail.com>',
         'Copyright':     'Copyright © 2025 Tomás Vírseda',
         'Website':       'http://github.com/t00m/MiAZ',
-        'Help':          'https://github.com/t00m/MiAZ/blob/main/README.md',
+        'Help':          'https://t00m.github.io/MiAZ/go.html?id=plugin-export2dir',
         'Category':      'Documents',
         'Subcategory':   'Export',
         'MenuEntries':   [

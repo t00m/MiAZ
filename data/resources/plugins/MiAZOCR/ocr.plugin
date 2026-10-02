@@ -6,7 +6,7 @@ Description=Extract text from PDF documents with OCR and save it as a note
 Authors=Tomás Vírseda <tomasvirseda@gmail.com>
 Copyright=Copyright © 2026 Tomás Vírseda
 Website=http://github.com/t00m/MiAZ
-Help=https://github.com/t00m/MiAZ/blob/main/README.md
+Help=https://t00m.github.io/MiAZ/go.html?id=plugin-ocr
 Category=Documents
 Subcategory=Annotation
 MenuEntry-extract=Extract text (OCR)…

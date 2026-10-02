@@ -3,7 +3,7 @@ DocType: Reference
 Feature: Getting started, Documents, Search
 HelpId: shortcuts
 Level: basic
-Order: 510
+Order: 710
 Section: Reference
 Summary: Every keyboard shortcut in MiAZ.
 ---

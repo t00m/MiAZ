@@ -3,45 +3,44 @@ DocType: How-to guide
 Feature: Documents, Renaming, Notes, Repositories
 HelpId: tips
 Layout: tips
-Order: 410
-Section: Help
-Summary: Small things MiAZ does for you that are easy to miss.
+Order: 750
+Section: Reference
+Summary: Small things MiAZ does for you that are easy to miss, each with the page that explains it.
 ---
 
 # Tips
 
-## The Concept field links documents {#concept-links}
+## Reuse the Concept {#concept-links}
 
-Give documents that belong together the same Concept. Case and underscores do
-not matter: `home_insurance`, `Home Insurance` and `HOME_INSURANCE` count as
-the same.
+Give documents that belong together the same Concept, in any case. They then
+read as one conversation. [More](explanation-filename-convention.md#concept)
 
-## An exchange reads as a conversation {#conversations}
+## Read an exchange as a conversation {#conversations}
 
-The **Conversations** view (<kbd>Ctrl</kbd>+<kbd>4</kbd>) groups documents by
-Concept and puts what you sent on one side and what you received on the other.
-An invoice and its payment read as one exchange.
+<kbd>Ctrl</kbd>+<kbd>4</kbd> shows what you sent beside what you received.
+[More](reference-views.md#conversations)
 
-## MiAZ reads the date from the document, not from its name {#date-from-metadata}
+## Let the file say its date {#date-from-metadata}
 
-A file name is full of numbers that look like dates: invoice numbers, policy
-numbers, IDs. The date stored inside the file cannot be confused that way, so
-MiAZ reads it first.
+**Detect** in the rename dialog reads the date stored in the file before the
+one in its name. [More](explanation-filename-convention.md#date)
 
-## One note for several documents {#note-many}
+## One note for many documents {#note-many}
 
-Select several documents and press <kbd>Ctrl</kbd>+<kbd>N</kbd>. You write the
-note once and it is attached to all of them.
+Select several documents and press <kbd>Ctrl</kbd>+<kbd>N</kbd>.
+[More](howto-notes.md#add)
 
-## Plugins are chosen per repository {#plugins-per-repository}
+## Different plugins per repository {#plugins-per-repository}
 
-A work archive and a family archive can have different plugins enabled, each
-with its own settings.
+A work archive and a family archive can enable different plugins.
+[More](howto-repositories.md#plugins)
 
-## Repositories on a network {#remote}
+## Mark a network repository as remote {#remote}
 
-If a repository lives on a network share or a mounted cloud folder, turn on
-**Remote repository** in **Repository settings**. MiAZ then stops reading every
-file to draw thumbnails, and checks for changes every 30 seconds instead of
-waiting for the system to tell it. Turn it off and everything comes back at
-once.
+MiAZ then stops reading every file to draw thumbnails.
+[More](howto-remote-repository.md)
+
+## Find what still needs a name {#review}
+
+**Review** in the toolbar lists the documents MiAZ cannot file yet.
+[More](howto-review-documents.md)

@@ -2,10 +2,10 @@
 DocType: Explanation
 Feature: Plugins, Documents
 HelpId: plugin-oikos-amounts
-Order: 630
+Order: 642
 Plugin: MiAZOikos
 Related: plugin-miazoikos.md, reference-miazoikos.md
-Section: Plugins
+Section: Plugins for documents
 Since: "0.5"
 Summary: Why MiAZOikos reads and shows amounts the way it does, and never mixes currencies.
 ---

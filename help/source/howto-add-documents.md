@@ -4,7 +4,7 @@ Feature: Documents
 HelpId: add-documents, add-folder=#folder
 Level: basic
 Order: 210
-Section: Documents
+Section: Add and name documents
 Summary: Add documents from a file, a whole folder, or by dragging them onto the window.
 ---
 

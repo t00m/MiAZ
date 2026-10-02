@@ -3,10 +3,10 @@ DocType: How-to guide
 Feature: Plugins, Documents
 HelpId: plugin-oikos
 Level: basic
-Order: 610
+Order: 640
 Plugin: MiAZOikos
 Related: reference-miazoikos.md, explanation-miazoikos-amounts.md
-Section: Plugins
+Section: Plugins for documents
 Since: "0.5"
 Summary: Record documents as income or expense, then filter them and see their totals.
 ---

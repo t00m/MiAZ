@@ -4,7 +4,7 @@ Feature: Development, Plugins
 HelpId: dev-plugins
 Level: advanced
 Order: 930
-Section: Developers
+Section: For developers
 Summary: "Write a MiAZ plugin: the two files, the menu entries, and what to clean up."
 ---
 

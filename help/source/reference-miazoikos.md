@@ -2,10 +2,10 @@
 DocType: Reference
 Feature: Plugins, Documents
 HelpId: plugin-oikos-reference
-Order: 620
+Order: 641
 Plugin: MiAZOikos
 Related: plugin-miazoikos.md, explanation-miazoikos-amounts.md
-Section: Plugins
+Section: Plugins for documents
 Since: "0.5"
 Summary: The filter choices, the Amount column, the totals view, amount formats and storage of MiAZOikos.
 ---

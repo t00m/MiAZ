@@ -4,7 +4,7 @@ Feature: Development
 HelpId: dev-setup
 Level: advanced
 Order: 920
-Section: Developers
+Section: For developers
 Summary: Run MiAZ from source, install it locally, and run the checks before a commit.
 ---
 
