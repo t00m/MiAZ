@@ -26,6 +26,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
   Amounts are `Decimal`, stored as strings, never floats, in `.conf/plugins/MiAZOikos/data/MiAZOikos.json`, and follow a document when it is renamed or deleted. A single separator is always the decimal one, in every locale, so `1.500` is one and a half; with both, the last one is. Amounts are therefore shown without a thousands separator (`1500,00 EUR`) in every locale: grouped, `1.500,00` copied back as `1.500` would have been read a thousand times smaller. The currencies are a vocabulary in Repository Settings, Metadata, and the default currency is a setting. `oikos/money.py`, `ledger.py` and `aggregate.py` have no GTK in them and carry the testing: 53 cases in `tests/test_oikos.py`, plus `tests/ui/test_ui_oikos.py` and the plugin cycle and signal census lists. Its help page is `help/source/plugin-miazoikos.md`, help id `plugin-oikos`.
 
+- **The help has a section for developers, and keeping the help current is a rule.** Four pages under "Developers" cover the essentials: how MiAZ is built (the file name as database, the three layers, services and signals), how to run, install and check it, how to write a plugin, and how to write these help pages. `AGENTS.md` now opens with the rule that every code change is checked against the user and developer pages, in the same commit.
+
+  `tests/test_help.py` takes the mechanical part. It fails when a help page has frontmatter KB4IT cannot read, which KB4IT itself does not do: it drops the page and exits 0, which is how two of these pages first went missing over a colon in their summary. It also fails when a shortcut in `services/shortcuts.py` is missing from the shortcut reference, and when a plugin `Help=` link names a help id the contract does not list.
+
 ### Changed
 
 - **F1 no longer opens the keyboard shortcuts.** It did because MiAZ had no manual, and a key advertised in the shortcuts list had to do something. The shortcuts list keeps `Ctrl+?`, and the main menu Help item now opens the help too.

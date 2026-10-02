@@ -21,8 +21,21 @@
         "about": false,
         "contract": "config/contract.txt",
         "vocabulary": {
-            "Feature": ["Getting started", "Documents", "Renaming", "Search", "Repositories", "Notes", "Plugins", "Settings"],
-            "Level": ["basic", "advanced"]
+            "Feature": [
+                "Getting started",
+                "Documents",
+                "Renaming",
+                "Search",
+                "Repositories",
+                "Notes",
+                "Plugins",
+                "Settings",
+                "Development"
+            ],
+            "Level": [
+                "basic",
+                "advanced"
+            ]
         }
     }
 }

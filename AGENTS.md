@@ -2,6 +2,32 @@
 
 > App ID: `io.github.t00m.MiAZ` | License: GPL v3 | Repo: https://github.com/t00m/MiAZ
 
+## Rule for every code change: keep the help current
+
+This applies to every session and every contributor working in this repository.
+
+Whenever a change touches code (anything under `MiAZ/`, `data/resources/plugins/`,
+`scripts/`, `meson.build` or the packaging), check before committing whether the
+help in `help/source/` needs an update, and make it in the same commit:
+
+1. **User pages**: does the change alter what a user sees or does? A new or
+   renamed action, label, menu path, shortcut, dialog, setting, default, file
+   location, or a behaviour a page describes. Update the page that covers it,
+   or add one. A new plugin gets its own page (`plugin-<module>.md`).
+2. **Developer pages** (`dev-*.md`, section "Developers"): does the change alter
+   how MiAZ is built, run, tested, laid out or extended? A new service, signal,
+   plugin helper, layer rule, check, command, dependency or minimum version.
+   Keep them to the essentials; `AGENTS.md` remains the full reference.
+3. **Help ids**: code that opens the help (`actions.open_help(...)`, a plugin
+   `Help=` link) needs its id in `help/config/contract.txt`.
+4. **Build it**: `kb4it build help/config/repo.json --force` with no warnings,
+   and `python -m pytest -q tests/test_help.py`.
+
+If nothing in the help is affected, say so in the summary of the change, so the
+check is visible rather than assumed. `tests/test_help.py` catches the
+mechanical part (page metadata, the shortcut table, plugin help ids); whether a
+page still tells the truth is the judgement this rule asks for.
+
 ## What MiAZ does
 
 GTK4/Libadwaita desktop app that organises personal documents by enforcing a strict 7-field filename convention:
@@ -882,7 +908,13 @@ published to `https://t00m.github.io/MiAZ/` by `.github/workflows/help.yml`.
   `help/target/` and `help/var/` are build output and ignored.
 - CI builds every change under `help/` on main and on `X.Y` branches, and
   deploys from `main` only. Settings > Pages > Source must be "GitHub Actions".
-- Keep `reference-shortcuts.md` in step with `services/shortcuts.py`.
+- Keep `reference-shortcuts.md` in step with `services/shortcuts.py`;
+  `tests/test_help.py` fails when a shortcut is missing from it.
+- The "Developers" section (`dev-architecture.md`, `dev-setup.md`,
+  `dev-plugins.md`, `dev-help.md`) holds the essentials for contributors.
+- Quote a frontmatter value that contains `: ` (`Summary: "A: b"`). KB4IT drops a
+  page whose frontmatter is not valid YAML and still exits 0;
+  `tests/test_help.py` catches it.
 
 **Opening the help from the application.** `actions.open_help(help_id=None)`
 shows a topic in `MiAZHelpWindow` (`widgets/helpwindow.py`, widget

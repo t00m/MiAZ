@@ -85,3 +85,71 @@ def test_with_theme_swaps_only_the_theme_parameter():
     assert with_theme(uri, True) == f'{HELP_SITE}faq.html?theme=dark#storage'
     assert with_theme(uri, False) == uri
     assert with_theme(f'{HELP_SITE}faq.html', True) == f'{HELP_SITE}faq.html'
+
+
+# The help pages themselves. KB4IT drops a page whose frontmatter does not
+# parse and still exits 0, so a colon in a Summary loses a page silently.
+SOURCE = os.path.join(REPO, 'help', 'source')
+REQUIRED = ('Kind', 'Section', 'Order', 'Summary', 'Feature')
+
+
+def help_pages():
+    return sorted(name for name in os.listdir(SOURCE) if name.endswith('.md'))
+
+
+def frontmatter(name):
+    import yaml
+    with open(os.path.join(SOURCE, name), encoding='utf-8') as fh:
+        text = fh.read()
+    assert text.startswith('---\n'), f'{name}: no frontmatter'
+    block = text.split('---\n', 2)[1]
+    return yaml.safe_load(block) or {}
+
+
+def test_every_help_page_has_frontmatter_kb4it_can_read():
+    problems = []
+    for name in help_pages():
+        try:
+            meta = frontmatter(name)
+        except Exception as error:
+            problems.append(f'{name}: {error}')
+            continue
+        if name == 'index.md':
+            continue
+        missing = [key for key in REQUIRED if not meta.get(key)]
+        if missing:
+            problems.append(f'{name}: missing {missing}')
+        if len(str(meta.get('Summary', ''))) > 160:
+            problems.append(f'{name}: Summary longer than 160 characters')
+    assert problems == []
+
+
+def test_the_shortcut_reference_lists_every_core_shortcut():
+    """reference-shortcuts.md is written by hand from services/shortcuts.py."""
+    path = os.path.join(REPO, 'MiAZ', 'frontend', 'desktop', 'services', 'shortcuts.py')
+    with open(path, encoding='utf-8') as fh:
+        source = fh.read()
+    core = source[source.index('CORE = ('):source.index('\n)\n', source.index('CORE = ('))]
+    labels = re.findall(r"\(SECTION_\w+, N_\('([^']+)'\)", core)
+    assert labels, 'could not read the CORE table'
+    with open(os.path.join(SOURCE, 'reference-shortcuts.md'), encoding='utf-8') as fh:
+        page = fh.read()
+    missing = [label for label in labels if f'| {label}' not in page]
+    assert missing == [], f'shortcuts missing from the help: {missing}'
+
+
+def test_plugin_help_links_name_ids_the_help_build_checks():
+    plugins = os.path.join(REPO, 'data', 'resources', 'plugins')
+    with open(os.path.join(REPO, 'help', 'config', 'contract.txt')) as fh:
+        contract = {line.strip() for line in fh if line.strip() and not line.startswith('#')}
+    missing = []
+    for folder in sorted(os.listdir(plugins)):
+        for name in os.listdir(os.path.join(plugins, folder)):
+            if not name.endswith('.plugin'):
+                continue
+            with open(os.path.join(plugins, folder, name), encoding='utf-8') as fh:
+                for line in fh:
+                    match = re.match(r'Help=.*[?&]id=([a-z0-9._-]+)', line.strip())
+                    if match and match.group(1) not in contract:
+                        missing.append(f'{folder}: {match.group(1)}')
+    assert missing == []
