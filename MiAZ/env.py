@@ -83,6 +83,8 @@ def _build_env(app_id, version, pkgdatadir, localedir, profile):
     ENV['GPATH']['LOCALE'] = os.path.join(ENV['GPATH']['DATA'], 'po')
     ENV['GPATH']['PLUGINS'] = os.path.join(ENV['GPATH']['DATA'], 'plugins')
     ENV['GPATH']['CONF'] = os.path.join(ENV['GPATH']['DATA'], 'conf')
+    # The user help, built from help/ by KB4IT and installed beside the data.
+    ENV['GPATH']['HELP'] = os.path.join(ENV['GPATH']['ROOT'], 'help')
 
     # Common file paths
     ENV['FILE'] = {}
@@ -164,3 +166,6 @@ except ImportError:
         localedir=os.path.join(_repo_root, 'po'),
         profile='development',
     )
+    # A checkout has no installed help. A local build of help/ is the closest
+    # thing to it, and without one the help window falls back to the website.
+    ENV['GPATH']['HELP'] = os.path.join(_repo_root, 'help', 'target')

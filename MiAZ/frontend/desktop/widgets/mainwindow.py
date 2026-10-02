@@ -698,9 +698,8 @@ class MiAZMainWindow(Gtk.Box):
             'app-shortcuts', _('Keyboard Shortcuts'), actions.show_app_shortcuts,
             None, srvsct.accelerators_for('app-shortcuts'))
         section_common.append_item(menuitem)
-        # F1 is listed in the shortcuts window, so it has to do something. It
-        # opens that same window: MiAZ has no separate manual, and a shortcut
-        # advertised and bound to nothing is worse than one that is honest.
+        # F1 opens the user help, as in every GNOME application. The help is
+        # the site built from help/; see actions.open_help.
         menuitem = factory.create_menuitem(
             'app-help', _('Help'), actions.show_app_help, None,
             srvsct.accelerators_for('app-help'))

@@ -16,6 +16,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
   Each topic the application will open has a help id, and `help/config/contract.txt` lists them. The build fails when a listed id or anchor is missing, so renaming a page cannot silently break a link from MiAZ.
 
+- **F1 opens the help, in a window of its own.** The help window shows the site from `help/` with WebKit, on the topic the application asks for by help id, in the light or dark scheme the desktop uses. It prefers the copy installed with MiAZ, which works offline and documents the running version, and falls back to the published site. Links that leave the help open in the web browser. It is a separate window rather than a dialog, so it can stay open beside MiAZ while you follow a page.
+
+### Changed
+
+- **F1 no longer opens the keyboard shortcuts.** It did because MiAZ had no manual, and a key advertised in the shortcuts list had to do something. The shortcuts list keeps `Ctrl+?`, and the main menu Help item now opens the help too.
+
 ## [0.4.0] - 2026-09-30
 
 ### Added

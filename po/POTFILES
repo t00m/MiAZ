@@ -41,6 +41,7 @@ MiAZ/frontend/desktop/widgets/dr.py
 MiAZ/frontend/desktop/widgets/filenamesview.py
 MiAZ/frontend/desktop/widgets/filetypebadge.py
 MiAZ/frontend/desktop/widgets/gridview.py
+MiAZ/frontend/desktop/widgets/helpwindow.py
 MiAZ/frontend/desktop/widgets/jobindicator.py
 MiAZ/frontend/desktop/widgets/mainwindow.py
 MiAZ/frontend/desktop/widgets/markdownview.py

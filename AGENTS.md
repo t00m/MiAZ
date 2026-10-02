@@ -40,6 +40,7 @@ MiAZ/
 │   │   ├── config.py             ← MiAZConfig + subclasses, MiAZConfigStore (per repo)
 │   │   ├── conversation.py       ← Conversation, Message (documents as an exchange)
 │   │   ├── gate.py               ← UpdateGate (reference-counted refresh suspension)
+│   │   ├── help.py               ← help_uri, is_help_uri (where the user help is, by help id)
 │   │   ├── crash.py              ← console/log-only excepthook (install_backend_excepthook)
 │   │   ├── doctor.py             ← Finding + the repository health checks, in one pass
 │   │   ├── dr.py                 ← MiAZDR (disaster recovery / backup)
@@ -86,7 +87,7 @@ MiAZ/
 │               ├── assistant.py, browserpage.py, button.py, chip.py
 │               ├── columnview.py, configview.py, conversationview.py
 │               ├── dateentry.py, docpreview.py, dr.py, filenamesview.py
-│               ├── filetypebadge.py, gridview.py, mainwindow.py
+│               ├── filetypebadge.py, gridview.py, helpwindow.py, mainwindow.py
 │               ├── jobindicator.py, markdownview.py, metadatapage.py
 │               ├── pages.py, pills.py
 │               ├── rename.py, reposettingspage.py, selector.py
@@ -882,6 +883,23 @@ published to `https://t00m.github.io/MiAZ/` by `.github/workflows/help.yml`.
 - CI builds every change under `help/` on main and on `X.Y` branches, and
   deploys from `main` only. Settings > Pages > Source must be "GitHub Actions".
 - Keep `reference-shortcuts.md` in step with `services/shortcuts.py`.
+
+**Opening the help from the application.** `actions.open_help(help_id=None)`
+shows a topic in `MiAZHelpWindow` (`widgets/helpwindow.py`, widget
+`help-window`), a top-level `Adw.Window` with a `WebKit.WebView`. One window
+serves every topic and closing it only hides it. F1 and the main menu Help item
+open `first-steps`; the Keyboard Shortcuts window stays on Ctrl+?.
+
+`backend/help.py` builds the address: `ENV['GPATH']['HELP']/go.html?id=<id>&theme=dark|light`
+when an installed copy exists (`<pkgdatadir>/help`, or `help/target` in a
+checkout), else `https://t00m.github.io/MiAZ/go.html?...`. A malformed id falls
+back to `first-steps`. Navigation outside the help (the "Edit this page" link,
+any external site) is cancelled and opened in the web browser, and the theme
+parameter follows `Adw.StyleManager` when the desktop switches scheme.
+
+Meson installs `help/target` into `<pkgdatadir>/help` only when it has already
+been built; it never runs KB4IT. Packages built without it fall back to the
+published site.
 
 ## Build & install
 

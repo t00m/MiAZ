@@ -38,6 +38,18 @@ subdir('data')
 subdir('MiAZ')
 subdir('po')
 
+# The user help. KB4IT builds help/ into help/target (Python 3.11 or newer,
+# see AGENTS.md), so meson never runs it and only installs a copy built
+# beforehand. Without one, the help window opens the published site instead.
+fs = import('fs')
+if fs.is_dir('help/target')
+  install_subdir('help/target',
+                 install_dir: join_paths(get_option('datadir'), meson.project_name(), 'help'),
+                 strip_directory: true)
+else
+  message('help/target is not built: the help window will use the published site')
+endif
+
 # `meson test` runs the unit suite, alongside the three file validations in
 # data/meson.build. It stays fast: a few seconds, no display, nothing to set up.
 #

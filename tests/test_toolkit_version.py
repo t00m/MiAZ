@@ -41,7 +41,7 @@ VERSION_GUARDED = {
     'Adw.ShortcutsDialog': (
         'ADW_SHORTCUTS_DIALOG',
         'GNOME provides this widget from libadwaita 1.8. Debian 13, the '
-        'current stable, ships 1.7.6, so show_app_help falls back to '
+        'current stable, ships 1.7.6, so show_app_shortcuts falls back to '
         '_build_shortcuts_fallback there.'),
     'Adw.ShortcutsSection': (
         'ADW_SHORTCUTS_DIALOG', 'part of Adw.ShortcutsDialog, same guard'),

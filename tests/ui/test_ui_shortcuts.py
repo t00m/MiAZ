@@ -3,7 +3,7 @@
 """UI: the keyboard shortcuts window, on both libadwaita paths.
 
 Adw.ShortcutsDialog arrived in libadwaita 1.8. Debian 13, the current stable,
-ships 1.7.6, so show_app_help builds the same list out of older parts there.
+ships 1.7.6, so show_app_shortcuts builds the same list out of older parts there.
 The fallback is the path a developer on Fedora never sees, so both are built
 here whatever this machine runs.
 """
