@@ -9,3 +9,4 @@ mass-rename
 filename-convention
 review
 shortcuts
+plugin-oikos
