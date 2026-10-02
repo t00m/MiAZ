@@ -1,0 +1,11 @@
+# Help ids and page anchors that MiAZ opens, as go.html?id=<id> or page.html#anchor.
+# The build fails when one of them is missing, so a page or heading the
+# application links to cannot be renamed by accident.
+# Add a line here in the same commit that makes MiAZ open a new topic.
+first-steps
+add-documents
+rename-document
+mass-rename
+filename-convention
+review
+shortcuts

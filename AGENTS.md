@@ -106,6 +106,7 @@ MiAZ/
 ├── data/io.github.t00m.MiAZ.metainfo.xml.in
 ├── flatpak/io.github.t00m.MiAZ.json      ← Flatpak manifest (+ .local.json for local builds)
 ├── scripts/packaging/            ← AppImage, deb, rpm, win, flatpak build scripts + build_all.sh
+├── help/                         ← User help (KB4IT `apphelp` site, published to GitHub Pages)
 ├── po/                           ← Translations
 ├── meson.build                   ← Root Meson build file (meson_version >= 1.5.1)
 ├── meson_options.txt
@@ -857,6 +858,30 @@ activation (with install instructions) when `ocrmypdf` is not on `PATH`.
 - **No GTK3**: no `GtkListStore`, `GtkTreeView`, `GtkDialog` subclassing
 - **Filechooser**: `Gtk.FileDialog` (async GTK4 API), not `Gtk.FileChooserDialog`
 
+
+## User help (`help/`)
+
+The user help is a static site built by KB4IT with its `apphelp` theme and
+published to `https://t00m.github.io/MiAZ/` by `.github/workflows/help.yml`.
+`docs/` is unrelated: it is gitignored and holds private notes.
+
+- `help/source/*.md`: one page each, flat (no subfolders). Frontmatter keys
+  `Kind`, `Section`, `Order`, `Summary` (160 characters at most) and `Feature`
+  are required; `Feature` and `Level` values must be in the vocabulary in
+  `help/config/repo.json`. Images go in `help/source/resources/images/`.
+- `HelpId: id` or `HelpId: id=#anchor` gives a page a stable name. The app opens
+  a topic as `go.html?id=<id>`, which redirects to the page.
+- `help/config/contract.txt` lists the help ids and `page.html#anchor` pairs the
+  application opens. The build fails when one is missing, so add the line in the
+  same commit that makes MiAZ open a new topic, and never rename a heading id
+  (`## Title {#id}`) that the contract names.
+- Link between pages with `[text](page.md#anchor)`; KB4IT rewrites it to `.html`.
+- Build locally: `pip install 'KB4IT==0.7.9'`, then
+  `kb4it build help/config/repo.json --force` and open `help/target/index.html`.
+  `help/target/` and `help/var/` are build output and ignored.
+- CI builds every change under `help/` on main and on `X.Y` branches, and
+  deploys from `main` only. Settings > Pages > Source must be "GitHub Actions".
+- Keep `reference-shortcuts.md` in step with `services/shortcuts.py`.
 
 ## Build & install
 

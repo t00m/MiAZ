@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **A help site, written in the repository and published to GitHub Pages.** `help/` holds the user help as Markdown, built by the KB4IT `apphelp` theme into a static site that works from GitHub Pages, from disk without a network, and inside a web view. It starts with a tutorial, how-to pages for adding and renaming documents, an explanation of the filename convention, tips, a FAQ and the shortcut reference.
+
+  `.github/workflows/help.yml` builds it whenever `help/` changes, on `main` and on the release branches, and deploys from `main`. Pages used to be set to the legacy builder on `main:/docs`, which failed every time because `docs/` is not tracked; the source has to be switched to "GitHub Actions" for the new workflow to publish.
+
+  Each topic the application will open has a help id, and `help/config/contract.txt` lists them. The build fails when a listed id or anchor is missing, so renaming a page cannot silently break a link from MiAZ.
+
 ## [0.4.0] - 2026-09-30
 
 ### Added

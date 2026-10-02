@@ -1,0 +1,3 @@
+# Build output and the KB4IT cache, both recreated by every build.
+var/
+target/

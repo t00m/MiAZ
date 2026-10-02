@@ -1,0 +1,65 @@
+# Builds the help in help/ with KB4IT and publishes it to GitHub Pages.
+#
+# Every push that touches the help builds it, on main and on the X.Y release
+# branches, so a broken link, bad metadata or a help id MiAZ needs
+# (help/config/contract.txt) fails here and not after a merge. Only main
+# deploys, because the site documents the released application.
+#
+# Settings > Pages > Source must be "GitHub Actions". The old setting, the
+# legacy builder on main:/docs, fails on every push: docs/ is not tracked.
+name: help
+
+on:
+  push:
+    branches:
+      - main
+      - '[0-9]+.[0-9]+'
+    paths:
+      - 'help/**'
+      - '.github/workflows/help.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: help-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      # Pinned: a new KB4IT may change what the theme accepts, and the help
+      # should only change when someone edits it.
+      - name: Install KB4IT
+        run: pip install 'KB4IT==0.7.9'
+
+      - name: Build the help
+        run: kb4it build help/config/repo.json --force
+
+      - name: Upload the site
+        if: github.ref == 'refs/heads/main'
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: help/target
+
+  deploy:
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

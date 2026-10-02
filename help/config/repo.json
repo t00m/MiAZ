@@ -1,0 +1,28 @@
+{
+    "title": "MiAZ Help",
+    "tagline": "Keep your personal documents in order",
+    "theme": "apphelp",
+    "source": "source",
+    "target": "target",
+    "version": "0.5",
+    "logo": "resources/images/logo.svg",
+    "logo_alt": "MiAZ",
+    "publish_sources": false,
+    "git": true,
+    "git_server": "github.com",
+    "git_user": "t00m",
+    "git_repo": "MiAZ",
+    "git_branch": "main",
+    "git_path": "help/source",
+    "apphelp": {
+        "strict": true,
+        "lang": "en",
+        "accent": "#3584e4",
+        "about": false,
+        "contract": "config/contract.txt",
+        "vocabulary": {
+            "Feature": ["Getting started", "Documents", "Renaming", "Search", "Repositories", "Notes", "Plugins", "Settings"],
+            "Level": ["basic", "advanced"]
+        }
+    }
+}
