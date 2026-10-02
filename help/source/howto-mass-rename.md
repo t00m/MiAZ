@@ -1,7 +1,7 @@
 ---
+DocType: How-to guide
 Feature: Renaming
 HelpId: mass-rename
-Kind: howto
 Level: advanced
 Order: 320
 Section: Renaming

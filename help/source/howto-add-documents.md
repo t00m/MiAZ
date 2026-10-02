@@ -1,7 +1,7 @@
 ---
+DocType: How-to guide
 Feature: Documents
 HelpId: add-documents, add-folder=#folder
-Kind: howto
 Level: basic
 Order: 210
 Section: Documents

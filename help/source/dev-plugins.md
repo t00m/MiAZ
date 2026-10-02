@@ -1,7 +1,7 @@
 ---
+DocType: How-to guide
 Feature: Development, Plugins
 HelpId: dev-plugins
-Kind: howto
 Level: advanced
 Order: 930
 Section: Developers

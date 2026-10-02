@@ -37,9 +37,11 @@ jobs:
           python-version: '3.12'
 
       # Pinned: a new KB4IT may change what the theme accepts, and the help
-      # should only change when someone edits it.
+      # should only change when someone edits it. A commit, not a release:
+      # DocType (Diataxis) is not in any PyPI release yet. Move to a version
+      # pin once one ships it.
       - name: Install KB4IT
-        run: pip install 'KB4IT==0.7.9'
+        run: pip install 'git+https://github.com/t00m/KB4IT@0fd6bb810331376b27f1efbc0f89755c69699b93'
 
       - name: Build the help
         run: kb4it build help/config/repo.json --force

@@ -896,9 +896,17 @@ published to `https://t00m.github.io/MiAZ/` by `.github/workflows/help.yml`.
 `docs/` is unrelated: it is gitignored and holds private notes.
 
 - `help/source/*.md`: one page each, flat (no subfolders). Frontmatter keys
-  `Kind`, `Section`, `Order`, `Summary` (160 characters at most) and `Feature`
-  are required; `Feature` and `Level` values must be in the vocabulary in
-  `help/config/repo.json`. Images go in `help/source/resources/images/`.
+  `DocType`, `Section`, `Order`, `Summary` (160 characters at most) and
+  `Feature` are required; `Feature` and `Level` values must be in the
+  vocabulary in `help/config/repo.json`. Images go in
+  `help/source/resources/images/`.
+- **Diátaxis.** Every page is exactly one `DocType`: `Tutorial`,
+  `How-to guide`, `Reference` or `Explanation`, spelled exactly so. The theme
+  leaves out a page without a valid one and fails the build; the old `Kind` key
+  is refused. A page that needs two types becomes two pages linked with
+  `Related` (the MiAZOikos help is the example). `Layout: faq | tips |
+  troubleshooting` changes only the rendering. `help/source/dev-help.md` has
+  the table.
 - `HelpId: id` or `HelpId: id=#anchor` gives a page a stable name. The app opens
   a topic as `go.html?id=<id>`, which redirects to the page.
 - `help/config/contract.txt` lists the help ids and `page.html#anchor` pairs the
@@ -906,7 +914,8 @@ published to `https://t00m.github.io/MiAZ/` by `.github/workflows/help.yml`.
   same commit that makes MiAZ open a new topic, and never rename a heading id
   (`## Title {#id}`) that the contract names.
 - Link between pages with `[text](page.md#anchor)`; KB4IT rewrites it to `.html`.
-- Build locally: `pip install 'KB4IT==0.7.9'`, then
+- Build locally: `pip install 'git+https://github.com/t00m/KB4IT@0fd6bb810331376b27f1efbc0f89755c69699b93'`
+  (the first commit with `DocType`; no PyPI release has it yet), then
   `kb4it build help/config/repo.json --force` and open `help/target/index.html`.
   `help/target/` and `help/var/` are build output and ignored.
 - CI builds every change under `help/` on main and on `X.Y` branches, and

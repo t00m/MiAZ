@@ -87,10 +87,14 @@ def test_with_theme_swaps_only_the_theme_parameter():
     assert with_theme(f'{HELP_SITE}faq.html', True) == f'{HELP_SITE}faq.html'
 
 
-# The help pages themselves. KB4IT drops a page whose frontmatter does not
-# parse and still exits 0, so a colon in a Summary loses a page silently.
+# The help pages themselves. The help build catches all of this too, but it
+# needs KB4IT installed and runs in its own workflow; these run with the unit
+# suite, before anything is pushed.
 SOURCE = os.path.join(REPO, 'help', 'source')
-REQUIRED = ('Kind', 'Section', 'Order', 'Summary', 'Feature')
+REQUIRED = ('DocType', 'Section', 'Order', 'Summary', 'Feature')
+# Diataxis, as the apphelp theme spells it.
+DOCTYPES = ('Tutorial', 'How-to guide', 'Reference', 'Explanation')
+LAYOUTS = ('faq', 'tips', 'troubleshooting')
 
 
 def help_pages():
@@ -116,6 +120,15 @@ def test_every_help_page_has_frontmatter_kb4it_can_read():
             continue
         if name == 'index.md':
             continue
+        if 'Kind' in meta:
+            problems.append(f'{name}: Kind is replaced by DocType and Layout')
+        if meta.get('DocType') and meta['DocType'] not in DOCTYPES:
+            problems.append(f"{name}: DocType {meta['DocType']!r} is not one of {DOCTYPES}")
+        if meta.get('Layout') and meta['Layout'] not in LAYOUTS:
+            problems.append(f"{name}: Layout {meta['Layout']!r} is not one of {LAYOUTS}")
+        for related in str(meta.get('Related') or '').split(','):
+            if related.strip() and related.strip() not in help_pages():
+                problems.append(f'{name}: Related names a missing page {related.strip()}')
         missing = [key for key in REQUIRED if not meta.get(key)]
         if missing:
             problems.append(f'{name}: missing {missing}')

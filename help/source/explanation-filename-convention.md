@@ -1,7 +1,7 @@
 ---
+DocType: Explanation
 Feature: Documents, Renaming
 HelpId: filename-convention, review=#review
-Kind: explanation
 Level: basic
 Order: 110
 Section: Concepts

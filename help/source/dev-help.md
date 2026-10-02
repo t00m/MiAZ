@@ -1,7 +1,7 @@
 ---
+DocType: How-to guide
 Feature: Development
 HelpId: dev-help
-Kind: howto
 Level: advanced
 Order: 940
 Section: Developers
@@ -21,15 +21,36 @@ Every change to the code is checked against the help, in the same commit:
 - these developer pages, when it alters how MiAZ is built, run, tested or
   extended.
 
+## One type per page {#doctype}
+
+The help follows [Diátaxis](https://diataxis.fr/): every page is exactly one
+type of document, and the theme refuses to publish a page that is not.
+
+| `DocType` | The page | Example here |
+|---|---|---|
+| `Tutorial` | takes a newcomer through a lesson, step by step | Get started with MiAZ |
+| `How-to guide` | solves one task for someone who knows what they want | Add documents |
+| `Reference` | describes, in tables and lists, without instructions | Keyboard shortcuts |
+| `Explanation` | says how or why something works | How documents are named |
+
+When a page needs two of these, write two pages and link them with
+`Related`. The MiAZOikos help is the example: a how-to guide, a reference and
+an explanation.
+
+`Layout` changes how a page is drawn, not what it is: `faq` (each `##` is a
+collapsible question, usually a Reference), `tips` (each `##` is a card,
+usually a How-to guide) or `troubleshooting` (each `##` is a problem with
+`### Cause` and `### Fix`, usually a How-to guide).
+
 ## A page {#page}
 
 One Markdown file per page, in `help/source/`, no subfolders:
 
 ```markdown
 ---
+DocType: How-to guide
 Feature: Documents
 HelpId: add-documents
-Kind: howto
 Level: basic
 Order: 210
 Section: Documents
@@ -41,11 +62,13 @@ Summary: One line, 160 characters at most.
 ## Add a folder {#folder}
 ```
 
-- `Kind`, `Section`, `Order`, `Summary` and `Feature` are required.
-- `Kind` is one of `tutorial`, `howto`, `reference`, `explanation`, `faq`,
-  `tips`, `troubleshooting`.
+- `DocType`, `Section`, `Order`, `Summary` and `Feature` are required.
+- `DocType` is spelled exactly as in the table above. A page without a valid
+  one is left out of the site and fails the build.
 - `Feature` and `Level` values must be in the vocabulary in
   `help/config/repo.json`.
+- `Related` lists file names of pages to show first under "Related pages".
+- Quote a value that contains `: `, such as `Summary: "A: b"`.
 - Give a heading an explicit id (`{#folder}`) when anything links to it.
 - Link to another page as `[text](page.md#anchor)`.
 - Images go in `help/source/resources/images/`.
@@ -66,7 +89,7 @@ so renaming a page or a heading cannot silently break the application.
 ## Build it {#build}
 
 ```bash
-pip install 'KB4IT==0.7.9'
+pip install 'git+https://github.com/t00m/KB4IT@0fd6bb810331376b27f1efbc0f89755c69699b93'
 kb4it build help/config/repo.json --force
 xdg-open help/target/index.html
 ```

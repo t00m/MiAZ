@@ -1,7 +1,7 @@
 ---
+DocType: How-to guide
 Feature: Renaming
 HelpId: rename-document
-Kind: howto
 Level: basic
 Order: 310
 Section: Renaming

@@ -1,7 +1,7 @@
 ---
+DocType: How-to guide
 Feature: Development
 HelpId: dev-setup
-Kind: howto
 Level: advanced
 Order: 920
 Section: Developers

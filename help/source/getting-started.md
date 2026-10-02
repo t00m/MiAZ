@@ -1,7 +1,7 @@
 ---
+DocType: Tutorial
 Feature: Getting started
 HelpId: first-steps
-Kind: tutorial
 Level: basic
 Order: 10
 Section: Start

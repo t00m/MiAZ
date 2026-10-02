@@ -1,7 +1,7 @@
 ---
+DocType: Reference
 Feature: Getting started, Documents, Search
 HelpId: shortcuts
-Kind: reference
 Level: basic
 Order: 510
 Section: Reference

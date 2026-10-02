@@ -1,7 +1,8 @@
 ---
+DocType: Reference
 Feature: Getting started, Repositories
 HelpId: faq
-Kind: faq
+Layout: faq
 Order: 420
 Section: Help
 Summary: Short answers to the questions people ask most.

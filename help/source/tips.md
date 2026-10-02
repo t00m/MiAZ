@@ -1,7 +1,8 @@
 ---
+DocType: How-to guide
 Feature: Documents, Renaming, Notes, Repositories
 HelpId: tips
-Kind: tips
+Layout: tips
 Order: 410
 Section: Help
 Summary: Small things MiAZ does for you that are easy to miss.

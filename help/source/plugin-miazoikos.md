@@ -1,26 +1,36 @@
 ---
+DocType: How-to guide
 Feature: Plugins, Documents
 HelpId: plugin-oikos
-Kind: howto
 Level: basic
 Order: 610
 Plugin: MiAZOikos
+Related: reference-miazoikos.md, explanation-miazoikos-amounts.md
 Section: Plugins
 Since: "0.5"
-Summary: Record documents as income or expense and see their totals per currency.
+Summary: Record documents as income or expense, then filter them and see their totals.
 ---
 
-# Income and expenses
+# Record income and expenses
 
-The MiAZOikos plugin lets you say what a document is worth: whether it is money
-coming in or going out, how much, and in what currency. A view next to
-Details, Grid and Timeline then adds up the documents you select, or every
-document shown when you select none.
+The MiAZOikos plugin records what a document is worth: money coming in or
+going out, how much, and in what currency. For every choice and format, see
+[Income and expenses reference](reference-miazoikos.md).
 
-## Turn it on {#enable}
+## Turn the plugin on {#enable}
 
-Open **Repository settings** (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>R</kbd>),
-go to **Plugins** and enable **MiAZOikos**. Plugins are enabled per repository.
+1. Open **Repository settings** (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>R</kbd>).
+2. Go to **Plugins** and enable **MiAZOikos**.
+
+Plugins are enabled per repository.
+
+## Choose your currencies {#currencies}
+
+1. Open **Repository settings > Metadata > Currencies**, or right-click a
+   document and open **Documents > Annotation > Manage currencies**.
+2. Enable the currencies you use.
+3. In **Repository settings > Settings**, pick the **Default currency** new
+   records start with.
 
 ## Record one document {#one}
 
@@ -29,7 +39,7 @@ go to **Plugins** and enable **MiAZOikos**. Plugins are enabled per repository.
 3. Choose **Income** or **Expense**, the currency and the amount.
 4. Press **Rename**. The amount is saved even if the name did not change.
 
-Choose **Neither** to remove what was recorded. **Cancel** changes nothing.
+To remove a record, choose **Neither**. **Cancel** changes nothing.
 
 ## Record many documents {#many}
 
@@ -41,92 +51,24 @@ Choose **Neither** to remove what was recorded. **Cancel** changes nothing.
    to type one amount per document.
 5. Press **Apply**.
 
-!!! note
-    If the selected documents already differ in type or currency, nothing is
-    preselected. Choose both on purpose, so one click cannot turn a salary
-    into a bill or dollars into euros.
+Type amounts without a thousands separator: `1500,50` or `1500.50`.
 
-## Filter by income or expense {#filter}
+## Find the documents still to record {#missing}
 
-While the plugin is on, the sidebar has one more filter, next to the plugin's
-icon:
+1. In the sidebar, set the income or expense filter to **Without an amount**.
+2. Select what is listed and record it as above.
 
-| Choice | Shows |
-|---|---|
-| Any amount | every document (the filter is off) |
-| Income | documents recorded as an income |
-| Expense | documents recorded as an expense |
-| With an amount | documents with an income or an expense |
-| Without an amount | documents with nothing recorded yet |
+## See the totals {#totals}
 
-It combines with the other filters: **Expense** with a sender shows what you
-paid that sender. **Clear filters** puts it back on **Any amount**.
+1. Narrow the documents with the sidebar filters, for example a year and
+   **Expense**.
+2. Switch to the **Income and expenses** view, or right-click and open
+   **Documents > Annotation > Show income and expenses**.
+3. To count only some of the documents shown, select them first.
 
-**Without an amount** is a quick way to find the documents still to record.
-With nothing selected, the **Income and expenses** view adds up what the
-filter leaves on screen, so **Expense** plus a year gives that year's spending.
+The totals follow the filters while the view is open.
 
-## The Amount column {#column}
+## Sort by amount {#sort}
 
-While the plugin is on, the **Details** table has an **Amount** column with
-each document's amount and currency:
-
-- an expense is negative and red: `−650,40 EUR`
-- an income has no sign and is green: `1500,00 EUR`
-- a document with nothing recorded shows nothing
-
-Click the header to sort: documents with an amount come first, grouped by
-currency, from the largest expense to the largest income. Hide or show the
-column with **Choose the columns to show**
-(<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>K</kbd>).
-
-## Typing amounts {#amounts}
-
-Write the amount without a thousands separator. Both `1500,50` and `1500.50`
-work.
-
-A single separator is always the decimal one, in every language: `1.500` is
-one and a half, not fifteen hundred. With two separators, the last one is the
-decimal one, so `1.500,50` and `1,500.50` both mean 1500.50.
-
-MiAZ shows amounts the same way, without a thousands separator
-(`1500,00 EUR`), so what you see can be typed back as it is.
-
-## See the totals {#view}
-
-Switch to the **Income and expenses** view, or right-click and open
-**Documents > Annotation > Show income and expenses**. What it adds up
-depends on the selection:
-
-- **Nothing selected**: every document the filters leave on screen. Narrow
-  the list with the sidebar (a sender, a year, a search) to get the totals of
-  just those documents. The totals change as you change the filters.
-- **Documents selected** in Details, Grid or Timeline: only those.
-
-The line above the chart says which: "3 of 5 documents shown counted" or
-"2 of 2 selected documents counted".
-
-- One card per currency shows income, expense and net.
-- The chart can be grouped by total, year, month, group, sender or purpose.
-- Hover a bar to see its income, expense, net and number of documents.
-- Documents with nothing recorded are not counted. The view says how many
-  there are and offers to set them.
-- **Set income or expense…** in the view edits the documents it is adding up:
-  the selection, or everything shown.
-
-Currencies are never converted or added together. Each one has its own card
-and its own chart.
-
-## Currencies {#currencies}
-
-Enable the currencies you use in **Repository settings > Metadata >
-Currencies**, or right-click and open **Documents > Annotation > Manage
-currencies**. Choose
-the currency new documents start with in **Repository settings > Settings >
-Default currency**.
-
-## Where the amounts are kept {#storage}
-
-In the repository, in `.conf/plugins/MiAZOikos/data/MiAZOikos.json`. They
-follow a document when you rename it, are removed when you delete it, and are
-included in **Backup & Restore**.
+In **Details**, click the **Amount** column header. To hide or show the column,
+use **Choose the columns to show** (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>K</kbd>).

@@ -1,7 +1,7 @@
 ---
+DocType: Explanation
 Feature: Development
 HelpId: dev-architecture
-Kind: explanation
 Level: advanced
 Order: 910
 Section: Developers
