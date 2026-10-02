@@ -69,3 +69,19 @@ def test_every_contract_id_is_a_valid_help_id():
             continue
         assert re.match(r'^[a-z0-9][a-z0-9._-]*$', help_id), help_id
         assert f'id={help_id}&' in help_uri(help_id, None)
+
+
+def test_the_landing_page_prefers_the_local_copy(tmp_path):
+    from MiAZ.backend.help import help_home_uri
+    assert help_home_uri(None) == f'{HELP_SITE}index.html?theme=light'
+    site = make_site(tmp_path)
+    uri = help_home_uri(site, dark=True)
+    assert uri.startswith('file://') and uri.endswith('/help/index.html?theme=dark')
+
+
+def test_with_theme_swaps_only_the_theme_parameter():
+    from MiAZ.backend.help import with_theme
+    uri = f'{HELP_SITE}faq.html?theme=light#storage'
+    assert with_theme(uri, True) == f'{HELP_SITE}faq.html?theme=dark#storage'
+    assert with_theme(uri, False) == uri
+    assert with_theme(f'{HELP_SITE}faq.html', True) == f'{HELP_SITE}faq.html'

@@ -75,3 +75,26 @@ def is_help_uri(uri: str, help_dir: Optional[str] = None) -> bool:
         return False
     root = Path(local).resolve().as_uri().rstrip('/') + '/'
     return f'{parts.scheme}://{parts.netloc}{parts.path}'.startswith(root)
+
+
+def help_home_uri(help_dir: Optional[str] = None, dark: bool = False) -> str:
+    """The address of the help landing page, for browsing rather than a topic."""
+    query = urlencode({'theme': 'dark' if dark else 'light'})
+    local = local_help_dir(help_dir)
+    if local is not None:
+        base = Path(local, 'index.html').resolve().as_uri()
+    else:
+        base = HELP_SITE + 'index.html'
+    return f'{base}?{query}'
+
+
+def with_theme(uri: str, dark: bool) -> str:
+    """The same help address in the other colour scheme.
+
+    The site keeps the theme parameter on every link, so a page reached from
+    one opened in light stays light. Swapping it is how a view follows the
+    desktop when it switches. An address without the parameter is returned
+    as it is.
+    """
+    old, new = ('theme=light', 'theme=dark') if dark else ('theme=dark', 'theme=light')
+    return uri.replace(old, new) if old in uri else uri

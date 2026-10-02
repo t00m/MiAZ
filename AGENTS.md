@@ -486,7 +486,7 @@ The serving root is `ENV['LPATH']['WWW']` = `~/.MiAZ/var/www/html`. A plugin pub
 
 ### Built-in Browser page (`MiAZBrowserPage`, `widgets/browserpage.py`)
 
-A WebKit 6.0 viewer added to the **workspace** stack as `'workspace-browser'` (also `app.get_widget('workspace-browser')`). Header bar with Back, a page dropdown, and Refresh. It scans `<WWW>/*/index.html`, lists each as a dropdown entry, and loads it via the webserver URL when running, else a `file://` URI. It watches the WWW root with `Gio.FileMonitor` (`WATCH_MOVES`, 500 ms debounce) and refreshes the dropdown when plugin dirs appear/disappear. The context menu is replaced with just **Copy** / **Select All**, and **Ctrl+C** copies the selection (read-only viewer).
+A WebKit 6.0 viewer added to the **workspace** stack as `'workspace-browser'` (also `app.get_widget('workspace-browser')`). Header bar with Back, a page dropdown, and Refresh. It scans `<WWW>/*/index.html`, lists each as a dropdown entry (followed by the user help, see "User help"), and loads it via the webserver URL when running, else a `file://` URI. It watches the WWW root with `Gio.FileMonitor` (`WATCH_MOVES`, 500 ms debounce) and refreshes the dropdown when plugin dirs appear/disappear. The context menu is replaced with just **Copy** / **Select All**, and **Ctrl+C** copies the selection (read-only viewer).
 
 **Opening repository documents from a page.** A served page links a document with the `miazdoc:<filename>` URI scheme. The page's `decide-policy` handler intercepts only `LINK_CLICKED` navigations whose URI starts with `miazdoc:`, cancels the navigation, and opens the named repo document via `actions.document_display(name)` (system handler). Every other link navigates normally. There is no custom URI scheme registration, no in-process file streaming, and no `load_path()` API. Caveat: WebKitGTK has no built-in PDF viewer; render HTML/SVG/images/text in the page and open PDFs via the system viewer.
 
@@ -896,6 +896,14 @@ checkout), else `https://t00m.github.io/MiAZ/go.html?...`. A malformed id falls
 back to `first-steps`. Navigation outside the help (the "Edit this page" link,
 any external site) is cancelled and opened in the web browser, and the theme
 parameter follows `Adw.StyleManager` when the desktop switches scheme.
+
+The Browser page also lists the help, as the last dropdown entry
+(`HELP_KEY = ':miaz-help'` in `widgets/browserpage.py`, label "MiAZ Help"). It
+loads the landing page from the same place (`help_home_uri`), with the full site
+navigation rather than `?embed=1`, because the Browser header has no topic list
+or search of its own. Links out of the help open in the web browser there too;
+plugin sites keep their old behaviour. Since the help is always listed, the
+Browser tab is always visible.
 
 Meson installs `help/target` into `<pkgdatadir>/help` only when it has already
 been built; it never runs KB4IT. Packages built without it fall back to the

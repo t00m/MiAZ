@@ -10,7 +10,7 @@ gi.require_version('WebKit', '6.0')
 
 from gi.repository import Adw, Gtk, WebKit
 
-from MiAZ.backend.help import help_uri, is_help_uri
+from MiAZ.backend.help import help_uri, is_help_uri, with_theme
 from MiAZ.backend.log import MiAZLog
 
 
@@ -92,10 +92,9 @@ class MiAZHelpWindow(Adw.Window):
         uri = self.webview.get_uri()
         if not uri or not is_help_uri(uri, self.help_dir):
             return
-        old, new = ('theme=light', 'theme=dark') if self._style.get_dark() \
-            else ('theme=dark', 'theme=light')
-        if old in uri:
-            self.webview.load_uri(uri.replace(old, new))
+        themed = with_theme(uri, self._style.get_dark())
+        if themed != uri:
+            self.webview.load_uri(themed)
 
     def _on_decide_policy(self, _webview, decision, decision_type):
         if decision_type not in (WebKit.PolicyDecisionType.NAVIGATION_ACTION,

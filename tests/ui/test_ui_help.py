@@ -56,3 +56,33 @@ def test_the_shortcuts_window_is_still_reachable(miaz):
     keys = {row[2]: row[3] for row in sct.CORE}
     assert keys['app-shortcuts'] == '<Control>question'
     assert keys['app-help'] == 'F1'
+
+
+def browser(driver):
+    page = driver.widget('workspace-browser')
+    assert page is not None, 'the Browser page is not built'
+    return page
+
+
+def test_the_browser_lists_the_help_last(clean_view):
+    from MiAZ.frontend.desktop.widgets.browserpage import HELP_KEY
+    page = browser(clean_view)
+    page._refresh_pages()
+    clean_view.pump()
+    keys = [key for key, _desc in page._pages]
+    assert keys[-1] == HELP_KEY, keys
+    assert keys.count(HELP_KEY) == 1
+    assert page.has_pages(), 'with the help listed the Browser tab must show'
+
+
+def test_choosing_the_help_loads_the_landing_page(clean_view):
+    from MiAZ.frontend.desktop.widgets.browserpage import HELP_KEY
+    page = browser(clean_view)
+    page._refresh_pages()
+    index = [key for key, _desc in page._pages].index(HELP_KEY)
+    page._dropdown.set_selected(index)
+    clean_view.pump(0.5)
+    uri = page._webview.get_uri() or ''
+    assert page._loaded_key == HELP_KEY
+    assert 'index.html?theme=' in uri, uri
+    assert 'embed' not in uri

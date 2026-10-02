@@ -1385,7 +1385,8 @@ class MiAZWorkspace(Gtk.Box):
 
     def _on_browser_pages_updated(self, _browser, count):
         # Show the Browser tab only when at least one page is available. If it
-        # gets hidden while selected, fall back to the Documents view.
+        # gets hidden while selected, fall back to the Documents view. The
+        # user help is always listed, so in practice the count is never zero.
         page = getattr(self, '_browser_page', None)
         if page is None:
             return
