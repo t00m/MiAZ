@@ -949,9 +949,26 @@ or search of its own. Links out of the help open in the web browser there too;
 plugin sites keep their old behaviour. Since the help is always listed, the
 Browser tab is always visible.
 
-Meson installs `help/target` into `<pkgdatadir>/help` only when it has already
-been built; it never runs KB4IT. Packages built without it fall back to the
-published site.
+Meson builds the help with KB4IT and installs it into `<pkgdatadir>/help`,
+through the `help` custom target and `build-aux/meson/build_help.py`. The
+script writes a copy of `help/config/repo.json` into `<builddir>/help-work`
+with absolute paths, so KB4IT reads `help/source/` and writes the site into
+`<builddir>/help`; nothing is written into the source tree. It runs on every
+build (`build_always_stale`, under a second). The `help` option
+(`meson_options.txt`) decides what happens:
+
+| `-Dhelp=` | `kb4it` on PATH | Result |
+|---|---|---|
+| `auto` (default) | yes, build works | built and installed |
+| `auto` | yes, build fails | warning with the KB4IT problems; installs `help/target` if built by hand, else nothing |
+| `auto` | no | installs `help/target` if built by hand, else nothing |
+| `enabled` | required | a failed build fails the build |
+| `disabled` | ignored | nothing installed |
+
+A failure is expected from a KB4IT without the apphelp `DocType` rules (PyPI
+0.7.9 and older). With no help installed the help window opens the published
+site. The deb, rpm and AppImage builds have no KB4IT, so they take the `auto`
+fallback.
 
 ## Build & install
 
@@ -959,7 +976,7 @@ published site.
 # Developer install (user scope)
 ./scripts/install/local/install_user.sh
 
-# Manual Meson
+# Manual Meson (builds the help too when kb4it is on PATH; see "User help")
 meson setup _build --prefix="$HOME/.local"
 ninja -C _build
 ninja -C _build install

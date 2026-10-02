@@ -96,3 +96,10 @@ xdg-open help/target/index.html
 
 A build with no warnings is the target. `help/target/` and `help/var/` are
 build output and are not committed.
+
+The installed MiAZ does not read `help/target/`: `meson install` builds the
+help again into the build directory and installs that copy, so after editing
+a page, reinstall to see it in the application. Run from the source tree,
+MiAZ reads `help/target/` directly. A KB4IT too old for these pages makes
+meson warn and keep the last copy built by hand; `-Dhelp=enabled` turns that
+into an error.

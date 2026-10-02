@@ -40,6 +40,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **`meson install` builds the help.** Meson used to install `help/target` only if someone had built it by hand, so a change to a help page reached the installed application only after a manual `kb4it build`, and never if that step was forgotten. A `help` custom target now runs KB4IT on every build, from `help/source/` into the build directory, and installs the result; the source tree is not written to. The new `help` option sets the policy: `auto` (default) builds when `kb4it` is found and, if the build fails, warns with KB4IT's problems and keeps the copy built by hand; `enabled` makes a failure fail the build; `disabled` installs no help.
+
 - **Every help page is one type of document, following Diataxis.** The KB4IT `apphelp` theme now classifies pages with `DocType` (Tutorial, How-to guide, Reference, Explanation) and leaves out any page without one, so the help moved from the old `Kind` key to it; FAQ and tips keep their look through `Layout`. The MiAZOikos page mixed steps, tables and reasons, and is now three: a how-to guide, a reference and an explanation of how it handles money, linked with `Related`. `tests/test_help.py` checks the type of every page, and the help workflow installs KB4IT at the commit that introduced `DocType`, since no release has it yet.
 
 - **F1 no longer opens the keyboard shortcuts.** It did because MiAZ had no manual, and a key advertised in the shortcuts list had to do something. The shortcuts list keeps `Ctrl+?`, and the main menu Help item now opens the help too.

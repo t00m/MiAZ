@@ -34,6 +34,11 @@ meson setup _build --prefix="$HOME/.local"
 ninja -C _build install
 ```
 
+When `kb4it` is on your `PATH`, the build also builds this help and installs
+it, so a change under `help/` reaches the installed MiAZ with the next
+install. `-Dhelp=enabled` makes a help build failure fail the build;
+`-Dhelp=disabled` skips the help.
+
 ## Checks before a commit {#checks}
 
 | Check | Command | Time |
