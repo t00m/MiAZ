@@ -14,7 +14,8 @@ Summary: Record documents as income or expense and see their totals per currency
 
 The MiAZOikos plugin lets you say what a document is worth: whether it is money
 coming in or going out, how much, and in what currency. A view next to
-Details, Grid and Timeline then adds up the documents you select.
+Details, Grid and Timeline then adds up the documents you select, or every
+document shown when you select none.
 
 ## Turn it on {#enable}
 
@@ -59,15 +60,25 @@ MiAZ shows amounts the same way, without a thousands separator
 
 ## See the totals {#view}
 
-Select documents in Details, Grid or Timeline, then switch to the
-**Income and expenses** view, or right-click and open **Documents >
-Annotation > Show income and expenses**.
+Switch to the **Income and expenses** view, or right-click and open
+**Documents > Annotation > Show income and expenses**. What it adds up
+depends on the selection:
+
+- **Nothing selected**: every document the filters leave on screen. Narrow
+  the list with the sidebar (a sender, a year, a search) to get the totals of
+  just those documents. The totals change as you change the filters.
+- **Documents selected** in Details, Grid or Timeline: only those.
+
+The line above the chart says which: "3 of 5 documents shown counted" or
+"2 of 2 selected documents counted".
 
 - One card per currency shows income, expense and net.
 - The chart can be grouped by total, year, month, group, sender or purpose.
 - Hover a bar to see its income, expense, net and number of documents.
-- Selected documents with nothing recorded are not counted. The view says how
-  many there are and offers to set them.
+- Documents with nothing recorded are not counted. The view says how many
+  there are and offers to set them.
+- **Set income or expense…** in the view edits the documents it is adding up:
+  the selection, or everything shown.
 
 Currencies are never converted or added together. Each one has its own card
 and its own chart.

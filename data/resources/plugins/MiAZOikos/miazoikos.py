@@ -49,8 +49,9 @@ class MiAZOikos(MiAZExtension):
 
     The user says which, how much and in what currency, for one document
     (a tab in the rename dialog) or many at once (the Set dialog). A view
-    beside Details, Grid and Timeline adds up whatever is selected there,
-    per currency, as tiles and a bar chart. Currencies are never converted:
+    beside Details, Grid and Timeline adds up whatever is selected there, or
+    every document shown when nothing is selected, per currency, as tiles
+    and a bar chart. Currencies are never converted:
     each has its own totals and its own scale.
 
     The amounts live in this plugin's data file in the repository, keyed by

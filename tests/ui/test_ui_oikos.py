@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
-"""The MiAZOikos view: income and expenses of the selected documents."""
+"""The MiAZOikos view: income and expenses of the selected documents, or of
+every document shown when nothing is selected."""
 
 from decimal import Decimal
 
@@ -32,18 +33,110 @@ def oikos(clean_view):
     yield plugin
     plugin.clear_documents([MORTGAGE, ELECTRICITY, PERMIT])
     clean_view.select_documents()
+    clean_view.workspace.clear_filters()
     clean_view.workspace.show_view('details')
     system.unload_plugin(info)
     clean_view.pump(0.3)
 
 
-def test_the_view_says_so_when_nothing_is_selected(oikos, clean_view):
+def show_only(clean_view, *ids):
+    """Filter the workspace down to exactly these documents.
+
+    show_documents is the workspace call for an explicit list; it also
+    switches to Details, so callers show the view they want afterwards.
+    """
+    clean_view.workspace.show_documents(ids)
+    clean_view.pump(0.3)
+
+
+def test_with_nothing_selected_every_document_shown_is_added_up(oikos, clean_view):
+    from oikos.ledger import Entry
+    from oikos.view import SCOPE_SHOWN
+    oikos.set_entries({
+        MORTGAGE: Entry('expense', '650.40', 'EUR'),
+        ELECTRICITY: Entry('expense', '84.10', 'EUR'),
+        PERMIT: Entry('income', '20', 'USD'),
+    })
+    show_only(clean_view, MORTGAGE, ELECTRICITY)
+    clean_view.select_documents()
+    clean_view.workspace.show_view('oikos')
+    view = oikos.get_view()
+    clean_view.wait_until(
+        lambda: view.stack.get_visible_child_name() == 'content',
+        message='the documents shown are added up')
+    assert view.get_scope() == SCOPE_SHOWN
+    sections = dict(view.chart.get_sections())
+    assert sorted(sections) == ['EUR'], 'PERMIT is filtered out, so no USD'
+    assert sections['EUR'][0].totals.expense == Decimal('734.50')
+    assert 'shown' in view.counter.get_text()
+
+
+def test_with_nothing_selected_the_totals_follow_the_filters(oikos, clean_view):
+    from oikos.ledger import Entry
+    oikos.set_entries({
+        MORTGAGE: Entry('expense', '650.40', 'EUR'),
+        ELECTRICITY: Entry('expense', '84.10', 'EUR'),
+    })
+    show_only(clean_view, MORTGAGE, ELECTRICITY)
+    clean_view.select_documents()
+    clean_view.workspace.show_view('oikos')
+    view = oikos.get_view()
+    clean_view.wait_until(
+        lambda: view.stack.get_visible_child_name() == 'content',
+        message='the totals are shown')
+    # A filter change while the view is on screen, without leaving it.
+    clean_view.widget('searchentry-concept').set_text('mortgage')
+    clean_view.wait_until(
+        lambda: dict(view.chart.get_sections())['EUR'][0].totals.expense
+        == Decimal('650.40'),
+        message='the totals follow the filter')
+    clean_view.widget('searchentry-concept').set_text('')
+
+
+def test_a_selection_is_counted_instead_of_everything_shown(oikos, clean_view):
+    from oikos.ledger import Entry
+    from oikos.view import SCOPE_SELECTION
+    oikos.set_entries({
+        MORTGAGE: Entry('expense', '650.40', 'EUR'),
+        ELECTRICITY: Entry('expense', '84.10', 'EUR'),
+    })
+    show_only(clean_view, MORTGAGE, ELECTRICITY)
+    clean_view.select_documents(ELECTRICITY)
+    clean_view.workspace.show_view('oikos')
+    view = oikos.get_view()
+    clean_view.wait_until(
+        lambda: view.stack.get_visible_child_name() == 'content',
+        message='the totals are shown')
+    assert view.get_scope() == SCOPE_SELECTION
+    assert dict(view.chart.get_sections())['EUR'][0].totals.expense == Decimal('84.10')
+
+
+def test_the_view_says_so_when_nothing_is_shown(oikos, clean_view):
+    show_only(clean_view)
     clean_view.select_documents()
     clean_view.workspace.show_view('oikos')
     view = oikos.get_view()
     clean_view.wait_until(view.is_showing, message='the view is shown')
+    clean_view.pump(0.3)
     assert view.stack.get_visible_child_name() == 'empty'
-    assert not view.set_button.get_visible(), 'nothing to set without a selection'
+    assert not view.set_button.get_visible(), 'nothing to set when nothing is shown'
+
+
+def test_the_set_button_edits_the_documents_counted(oikos, clean_view, monkeypatch):
+    """With nothing selected the Set button must still have documents to
+    edit: the ones shown, not an empty selection."""
+    show_only(clean_view, MORTGAGE, ELECTRICITY)
+    clean_view.select_documents()
+    clean_view.workspace.show_view('oikos')
+    view = oikos.get_view()
+    clean_view.wait_until(
+        lambda: view.stack.get_visible_child_name() == 'empty',
+        message='nothing recorded yet')
+    assert view.set_button.get_visible()
+    asked = []
+    monkeypatch.setattr(oikos, 'edit_documents', lambda docs: asked.append(sorted(docs)))
+    view.set_button.emit('clicked')
+    assert asked == [sorted([MORTGAGE, ELECTRICITY])]
 
 
 def test_the_selection_is_added_up_per_currency(oikos, clean_view):

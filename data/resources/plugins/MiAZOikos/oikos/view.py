@@ -42,13 +42,22 @@ def group_key(item, grouping):
     return None, None
 
 
-class MiAZOikosView(Gtk.Box):
-    """The money side of the documents selected in the other views.
+# What the view is adding up: the selection, or everything shown.
+SCOPE_SELECTION = 'selection'
+SCOPE_SHOWN = 'shown'
 
-    Details, Grid and Timeline share one selection, so whatever is selected
-    there is what this view adds up. It follows the selection while on
-    screen and does nothing while hidden, the contract every workspace view
-    keeps: set_active(True) when shown, set_active(False) when not.
+
+class MiAZOikosView(Gtk.Box):
+    """The money side of the documents in the other views.
+
+    With documents selected in Details, Grid or Timeline (they share one
+    selection), it adds up those. With nothing selected, it adds up every
+    document the filters leave on screen, so opening the view on a filtered
+    workspace answers "what did these cost" without selecting all first.
+
+    It follows the selection and the filters while on screen and does
+    nothing while hidden, the contract every workspace view keeps:
+    set_active(True) when shown, set_active(False) when not.
     """
     __gtype_name__ = 'MiAZOikosView'
 
@@ -59,6 +68,8 @@ class MiAZOikosView(Gtk.Box):
         self._showing = False
         self._refresh_id = None
         self._missing = []
+        self._items = []
+        self._scope = SCOPE_SHOWN
         self.workspace = app.get_widget('workspace')
 
         self.stack = Gtk.Stack()
@@ -68,14 +79,19 @@ class MiAZOikosView(Gtk.Box):
         self.stack.add_named(self._build_content(), 'content')
         self.append(self.stack)
 
-        self._selection_handler = self.workspace.connect(
-            'workspace-view-selection-changed', self._on_selection_changed)
+        # The selection decides what is counted, and with nothing selected the
+        # filters do: a filter change or a reload changes the documents shown.
+        self._workspace_handlers = [
+            self.workspace.connect(signal, self._on_documents_changed)
+            for signal in ('workspace-view-selection-changed',
+                           'workspace-view-filtered',
+                           'workspace-view-updated')]
 
     def dispose_view(self):
         """Let go of the workspace and the style manager, which outlive this."""
-        if self._selection_handler is not None:
-            self.workspace.disconnect(self._selection_handler)
-            self._selection_handler = None
+        for handler_id in self._workspace_handlers:
+            self.workspace.disconnect(handler_id)
+        self._workspace_handlers = []
         self._cancel_refresh()
         self.chart.dispose_chart()
 
@@ -88,7 +104,7 @@ class MiAZOikosView(Gtk.Box):
         self.set_button.add_css_class('pill')
         self.set_button.add_css_class('suggested-action')
         self.set_button.set_halign(Gtk.Align.CENTER)
-        self.set_button.connect('clicked', lambda *args: self.ext.edit_selection())
+        self.set_button.connect('clicked', self._on_set_counted)
         self.status.set_child(self.set_button)
         return self.status
 
@@ -117,7 +133,7 @@ class MiAZOikosView(Gtk.Box):
         self.counter.set_margin_start(12)
         bar.append(self.counter)
         edit = Gtk.Button(label=_('Set income or expense…'))
-        edit.connect('clicked', lambda *args: self.ext.edit_selection())
+        edit.connect('clicked', self._on_set_counted)
         bar.append(edit)
         box.append(bar)
 
@@ -192,7 +208,7 @@ class MiAZOikosView(Gtk.Box):
     def is_showing(self):
         return self._showing
 
-    def _on_selection_changed(self, *args):
+    def _on_documents_changed(self, *args):
         self.queue_refresh()
 
     def _on_grouping_changed(self, *args):
@@ -220,10 +236,25 @@ class MiAZOikosView(Gtk.Box):
             GLib.source_remove(self._refresh_id)
             self._refresh_id = None
 
+    def _shown_items(self):
+        """Every document the filters leave on screen, in the order shown."""
+        model = self.workspace.view.filter_model
+        return [model.get_item(i) for i in range(model.get_n_items())]
+
+    def get_scope(self):
+        """SCOPE_SELECTION or SCOPE_SHOWN, as of the last refresh."""
+        return self._scope
+
     def refresh(self):
-        """Recount the selection. Cheap: the ledger is in memory."""
+        """Recount the selection, or everything shown when nothing is
+        selected. Cheap: the ledger is in memory."""
         self._cancel_refresh()
         items = list(self.workspace.get_selected_items() or [])
+        self._scope = SCOPE_SELECTION if items else SCOPE_SHOWN
+        if not items:
+            items = self._shown_items()
+        self._items = [item.id for item in items]
+        selection = self._scope == SCOPE_SELECTION
         ledger = self.ext.ledger
         counted = []
         self._missing = []
@@ -235,31 +266,49 @@ class MiAZOikosView(Gtk.Box):
                 counted.append((item, entry))
 
         if not items:
-            self._show_empty(_('No documents selected'),
-                             _('Select documents in Details, Grid or Timeline to see their income and expenses here.'),
+            self._show_empty(_('No documents shown'),
+                             _('Change the filters to show some documents, or select documents in Details, Grid or Timeline.'),
                              can_set=False)
             return
         if not counted:
+            if selection:
+                text = ngettext('The selected document has no income or expense recorded.',
+                                'None of the {count} selected documents has an income or expense recorded.',
+                                len(items))
+            else:
+                text = ngettext('The document shown has no income or expense recorded.',
+                                'None of the {count} documents shown has an income or expense recorded.',
+                                len(items))
             self._show_empty(_('No income or expenses yet'),
-                             ngettext('The selected document has no income or expense recorded.',
-                                      'None of the {count} selected documents has an income or expense recorded.',
-                                      len(items)).format(count=len(items)),
-                             can_set=True)
+                             text.format(count=len(items)), can_set=True)
             return
 
         self.stack.set_visible_child_name('content')
-        self.counter.set_text(ngettext('{counted} of {count} selected document counted',
-                                       '{counted} of {count} selected documents counted',
-                                       len(items)).format(counted=len(counted), count=len(items)))
+        if selection:
+            counter = ngettext('{counted} of {count} selected document counted',
+                               '{counted} of {count} selected documents counted',
+                               len(items))
+        else:
+            counter = ngettext('{counted} of {count} document shown counted',
+                               '{counted} of {count} documents shown counted',
+                               len(items))
+        self.counter.set_text(counter.format(counted=len(counted), count=len(items)))
 
         totals = aggregate.summarize(entry for _item, entry in counted)
         self._fill_tiles(totals)
 
         if self._missing:
-            self.missing_label.set_text(ngettext(
-                '{count} selected document has no income or expense and is not counted.',
-                '{count} selected documents have no income or expense and are not counted.',
-                len(self._missing)).format(count=len(self._missing)))
+            if selection:
+                missing = ngettext(
+                    '{count} selected document has no income or expense and is not counted.',
+                    '{count} selected documents have no income or expense and are not counted.',
+                    len(self._missing))
+            else:
+                missing = ngettext(
+                    '{count} document shown has no income or expense and is not counted.',
+                    '{count} documents shown have no income or expense and are not counted.',
+                    len(self._missing))
+            self.missing_label.set_text(missing.format(count=len(self._missing)))
         self.missing_bar.set_visible(bool(self._missing))
 
         grouping = self.get_grouping()
@@ -292,6 +341,13 @@ class MiAZOikosView(Gtk.Box):
         self.set_button.set_visible(can_set)
         self.chart.set_sections([])
         self.stack.set_visible_child_name('empty')
+
+    def _on_set_counted(self, *args):
+        # The documents this view is adding up: the selection, or everything
+        # shown when nothing is selected. ext.edit_selection would refuse the
+        # second case, since there is no selection to edit.
+        if self._items:
+            self.ext.edit_documents(list(self._items))
 
     def _on_set_missing(self, *args):
         if self._missing:

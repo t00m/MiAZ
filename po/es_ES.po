@@ -6376,17 +6376,44 @@ msgstr "Establecer para estos…"
 msgid "Net"
 msgstr "Neto"
 
-#: data/resources/plugins/MiAZOikos/oikos/view.py:238
-msgid "No documents selected"
-msgstr "No hay documentos seleccionados"
+#: data/resources/plugins/MiAZOikos/oikos/view.py
+msgid "No documents shown"
+msgstr "No se muestra ningún documento"
 
-#: data/resources/plugins/MiAZOikos/oikos/view.py:239
+#: data/resources/plugins/MiAZOikos/oikos/view.py
 msgid ""
-"Select documents in Details, Grid or Timeline to see their income and "
-"expenses here."
+"Change the filters to show some documents, or select documents in Details, "
+"Grid or Timeline."
 msgstr ""
-"Seleccione documentos en Detalles, Cuadrícula o Cronología para ver aquí sus "
-"ingresos y gastos."
+"Cambie los filtros para mostrar algún documento, o seleccione documentos en "
+"Detalles, Cuadrícula o Cronología."
+
+#: data/resources/plugins/MiAZOikos/oikos/view.py
+#, python-brace-format
+msgid "The document shown has no income or expense recorded."
+msgid_plural ""
+"None of the {count} documents shown has an income or expense recorded."
+msgstr[0] "El documento mostrado no tiene ningún ingreso o gasto registrado."
+msgstr[1] ""
+"Ninguno de los {count} documentos mostrados tiene un ingreso o gasto "
+"registrado."
+
+#: data/resources/plugins/MiAZOikos/oikos/view.py
+#, python-brace-format
+msgid "{counted} of {count} document shown counted"
+msgid_plural "{counted} of {count} documents shown counted"
+msgstr[0] "{counted} de {count} documento mostrado contabilizado"
+msgstr[1] "{counted} de {count} documentos mostrados contabilizados"
+
+#: data/resources/plugins/MiAZOikos/oikos/view.py
+#, python-brace-format
+msgid "{count} document shown has no income or expense and is not counted."
+msgid_plural ""
+"{count} documents shown have no income or expense and are not counted."
+msgstr[0] ""
+"{count} documento mostrado no tiene ingreso ni gasto y no se contabiliza."
+msgstr[1] ""
+"{count} documentos mostrados no tienen ingreso ni gasto y no se contabilizan."
 
 #: data/resources/plugins/MiAZOikos/oikos/view.py:243
 msgid "No income or expenses yet"
