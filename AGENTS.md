@@ -363,6 +363,8 @@ self.workspace.register_query_hook('projects', self._adjust_query)
 
 Use `register_filter_view(name, callback)` when you need an extra condition ANDed in per item, and `register_query_hook` when you need to relax one of the built-in checks. `MiAZProjectMgt` uses both.
 
+When a plugin's own filter control changes, call `workspace.filters_changed()`: it runs the pass a built-in dropdown runs (refilter, counts, dropdown narrowing, `workspace-view-filtered`) without `update()`'s repository rescan. `clear_filters()` resets every dropdown in `plugin-dropdowns` to index 0, so a filter dropdown's first entry must mean "no restriction". `register_filter_view` conditions are not removed on unload; unregister them in `do_deactivate` and call `filters_changed()` so the documents they hid come back. MiAZOikos's income or expense filter (`oikos/filter.py`) is the small example.
+
 The Documents page itself is a `Gtk.ColumnView` fed by `Gio.ListStore` → `Gtk.FilterListModel` with a single composite filter callback (`_do_filter_view`). The filter widgets stay registered in the app's widget registry:
 
 - `app.get_widget('searchentry')` → free-text search across all fields.

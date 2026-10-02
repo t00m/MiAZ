@@ -72,6 +72,7 @@ class MiAZOikos(MiAZExtension):
         self.ledger = None
         self._view = None
         self._column = None
+        self._filter = None
         self._handlers = []
 
         source_dir = os.path.dirname(os.path.abspath(__file__))
@@ -99,8 +100,15 @@ class MiAZOikos(MiAZExtension):
         if self._view is not None:
             self._view.dispose_view()
             self._view = None
-        # The plugin system takes the column out of the table.
+        # The plugin system takes the column out of the table and the
+        # dropdown out of the sidebar. The condition is ours to take back,
+        # and a refilter brings back what it was hiding.
         self._column = None
+        if self._filter is not None:
+            from oikos.filter import FILTER_NAME
+            self.workspace.unregister_filter_view(FILTER_NAME)
+            self._filter = None
+            self.workspace.filters_changed()
         self.plugin.unregister_document_tabs()
         self.plugin.set_started(False)
 
@@ -139,6 +147,7 @@ class MiAZOikos(MiAZExtension):
             factory=self._build_tab, weight=300)
         self._add_view()
         self._add_column()
+        self._add_filter()
         self.plugin.set_started(started=True)
 
     # What other parts of the plugin call
@@ -255,6 +264,15 @@ class MiAZOikos(MiAZExtension):
 
     def get_column(self):
         return self._column
+
+    def _add_filter(self):
+        from oikos.filter import FILTER_NAME, MiAZOikosFilter
+        self._filter = MiAZOikosFilter(self)
+        self.plugin.add_sidebar_dropdown(self._filter.dropdown)
+        self.workspace.register_filter_view(FILTER_NAME, self._filter.matches)
+
+    def get_filter(self):
+        return self._filter
 
     def _refresh_view(self):
         if self._view is not None and self._view.is_showing():

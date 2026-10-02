@@ -298,3 +298,79 @@ def test_unloading_the_plugin_takes_the_column_away(clean_view):
     columns = clean_view.workspace.view.cv.get_columns()
     titles = [columns.get_item(i).get_title() for i in range(columns.get_n_items())]
     assert 'Amount' not in titles
+
+
+def _filtered(oikos, clean_view, choice):
+    """Show the three test documents, then narrow them with the filter."""
+    clean_view.workspace.show_documents([MORTGAGE, ELECTRICITY, PERMIT])
+    clean_view.pump(0.3)
+    oikos.get_filter().set_choice(choice)
+    clean_view.pump(0.3)
+    return sorted(clean_view.displayed())
+
+
+def test_the_filter_is_a_sidebar_dropdown_with_any_first(oikos, clean_view):
+    from oikos.filter import LABELS
+    from oikos.money import FILTERS
+    dropdown = oikos.get_filter().dropdown
+    assert clean_view.app.get_widget('plugin-MiAZOikos-dropdown') is dropdown
+    assert dropdown in clean_view.app.get_widget('plugin-dropdowns')
+    assert [key for key, _label in LABELS] == list(FILTERS)
+    assert oikos.get_filter().get_choice() == 'any'
+
+
+def test_the_filter_narrows_the_documents(oikos, clean_view):
+    from oikos.ledger import Entry
+    oikos.set_entries({
+        MORTGAGE: Entry('expense', '650.40', 'EUR'),
+        PERMIT: Entry('income', '20', 'USD'),
+    })
+    assert _filtered(oikos, clean_view, 'expense') == [MORTGAGE]
+    assert _filtered(oikos, clean_view, 'income') == [PERMIT]
+    assert _filtered(oikos, clean_view, 'missing') == [ELECTRICITY]
+    assert _filtered(oikos, clean_view, 'recorded') == sorted([MORTGAGE, PERMIT])
+    assert _filtered(oikos, clean_view, 'any') == sorted([MORTGAGE, ELECTRICITY, PERMIT])
+
+
+def test_clear_filters_resets_the_filter(oikos, clean_view):
+    oikos.get_filter().set_choice('expense')
+    clean_view.pump(0.2)
+    clean_view.workspace.clear_filters()
+    clean_view.pump(0.3)
+    assert oikos.get_filter().get_choice() == 'any'
+
+
+def test_the_totals_follow_the_filter(oikos, clean_view):
+    """With nothing selected the view counts what is shown, and the filter
+    decides what is shown."""
+    from oikos.ledger import Entry
+    oikos.set_entries({
+        MORTGAGE: Entry('expense', '650.40', 'EUR'),
+        ELECTRICITY: Entry('income', '84.10', 'EUR'),
+    })
+    _filtered(oikos, clean_view, 'expense')
+    clean_view.select_documents()
+    clean_view.workspace.show_view('oikos')
+    view = oikos.get_view()
+    clean_view.wait_until(
+        lambda: view.stack.get_visible_child_name() == 'content',
+        message='the totals are shown')
+    totals = dict(view.chart.get_sections())['EUR'][0].totals
+    assert totals.expense == Decimal('650.40')
+    assert totals.income == Decimal('0'), 'the income is filtered out'
+
+
+def test_unloading_the_plugin_takes_the_filter_away(clean_view):
+    from oikos.filter import FILTER_NAME
+    system = clean_view.service('plugin-system')
+    info = system.get_plugin_info('miazoikos')
+    assert system.load_plugin(info)
+    clean_view.wait_until(
+        lambda: clean_view.app.get_widget('plugin-MiAZOikos-dropdown') is not None,
+        message='the filter is added')
+    dropdown = clean_view.app.get_widget('plugin-MiAZOikos-dropdown')
+    system.unload_plugin(info)
+    clean_view.pump(0.3)
+    assert FILTER_NAME not in clean_view.workspace._workspace_filters
+    assert dropdown not in clean_view.app.get_widget('plugin-dropdowns')
+    assert clean_view.app.get_widget('plugin-MiAZOikos-dropdown') is None

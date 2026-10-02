@@ -266,3 +266,22 @@ def test_the_amount_column_signs_expenses_and_not_incomes(monkeypatch, point):
     assert amount_cell(EXPENSE, Decimal('650.4'), 'EUR') == (f'−650{point}40 EUR', EXPENSE)
     assert amount_cell(INCOME, Decimal('1500'), 'USD') == (f'1500{point}00 USD', INCOME)
     assert amount_cell(EXPENSE, Decimal('0'), 'EUR')[0] == f'0{point}00 EUR', 'no −0'
+
+
+@pytest.mark.parametrize('choice,kind,expected', [
+    ('any', None, True), ('any', 'income', True), ('any', 'expense', True),
+    ('income', 'income', True), ('income', 'expense', False), ('income', None, False),
+    ('expense', 'expense', True), ('expense', 'income', False), ('expense', None, False),
+    ('recorded', 'income', True), ('recorded', 'expense', True), ('recorded', None, False),
+    ('missing', None, True), ('missing', 'income', False), ('missing', 'expense', False),
+])
+def test_the_filter_rule(choice, kind, expected):
+    from oikos.money import FILTERS, filter_matches
+    assert choice in FILTERS
+    assert filter_matches(choice, kind) is expected
+
+
+def test_any_is_the_first_filter_choice():
+    """Clear filters puts every plugin dropdown back on its first entry."""
+    from oikos.money import FILTER_ANY, FILTERS
+    assert FILTERS[0] == FILTER_ANY

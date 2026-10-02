@@ -2104,6 +2104,17 @@ class MiAZWorkspace(Gtk.Box):
         self._update_dropdowns_after_filter()
         return False
 
+    def filters_changed(self, *args):
+        """Refilter after a filter outside the sidebar's own controls changed.
+
+        For a plugin's dropdown or condition (register_filter_view): the same
+        pass a built-in dropdown runs, so the counts, the dropdowns and the
+        'workspace-view-filtered' listeners all follow. update() would also
+        work, but it lists the repository and parses every filename again.
+        Connectable as a signal handler.
+        """
+        self._on_filter_selected()
+
     def _on_filter_selected(self, *args):
         # Do nothing if filters are being updated
         if self._clearing_filters or self._updating_dropdowns or self._filter_in_progress:

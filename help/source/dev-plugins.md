@@ -103,6 +103,11 @@ when the plugin is turned off, so `do_deactivate` has nothing to undo for them:
   also listed in the column chooser; call `workspace.refresh_rows()` when the
   data behind its cells changes
 - `add_sidebar_widget`, `add_headerbar_widget`, `add_sidebar_dropdown`
+- a filter: `add_sidebar_dropdown(dropdown)` (put "any" first, since Clear
+  filters selects the first entry), `workspace.register_filter_view(name,
+  callback)` for the condition, and `workspace.filters_changed()` when the
+  dropdown changes. Unregister the condition in `do_deactivate`; the plugin
+  system only takes back the dropdown
 - `register_document_tab`: a tab in the rename dialog
 - `install_settings_group`, `install_metadata_view`: Repository Settings
 

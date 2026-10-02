@@ -46,6 +46,26 @@ Choose **Neither** to remove what was recorded. **Cancel** changes nothing.
     preselected. Choose both on purpose, so one click cannot turn a salary
     into a bill or dollars into euros.
 
+## Filter by income or expense {#filter}
+
+While the plugin is on, the sidebar has one more filter, next to the plugin's
+icon:
+
+| Choice | Shows |
+|---|---|
+| Any amount | every document (the filter is off) |
+| Income | documents recorded as an income |
+| Expense | documents recorded as an expense |
+| With an amount | documents with an income or an expense |
+| Without an amount | documents with nothing recorded yet |
+
+It combines with the other filters: **Expense** with a sender shows what you
+paid that sender. **Clear filters** puts it back on **Any amount**.
+
+**Without an amount** is a quick way to find the documents still to record.
+With nothing selected, the **Income and expenses** view adds up what the
+filter leaves on screen, so **Expense** plus a year gives that year's spending.
+
 ## The Amount column {#column}
 
 While the plugin is on, the **Details** table has an **Amount** column with

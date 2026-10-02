@@ -103,6 +103,7 @@ data/resources/plugins/MiAZOikos/miazoikos.py
 data/resources/plugins/MiAZOikos/oikos/chart.py
 data/resources/plugins/MiAZOikos/oikos/column.py
 data/resources/plugins/MiAZOikos/oikos/editor.py
+data/resources/plugins/MiAZOikos/oikos/filter.py
 data/resources/plugins/MiAZOikos/oikos/money.py
 data/resources/plugins/MiAZOikos/oikos/view.py
 data/resources/plugins/MiAZOikos/oikos/vocabulary.py

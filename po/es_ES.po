@@ -6376,6 +6376,22 @@ msgstr "Establecer para estos…"
 msgid "Net"
 msgstr "Neto"
 
+#: data/resources/plugins/MiAZOikos/oikos/filter.py
+msgid "Any amount"
+msgstr "Cualquier importe"
+
+#: data/resources/plugins/MiAZOikos/oikos/filter.py
+msgid "With an amount"
+msgstr "Con importe"
+
+#: data/resources/plugins/MiAZOikos/oikos/filter.py
+msgid "Without an amount"
+msgstr "Sin importe"
+
+#: data/resources/plugins/MiAZOikos/oikos/filter.py
+msgid "Filter by income or expense"
+msgstr "Filtrar por ingreso o gasto"
+
 #: data/resources/plugins/MiAZOikos/oikos/view.py
 msgid "No documents shown"
 msgstr "No se muestra ningún documento"

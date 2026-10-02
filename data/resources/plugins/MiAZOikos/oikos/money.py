@@ -161,6 +161,30 @@ def format_money(value: Decimal, currency: str, signed: bool = False) -> str:
     return f'{format_amount(value, signed=signed)} {currency}'
 
 
+# What the sidebar filter can ask for. ANY is first: Clear filters puts every
+# plugin dropdown back on its first entry.
+FILTER_ANY = 'any'
+FILTER_INCOME = 'income'
+FILTER_EXPENSE = 'expense'
+FILTER_RECORDED = 'recorded'
+FILTER_MISSING = 'missing'
+FILTERS = (FILTER_ANY, FILTER_INCOME, FILTER_EXPENSE, FILTER_RECORDED, FILTER_MISSING)
+
+
+def filter_matches(choice: str, kind) -> bool:
+    """Whether a document passes the filter. `kind` is the document's kind,
+    or None when nothing is recorded for it."""
+    if choice == FILTER_INCOME:
+        return kind == INCOME
+    if choice == FILTER_EXPENSE:
+        return kind == EXPENSE
+    if choice == FILTER_RECORDED:
+        return kind is not None
+    if choice == FILTER_MISSING:
+        return kind is None
+    return True
+
+
 def amount_cell(kind: str, amount: Decimal, currency: str):
     """What the Amount column shows for one document: (text, kind).
 
