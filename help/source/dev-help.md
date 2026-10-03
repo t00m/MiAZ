@@ -1,0 +1,130 @@
+---
+DocType: How-to guide
+Feature: Development
+HelpId: dev-help
+Level: advanced
+Order: 940
+Section: For developers
+Summary: Write and build these help pages, and link a part of the application to one.
+---
+
+# Write help pages
+
+This help is built from `help/source/` by KB4IT with its `apphelp` theme, and
+published to GitHub Pages from the `main` branch.
+
+## Keep it current {#rule}
+
+Every change to the code is checked against the help, in the same commit:
+
+- the user pages, when the change alters what a user sees or does;
+- these developer pages, when it alters how MiAZ is built, run, tested or
+  extended.
+
+## One type per page {#doctype}
+
+The help follows [Diátaxis](https://diataxis.fr/): every page is exactly one
+type of document, and the theme refuses to publish a page that is not.
+
+| `DocType` | The page | Example here |
+|---|---|---|
+| `Tutorial` | takes a newcomer through a lesson, step by step | Get started with MiAZ |
+| `How-to guide` | solves one task for someone who knows what they want | Add documents |
+| `Reference` | describes, in tables and lists, without instructions | Keyboard shortcuts |
+| `Explanation` | says how or why something works | How documents are named |
+
+When a page needs two of these, write two pages and link them with
+`Related`. The MiAZOikos help is the example: a how-to guide, a reference and
+an explanation.
+
+`Layout` changes how a page is drawn, not what it is: `faq` (each `##` is a
+collapsible question, usually a Reference), `tips` (each `##` is a card,
+usually a How-to guide) or `troubleshooting` (each `##` is a problem with
+`### Cause` and `### Fix`, usually a How-to guide).
+
+## Where a page goes {#sections}
+
+Sections follow what the reader is trying to do, not the type of page; the
+type is the badge on each page. Put a page in the section of its goal, with an
+`Order` in that section's range:
+
+| Order | Section | For |
+|---|---|---|
+| 1xx | Get started | first use, the naming idea |
+| 2xx | Add and name documents | adding, renaming, Review |
+| 3xx | Find documents | search, filters, views |
+| 4xx | Notes | notes on documents |
+| 5xx | Repositories | repositories, their settings, plugins on and off, backup |
+| 61x-67x | Plugins for documents | one page per plugin (Import, Export, Annotation, ...) |
+| 68x | Plugins for the repository | Health, History, Stats plugins |
+| 69x | Plugins for the window | Interface plugins |
+| 7xx | Reference | shortcuts, settings, command line, FAQ, tips |
+| 9xx | For developers | contributors |
+
+Every bundled plugin has its own page, `plugin-<module>.md`, with
+`HelpId: plugin-<short name>`, and its `Help=` key (in the `.plugin` file and
+`plugin_info`) points at `https://t00m.github.io/MiAZ/go.html?id=<that id>`.
+List the id in the contract. A tip or an FAQ answer goes on the page of its
+topic; Tips and the FAQ only hold a short version and a link.
+
+## A page {#page}
+
+One Markdown file per page, in `help/source/`, no subfolders:
+
+```markdown
+---
+DocType: How-to guide
+Feature: Documents
+HelpId: add-documents
+Level: basic
+Order: 210
+Section: Documents
+Summary: One line, 160 characters at most.
+---
+
+# Add documents
+
+## Add a folder {#folder}
+```
+
+- `DocType`, `Section`, `Order`, `Summary` and `Feature` are required.
+- `DocType` is spelled exactly as in the table above. A page without a valid
+  one is left out of the site and fails the build.
+- `Feature` and `Level` values must be in the vocabulary in
+  `help/config/repo.json`.
+- `Related` lists file names of pages to show first under "Related pages".
+- Quote a value that contains `: `, such as `Summary: "A: b"`.
+- Give a heading an explicit id (`{#folder}`) when anything links to it.
+- Link to another page as `[text](page.md#anchor)`.
+- Images go in `help/source/resources/images/`.
+
+## Opening a page from MiAZ {#help-ids}
+
+`HelpId: add-documents` names a page; `HelpId: add-folder=#folder` names a
+section. MiAZ opens one with:
+
+```python
+app.get_service('actions').open_help('add-folder')
+```
+
+Every id the application or a plugin uses must be listed in
+`help/config/contract.txt`. The build fails when one of them no longer exists,
+so renaming a page or a heading cannot silently break the application.
+
+## Build it {#build}
+
+```bash
+pip install 'KB4IT>=0.8'
+kb4it build help/config/repo.json --force
+xdg-open help/target/index.html
+```
+
+A build with no warnings is the target. `help/target/` and `help/var/` are
+build output and are not committed.
+
+The installed MiAZ does not read `help/target/`: `meson install` builds the
+help again into the build directory and installs that copy, so after editing
+a page, reinstall to see it in the application. Run from the source tree,
+MiAZ reads `help/target/` directly. A KB4IT too old for these pages makes
+meson warn and keep the last copy built by hand; `-Dhelp=enabled` turns that
+into an error.

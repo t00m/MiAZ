@@ -41,6 +41,7 @@ MiAZ/frontend/desktop/widgets/dr.py
 MiAZ/frontend/desktop/widgets/filenamesview.py
 MiAZ/frontend/desktop/widgets/filetypebadge.py
 MiAZ/frontend/desktop/widgets/gridview.py
+MiAZ/frontend/desktop/widgets/helpwindow.py
 MiAZ/frontend/desktop/widgets/jobindicator.py
 MiAZ/frontend/desktop/widgets/mainwindow.py
 MiAZ/frontend/desktop/widgets/markdownview.py
@@ -98,6 +99,14 @@ data/resources/plugins/MiAZImportFromZip/importfromzip.py
 data/resources/plugins/MiAZInsights/MiAZInsights.py
 data/resources/plugins/MiAZInsights/insights/render.py
 data/resources/plugins/MiAZOCR/ocr.py
+data/resources/plugins/MiAZOikos/miazoikos.py
+data/resources/plugins/MiAZOikos/oikos/chart.py
+data/resources/plugins/MiAZOikos/oikos/column.py
+data/resources/plugins/MiAZOikos/oikos/editor.py
+data/resources/plugins/MiAZOikos/oikos/filter.py
+data/resources/plugins/MiAZOikos/oikos/money.py
+data/resources/plugins/MiAZOikos/oikos/view.py
+data/resources/plugins/MiAZOikos/oikos/vocabulary.py
 data/resources/plugins/MiAZPeriodicity/periodicity.py
 data/resources/plugins/MiAZProjectMgt/projmgt.py
 data/resources/plugins/MiAZRelated/relateddocs.py

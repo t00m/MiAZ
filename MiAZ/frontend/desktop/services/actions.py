@@ -794,8 +794,24 @@ class MiAZActions(GObject.GObject):
         about.set_comments(ENV['APP']['description'])
         about.present(window)
 
-    def show_app_shortcuts(self, *args):
-        self.show_app_help(*args)
+    def show_app_help(self, *args):
+        self.open_help()
+
+    def open_help(self, help_id=None):
+        """Show one help topic, by help id, in the help window.
+
+        help_id is a HelpId from help/source; leaving it out opens the first
+        steps. One window serves every topic, so a second call loads the new
+        topic into the window already open. Ids the application relies on are
+        listed in help/config/contract.txt, which makes the help build fail
+        if one of them disappears.
+        """
+        # Imported here: it loads WebKit, which nothing else needs at startup.
+        from MiAZ.frontend.desktop.widgets.helpwindow import MiAZHelpWindow
+        window = self.app.get_widget('help-window')
+        if window is None:
+            window = self.app.add_widget('help-window', MiAZHelpWindow(self.app))
+        return window.show_topic(help_id)
 
     def shortcut_sections(self):
         """The sections the Keyboard Shortcuts window is built from.
@@ -839,7 +855,7 @@ class MiAZActions(GObject.GObject):
             sections.append((_(name), tuple(rows)))
         return tuple(sections)
 
-    def show_app_help(self, *args):
+    def show_app_shortcuts(self, *args):
         window = self.app.get_widget('window')
         sections = self.shortcut_sections()
         if (Adw.MAJOR_VERSION, Adw.MINOR_VERSION) >= ADW_SHORTCUTS_DIALOG:

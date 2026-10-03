@@ -77,6 +77,10 @@ declare none.
   just in file order.
 - `CHANGELOG.md` has an `Unreleased` section holding everything since the last
   release.
+- KB4IT 0.8 or newer is on your `PATH` (`pipx install 'KB4IT>=0.8'`). The
+  packaging export builds the user help into every package with it, and stops
+  if it is missing or older. `MIAZ_SKIP_HELP=1` builds without help, for a
+  package you are not going to ship.
 
 ## The steps
 
@@ -150,7 +154,10 @@ scripts/packaging/build_all.sh
 ```
 
 RPM, DEB and AppImage, all from one export of one commit so they cannot
-disagree about their own version. They land in `dist/`, with a build log per
+disagree about their own version. The export also gets the user help, built
+with KB4IT into `help/target`, so the rpm source tarball and the .deb carry it
+and a distribution rebuilding from that tarball needs no KB4IT. The AppImage
+container installs KB4IT 0.8.0 from PyPI for its own build. They land in `dist/`, with a build log per
 format in `dist/logs/`. The AppImage brings its `.zsync` along, because the
 image carries `gh-releases-zsync` update information and the updater looks for
 that file on the release. It was left behind in the repository root until

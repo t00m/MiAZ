@@ -1,5 +1,5 @@
 project('MiAZ',
-         version : '0.4.0',
+         version : '0.5.0',
     meson_version: '>= 1.5.1',
   default_options: [ 'warning_level=2',
                    ],
@@ -37,6 +37,48 @@ conf.set('pkgdatadir', pkgdatadir)
 subdir('data')
 subdir('MiAZ')
 subdir('po')
+
+# The user help, built from help/ by KB4IT into the build directory and
+# installed beside the data as <datadir>/MiAZ/help. The 'help' option decides:
+#   auto      build it when kb4it is found; if the build fails (a KB4IT
+#             without the apphelp DocType rules refuses the pages), warn and
+#             install help/target when it was built by hand, else nothing
+#   enabled   kb4it is required and a failed build fails the build
+#   disabled  install no help
+# With no help installed, the help window opens the published site.
+fs = import('fs')
+help_option = get_option('help')
+help_install_dir = join_paths(get_option('datadir'), meson.project_name())
+# 0.8 is the first KB4IT whose apphelp theme has the DocType rules these pages
+# use. An older kb4it counts as not found, so 'auto' falls back cleanly and
+# 'enabled' fails at configure time, before any build.
+kb4it = find_program('kb4it', required: help_option, version: '>= 0.8')
+if kb4it.found()
+  custom_target('help',
+    output: 'help',
+    command: [python.find_installation('python3'),
+              files('build-aux/meson/build_help.py'),
+              '--kb4it', kb4it,
+              '--help-dir', meson.project_source_root() / 'help',
+              '--output', '@OUTPUT@',
+              '--work', meson.current_build_dir() / 'help-work',
+              '--mode', help_option.enabled() ? 'enabled' : 'auto'],
+    # Every page is an input and meson has no glob; KB4IT takes under a
+    # second for the whole site, so it simply runs on every build.
+    build_by_default: true,
+    build_always_stale: true,
+    install: true,
+    install_dir: help_install_dir)
+elif help_option.disabled()
+  message('help: disabled, the help window will use the published site')
+elif fs.is_dir('help/target')
+  message('help: KB4IT 0.8 or newer not found, installing the prebuilt help/target')
+  install_subdir('help/target',
+                 install_dir: help_install_dir / 'help',
+                 strip_directory: true)
+else
+  message('help: KB4IT 0.8 or newer not found (pip install \'KB4IT>=0.8\'), so no help is installed; the help window will use the published site')
+endif
 
 # `meson test` runs the unit suite, alongside the three file validations in
 # data/meson.build. It stays fast: a few seconds, no display, nothing to set up.

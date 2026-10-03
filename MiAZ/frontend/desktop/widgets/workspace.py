@@ -897,7 +897,10 @@ class MiAZWorkspace(Gtk.Box):
         menu always says what the table is actually doing.
         """
         menu = Gio.Menu.new()
+        self._columns_menu = menu
         self._column_actions = {}
+        # Columns a plugin added: name -> (column, action name).
+        self._extra_columns = {}
         for name, title in self._COLUMNS:
             column = getattr(self.view, name, None)
             if column is None:
@@ -919,6 +922,47 @@ class MiAZWorkspace(Gtk.Box):
     def _on_column_toggled(self, action, value, column):
         action.set_state(value)
         column.set_visible(value.get_boolean())
+
+    def add_column(self, name, title, column):
+        """Add a column to the document table, after the built-in ones.
+
+        It gets an entry in the column chooser like the columns MiAZ ships, so
+        it can be hidden and shown the same way. Adding a name twice replaces
+        the first column.
+        """
+        if name in self._extra_columns:
+            self.remove_column(name)
+        self.view.cv.append_column(column)
+        action_name = f'column-extra-{name}'
+        action = Gio.SimpleAction.new_stateful(
+            action_name, None, GLib.Variant.new_boolean(column.get_visible()))
+        action.connect('change-state', self._on_column_toggled, column)
+        self.app.add_action(action)
+        self._columns_menu.append(title, f'app.{action_name}')
+        self._extra_columns[name] = (column, action_name)
+        self.log.debug(f"Workspace column added: {name}")
+
+    def remove_column(self, name):
+        """Take a column added with add_column away, with its chooser entry."""
+        entry = self._extra_columns.pop(name, None)
+        if entry is None:
+            return
+        column, action_name = entry
+        if column.get_column_view() is not None:
+            self.view.cv.remove_column(column)
+        detailed = f'app.{action_name}'
+        for index in range(self._columns_menu.get_n_items()):
+            value = self._columns_menu.get_item_attribute_value(
+                index, Gio.MENU_ATTRIBUTE_ACTION, GLib.VariantType.new('s'))
+            if value is not None and value.get_string() == detailed:
+                self._columns_menu.remove(index)
+                break
+        self.app.remove_action(action_name)
+        self.log.debug(f"Workspace column removed: {name}")
+
+    def get_extra_columns(self):
+        """The names of the columns plugins added."""
+        return list(self._extra_columns)
 
     def _on_view_button_toggled(self, button, name):
         if button.get_active():
@@ -1385,7 +1429,8 @@ class MiAZWorkspace(Gtk.Box):
 
     def _on_browser_pages_updated(self, _browser, count):
         # Show the Browser tab only when at least one page is available. If it
-        # gets hidden while selected, fall back to the Documents view.
+        # gets hidden while selected, fall back to the Documents view. The
+        # user help is always listed, so in practice the count is never zero.
         page = getattr(self, '_browser_page', None)
         if page is None:
             return
@@ -1789,10 +1834,25 @@ class MiAZWorkspace(Gtk.Box):
         'this month' rather than the dates it meant when it was saved, and the
         sidebar entry supplies the range for today.
 
+        An explicit list (`only_ids`) has no sidebar control. The workspace
+        holds it, as show_documents does, and it shows as a removable tag. A
+        query without one drops a list shown earlier: this replaces the whole
+        query. Unlike show_documents it leaves the current view on screen.
+
+        `ignore_date` and `ignore_active` cannot be held the same way: nothing
+        on screen would say they are in effect or let the user remove them.
+        Outside an explicit list (which lifts both) they are reported as not
+        applied; a plugin that needs them registers a query hook.
+
         Returns the query fields it could not represent in the sidebar, empty
         when everything was applied.
         """
         unrepresented = self._write_widgets(query)
+        self._only_ids = None if query.only_ids is None else frozenset(query.only_ids)
+        self._only_label = ''
+        if query.only_ids is None:
+            unrepresented += [flag for flag in ('ignore_date', 'ignore_active')
+                              if getattr(query, flag)]
         self._query = self._read_query()
         self.view.refilter()
         self.emit('workspace-view-filtered')
@@ -2043,6 +2103,17 @@ class MiAZWorkspace(Gtk.Box):
         # When a filter changes, update values of the others
         self._update_dropdowns_after_filter()
         return False
+
+    def filters_changed(self, *args):
+        """Refilter after a filter outside the sidebar's own controls changed.
+
+        For a plugin's dropdown or condition (register_filter_view): the same
+        pass a built-in dropdown runs, so the counts, the dropdowns and the
+        'workspace-view-filtered' listeners all follow. update() would also
+        work, but it lists the repository and parses every filename again.
+        Connectable as a signal handler.
+        """
+        self._on_filter_selected()
 
     def _on_filter_selected(self, *args):
         # Do nothing if filters are being updated

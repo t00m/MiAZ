@@ -1090,3 +1090,46 @@ def test_the_preview_is_debounced(clean_view):
         preview.set_document = real_set_document
         button.set_active(False)
         clean_view.pump(0.3)
+
+
+def test_set_query_applies_an_explicit_list(clean_view):
+    """set_query used to drop only_ids: it writes the query into the sidebar
+    and reads it back, and an explicit list has no sidebar control. A plugin
+    asking for three documents got the whole repository, with no error."""
+    from MiAZ.backend.query import DocumentQuery
+    workspace = clean_view.workspace
+    everything = clean_view.displayed()
+    assert len(everything) > 1, 'need more than one document to narrow to one'
+    wanted = everything[0]
+    view_before = workspace.get_current_view()
+
+    unrepresented = workspace.set_query(DocumentQuery(only_ids=frozenset({wanted})))
+    clean_view.wait_until(lambda: clean_view.displayed() == [wanted],
+                          message='the view narrows to the listed document')
+    assert not [u for u in unrepresented if u.startswith('ignore_')], \
+        'an explicit list lifts both checks, so neither is reported'
+    assert workspace.get_shown_documents() == frozenset({wanted})
+    assert workspace.get_query().only_ids == frozenset({wanted})
+    assert workspace.get_current_view() == view_before, 'set_query keeps the view'
+    assert _tag(clean_view, 'Concept') is not None, 'the list shows as a tag'
+
+    # A query without a list replaces it, like every other field.
+    workspace.set_query(DocumentQuery())
+    clean_view.wait_until(lambda: workspace.get_shown_documents() is None,
+                          message='a query without a list drops it')
+    workspace.clear_filters()
+    clean_view.pump(0.2)
+
+
+def test_set_query_reports_lifted_checks_it_cannot_hold(clean_view):
+    """ignore_date and ignore_active have no control and nothing on screen
+    would show them; outside an explicit list they are reported, not
+    silently dropped."""
+    from MiAZ.backend.query import DocumentQuery
+    workspace = clean_view.workspace
+    unrepresented = workspace.set_query(
+        DocumentQuery(ignore_date=True, ignore_active=True))
+    assert 'ignore_date' in unrepresented
+    assert 'ignore_active' in unrepresented
+    workspace.clear_filters()
+    clean_view.pump(0.2)

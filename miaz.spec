@@ -1,5 +1,5 @@
 Name:           miaz
-Version:        0.4.0
+Version:        0.5.0
 Release:        1%{?dist}
 Summary:        Personal Document Organizer
 
@@ -81,6 +81,9 @@ gtk-update-icon-cache %{_datadir}/icons/hicolor &> /dev/null || :
 %{_datadir}/metainfo/io.github.t00m.MiAZ.metainfo.xml
 
 %changelog
+* Fri Oct 02 2026 Tomás Vírseda <tomasvirseda@gmail.com> - 0.5.0-1
+- New release. See CHANGELOG.md for details.
+
 * Wed Sep 16 2026 Tomás Vírseda <tomasvirseda@gmail.com> - 0.4.0-1
 - The AppImage carries its own Python, GTK, libadwaita, libpeas and WebKit, so it runs on distributions that ship none of them. It also knows how to update itself
 - Background work has a place in the header bar: what is running, how far it has got, and what failed. A job that failed used to disappear without saying anything

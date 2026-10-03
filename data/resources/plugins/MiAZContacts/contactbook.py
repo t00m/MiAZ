@@ -21,7 +21,7 @@ plugin_info = {
     'Authors':       'Tomás Vírseda <tomasvirseda@gmail.com>',
     'Copyright':     'Copyright © 2026 Tomás Vírseda',
     'Website':       'http://github.com/t00m/MiAZ',
-    'Help':          'https://github.com/t00m/MiAZ/blob/main/README.md',
+    'Help':          'https://t00m.github.io/MiAZ/go.html?id=plugin-contacts',
     'Category':      'Documents',
     'Subcategory':   'Contacts',
     'MenuEntries':   [

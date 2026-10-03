@@ -1,6 +1,6 @@
 [project]
 name = "MiAZ"
-version = "0.4.0"
+version = "0.5.0"
 requires-python = ">=3.9"
 
 [project.optional-dependencies]
@@ -8,13 +8,20 @@ requires-python = ">=3.9"
 # available. 'keyring' is the cross-platform fallback backend.
 keyring = ["keyring"]
 
+# Builds the user help in help/ at build time; meson finds the kb4it command.
+# Not needed at runtime, and not needed to build from a release tarball, which
+# carries the help already built. KB4IT itself needs Python 3.11.
+help = ["KB4IT>=0.8; python_version >= '3.11'"]
+
 # pytest-randomly shuffles the order every run. Three tests were passing only
 # because something unrelated happened to put shared state back before them:
 # the console log level, the current workspace view and the copy column. None
 # of those would have been found in file order. The UI suite opts back out,
 # through scripts/checks/run_ui_tests.sh, because it drives one application for
 # the whole run and a shuffle there costs 23 minutes against eight.
-test = ["pytest", "pytest-randomly"]
+# PyYAML: tests/test_help.py reads each help page's frontmatter the way KB4IT
+# does. Nothing in MiAZ itself uses it.
+test = ["pytest", "pytest-randomly", "pyyaml"]
 
 [tool.ruff]
 target-version = "py39"

@@ -387,6 +387,14 @@ class PluginViewRegistry:
         return self._views.pop(owner, [])
 
 
+class PluginColumnRegistry(PluginViewRegistry):
+    """Which document table columns belong to which plugin.
+
+    Same bookkeeping as the views: a column goes when its plugin is unloaded,
+    so the name is free when the plugin comes back.
+    """
+
+
 class PluginWidgetRegistry:
     """How to take back the widgets a plugin put into a shared container.
 
@@ -931,6 +939,25 @@ class MiAZPlugin(GObject.GObject):
         if system is not None:
             system.views.add(self.get_name(), name)
 
+    def add_workspace_column(self, column, name, title):
+        """Add a column to the Details table, owned by this plugin.
+
+        `column` is a Gtk.ColumnViewColumn whose factory reads the MiAZItem of
+        each row. It appears in the column chooser under `title`. The plugin
+        system removes it when the plugin is unloaded, so do_deactivate has
+        nothing to undo. Call workspace.refresh_rows() when the data behind
+        the cells changes.
+        """
+        if not self.is_active():
+            return
+        workspace = self.app.get_widget('workspace')
+        if workspace is None:
+            return
+        workspace.add_column(name, title, column)
+        system = self.app.get_service('plugin-system')
+        if system is not None:
+            system.columns.add(self.get_name(), name)
+
     def _widget_registry(self):
         system = self.app.get_service('plugin-system')
         return None if system is None else system.widgets
@@ -1136,6 +1163,7 @@ class MiAZPluginSystem(MiAZPluginCore):
         # away the same way it already does web content and dialog tabs.
         self.pages = PluginPageRegistry()
         self.views = PluginViewRegistry()
+        self.columns = PluginColumnRegistry()
         self.widgets = PluginWidgetRegistry()
         self.menus = PluginMenuRegistry()
         self.settings = PluginSettingsRegistry()
@@ -1218,6 +1246,7 @@ class MiAZPluginSystem(MiAZPluginCore):
             self._remove_plugin_document_tabs(plugin)
             self._remove_plugin_pages(plugin)
             self._remove_plugin_views(plugin)
+            self._remove_plugin_columns(plugin)
             self.menus.forget(plugin.get_name())
             self.settings.forget(plugin.get_name())
             self.widgets.undo_all(plugin.get_name())
@@ -1323,6 +1352,18 @@ class MiAZPluginSystem(MiAZPluginCore):
                 self.log.debug(f"Removed workspace view '{name}'")
             except Exception as error:
                 self.log.warning(f"Could not remove workspace view '{name}': {error}")
+
+    def _remove_plugin_columns(self, plugin: Peas.PluginInfo):
+        """Take back the document table columns of a plugin when it is unloaded."""
+        workspace = self.app.get_widget('workspace')
+        if workspace is None:
+            return
+        for name in self.columns.pop_all(plugin.get_name()):
+            try:
+                workspace.remove_column(name)
+                self.log.debug(f"Removed workspace column '{name}'")
+            except Exception as error:
+                self.log.warning(f"Could not remove workspace column '{name}': {error}")
 
     def get_engine(self):
         return self.engine

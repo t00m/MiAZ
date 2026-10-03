@@ -8,13 +8,19 @@
 import html
 import os
 import urllib.parse
+from gettext import gettext as _
 
 import gi
 gi.require_version('WebKit', '6.0')
 
-from gi.repository import Gdk, Gio, GLib, GObject, Gtk, WebKit
+from gi.repository import Adw, Gdk, Gio, GLib, GObject, Gtk, WebKit
 
+from MiAZ.backend.help import help_home_uri, is_help_uri, with_theme
 from MiAZ.backend.log import MiAZLog
+
+# The user help is listed with the plugin sites. Its key cannot be a WWW
+# directory name a plugin would choose, so the two can never collide.
+HELP_KEY = ':miaz-help'
 
 
 class MiAZBrowserPage(Gtk.Box):
@@ -40,6 +46,7 @@ class MiAZBrowserPage(Gtk.Box):
         self._build_ui()
         self._refresh_pages()
         self._setup_www_monitor()
+        Adw.StyleManager.get_default().connect('notify::dark', self._on_style_changed)
         plugin_system = self.app.get_service('plugin-system')
         if plugin_system is not None:
             try:
@@ -114,14 +121,22 @@ class MiAZBrowserPage(Gtk.Box):
     def _scan_pages(self):
         root = self._www_root()
         if not os.path.isdir(root):
-            return []
+            return [self._help_entry()]
         pages = []
         for name in sorted(os.listdir(root)):
             page_dir = os.path.join(root, name)
             index = os.path.join(page_dir, 'index.html')
             if os.path.isdir(page_dir) and os.path.isfile(index):
                 pages.append((name, self._plugin_description(name)))
-        return pages
+        return pages + [self._help_entry()]
+
+    def _help_entry(self):
+        # Last, so a plugin site stays the page the Browser opens on. With no
+        # plugin site it is the only entry, and the Browser shows the help.
+        return (HELP_KEY, _('MiAZ Help'))
+
+    def _help_dir(self):
+        return self.app.get_env()['GPATH']['HELP']
 
     def has_pages(self):
         """True when at least one browser page is available to load."""
@@ -179,6 +194,15 @@ class MiAZBrowserPage(Gtk.Box):
         if not (0 <= index < len(self._pages)):
             return
         key, _desc = self._pages[index]
+        if key == HELP_KEY:
+            # The full site, not ?embed=1: this header has no topic list or
+            # search of its own, so the site's header and sidebar are the
+            # only way around the help here. The help window does the same.
+            url = help_home_uri(self._help_dir(), self._prefers_dark())
+            self.log.debug(f"Loading {url}")
+            self._loaded_key = key
+            self._webview.load_uri(url)
+            return
         webserver = self.app.get_service('webserver')
         if webserver is not None and webserver.is_running():
             url = f"{webserver.get_url()}{key}/index.html"
@@ -274,6 +298,8 @@ class MiAZBrowserPage(Gtk.Box):
         # `miazdoc:<filename>`. We intercept the click, open the file with the
         # system handler, and cancel the navigation so the view stays put. Any
         # other link (e.g. a plugin page's internal navigation) is left alone.
+        if self._loaded_key == HELP_KEY and self._leaves_help(decision, decision_type):
+            return True
         if decision_type != WebKit.PolicyDecisionType.NAVIGATION_ACTION:
             return False
         action = decision.get_navigation_action()
@@ -287,6 +313,41 @@ class MiAZBrowserPage(Gtk.Box):
         if name:
             GLib.idle_add(self._open_document, name)
         return True
+
+    def _leaves_help(self, decision, decision_type):
+        """Send a link out of the help to the web browser, as the help window does.
+
+        Only for the help: a plugin site may well link to its own pages on
+        the web and expect them to open here.
+        """
+        if decision_type not in (WebKit.PolicyDecisionType.NAVIGATION_ACTION,
+                                 WebKit.PolicyDecisionType.NEW_WINDOW_ACTION):
+            return False
+        action = decision.get_navigation_action()
+        if action.get_navigation_type() != WebKit.NavigationType.LINK_CLICKED \
+                and decision_type != WebKit.PolicyDecisionType.NEW_WINDOW_ACTION:
+            return False
+        uri = action.get_request().get_uri()
+        if is_help_uri(uri, self._help_dir()):
+            return False
+        decision.ignore()
+        Gtk.UriLauncher.new(uri).launch(self.get_root(), None, self._on_launched, uri)
+        return True
+
+    def _on_launched(self, launcher, result, uri):
+        try:
+            launcher.launch_finish(result)
+        except Exception as error:
+            self.log.warning(f"Could not open {uri}: {error}")
+
+    def _on_style_changed(self, *_args):
+        if self._loaded_key != HELP_KEY:
+            return
+        uri = self._webview.get_uri()
+        if uri and is_help_uri(uri, self._help_dir()):
+            themed = with_theme(uri, self._prefers_dark())
+            if themed != uri:
+                self._webview.load_uri(themed)
 
     def _open_document(self, name):
         actions = self.app.get_service('actions')

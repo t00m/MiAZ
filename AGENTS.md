@@ -2,6 +2,32 @@
 
 > App ID: `io.github.t00m.MiAZ` | License: GPL v3 | Repo: https://github.com/t00m/MiAZ
 
+## Rule for every code change: keep the help current
+
+This applies to every session and every contributor working in this repository.
+
+Whenever a change touches code (anything under `MiAZ/`, `data/resources/plugins/`,
+`scripts/`, `meson.build` or the packaging), check before committing whether the
+help in `help/source/` needs an update, and make it in the same commit:
+
+1. **User pages**: does the change alter what a user sees or does? A new or
+   renamed action, label, menu path, shortcut, dialog, setting, default, file
+   location, or a behaviour a page describes. Update the page that covers it,
+   or add one. A new plugin gets its own page (`plugin-<module>.md`).
+2. **Developer pages** (`dev-*.md`, section "Developers"): does the change alter
+   how MiAZ is built, run, tested, laid out or extended? A new service, signal,
+   plugin helper, layer rule, check, command, dependency or minimum version.
+   Keep them to the essentials; `AGENTS.md` remains the full reference.
+3. **Help ids**: code that opens the help (`actions.open_help(...)`, a plugin
+   `Help=` link) needs its id in `help/config/contract.txt`.
+4. **Build it**: `kb4it build help/config/repo.json --force` with no warnings,
+   and `python -m pytest -q tests/test_help.py`.
+
+If nothing in the help is affected, say so in the summary of the change, so the
+check is visible rather than assumed. `tests/test_help.py` catches the
+mechanical part (page metadata, the shortcut table, plugin help ids); whether a
+page still tells the truth is the judgement this rule asks for.
+
 ## What MiAZ does
 
 GTK4/Libadwaita desktop app that organises personal documents by enforcing a strict 7-field filename convention:
@@ -40,6 +66,7 @@ MiAZ/
 │   │   ├── config.py             ← MiAZConfig + subclasses, MiAZConfigStore (per repo)
 │   │   ├── conversation.py       ← Conversation, Message (documents as an exchange)
 │   │   ├── gate.py               ← UpdateGate (reference-counted refresh suspension)
+│   │   ├── help.py               ← help_uri, is_help_uri (where the user help is, by help id)
 │   │   ├── crash.py              ← console/log-only excepthook (install_backend_excepthook)
 │   │   ├── doctor.py             ← Finding + the repository health checks, in one pass
 │   │   ├── dr.py                 ← MiAZDR (disaster recovery / backup)
@@ -86,7 +113,7 @@ MiAZ/
 │               ├── assistant.py, browserpage.py, button.py, chip.py
 │               ├── columnview.py, configview.py, conversationview.py
 │               ├── dateentry.py, docpreview.py, dr.py, filenamesview.py
-│               ├── filetypebadge.py, gridview.py, mainwindow.py
+│               ├── filetypebadge.py, gridview.py, helpwindow.py, mainwindow.py
 │               ├── jobindicator.py, markdownview.py, metadatapage.py
 │               ├── pages.py, pills.py
 │               ├── rename.py, reposettingspage.py, selector.py
@@ -106,6 +133,7 @@ MiAZ/
 ├── data/io.github.t00m.MiAZ.metainfo.xml.in
 ├── flatpak/io.github.t00m.MiAZ.json      ← Flatpak manifest (+ .local.json for local builds)
 ├── scripts/packaging/            ← AppImage, deb, rpm, win, flatpak build scripts + build_all.sh
+├── help/                         ← User help (KB4IT `apphelp` site, published to GitHub Pages)
 ├── po/                           ← Translations
 ├── meson.build                   ← Root Meson build file (meson_version >= 1.5.1)
 ├── meson_options.txt
@@ -319,7 +347,7 @@ workspace.set_query(query)                 # refilters and emits workspace-view-
 workspace.show_stack_page('workspace-default')
 ```
 
-`set_query` does not rewrite the filter widgets, so the next widget change rebuilds the query from them; call `clear_filters()` first for a clean base. `get_query()` returns the current one. `to_dict()` / `from_dict()` round-trip through JSON.
+`set_query` writes the query into the sidebar controls and reads it back, so the sidebar and the view agree and the next widget change builds on it. It returns the fields it could not represent, and logs them. `only_ids` has no control: the workspace holds it, as `show_documents()` does, and it shows as a removable tag; unlike `show_documents()`, `set_query` stays on the current view. A query without `only_ids` drops a list shown earlier. `ignore_date` and `ignore_active` are only honoured with `only_ids` (which lifts both); otherwise they come back as unrepresented, and a plugin that needs them uses `register_query_hook`. `get_query()` returns the current one. `to_dict()` / `from_dict()` round-trip through JSON.
 
 To adjust the query the widgets produced rather than replace it, register a hook:
 
@@ -334,6 +362,8 @@ self.workspace.register_query_hook('projects', self._adjust_query)
 ```
 
 Use `register_filter_view(name, callback)` when you need an extra condition ANDed in per item, and `register_query_hook` when you need to relax one of the built-in checks. `MiAZProjectMgt` uses both.
+
+When a plugin's own filter control changes, call `workspace.filters_changed()`: it runs the pass a built-in dropdown runs (refilter, counts, dropdown narrowing, `workspace-view-filtered`) without `update()`'s repository rescan. `clear_filters()` resets every dropdown in `plugin-dropdowns` to index 0, so a filter dropdown's first entry must mean "no restriction". `register_filter_view` conditions are not removed on unload; unregister them in `do_deactivate` and call `filters_changed()` so the documents they hid come back. MiAZOikos's income or expense filter (`oikos/filter.py`) is the small example.
 
 The Documents page itself is a `Gtk.ColumnView` fed by `Gio.ListStore` → `Gtk.FilterListModel` with a single composite filter callback (`_do_filter_view`). The filter widgets stay registered in the app's widget registry:
 
@@ -484,7 +514,7 @@ The serving root is `ENV['LPATH']['WWW']` = `~/.MiAZ/var/www/html`. A plugin pub
 
 ### Built-in Browser page (`MiAZBrowserPage`, `widgets/browserpage.py`)
 
-A WebKit 6.0 viewer added to the **workspace** stack as `'workspace-browser'` (also `app.get_widget('workspace-browser')`). Header bar with Back, a page dropdown, and Refresh. It scans `<WWW>/*/index.html`, lists each as a dropdown entry, and loads it via the webserver URL when running, else a `file://` URI. It watches the WWW root with `Gio.FileMonitor` (`WATCH_MOVES`, 500 ms debounce) and refreshes the dropdown when plugin dirs appear/disappear. The context menu is replaced with just **Copy** / **Select All**, and **Ctrl+C** copies the selection (read-only viewer).
+A WebKit 6.0 viewer added to the **workspace** stack as `'workspace-browser'` (also `app.get_widget('workspace-browser')`). Header bar with Back, a page dropdown, and Refresh. It scans `<WWW>/*/index.html`, lists each as a dropdown entry (followed by the user help, see "User help"), and loads it via the webserver URL when running, else a `file://` URI. It watches the WWW root with `Gio.FileMonitor` (`WATCH_MOVES`, 500 ms debounce) and refreshes the dropdown when plugin dirs appear/disappear. The context menu is replaced with just **Copy** / **Select All**, and **Ctrl+C** copies the selection (read-only viewer).
 
 **Opening repository documents from a page.** A served page links a document with the `miazdoc:<filename>` URI scheme. The page's `decide-policy` handler intercepts only `LINK_CLICKED` navigations whose URI starts with `miazdoc:`, cancels the navigation, and opens the named repo document via `actions.document_display(name)` (system handler). Every other link navigates normally. There is no custom URI scheme registration, no in-process file streaming, and no `load_path()` API. Caveat: WebKitGTK has no built-in PDF viewer; render HTML/SVG/images/text in the page and open PDFs via the system viewer.
 
@@ -714,6 +744,7 @@ definition.
 - `install_metadata_view(name, title, icon_name, factory)` → `bool`, adds one repository vocabulary to the Metadata tab, for a plugin that owns a vocabulary rather than a preference (MiAZPeriodicity's periodicities, MiAZProjectMgt's projects); `factory` is called with no arguments and returns the widget. Unlike a settings builder, it is not held: the Metadata tab calls every registered factory while the dialog is being built, since the dialog is constructed fresh each time it opens and a vocabulary view is cheap to create
 - `show_settings(widget=None)`, the older path: a plugin's own settings dialog, opened directly. MiAZAIAssistant still defines it, for its own standalone dialog reached from outside the Repository Settings dialog. The Plugins tab no longer has a button for it; `MiAZRepoSettingsPage.build_legacy_rows` is the shim that keeps it working for out-of-tree plugins written against it, with a Configure row under "Other plugins" for any loaded plugin that has `show_settings` but no `install_settings_group` builder
 - `add_workspace_page(widget, name, title, icon_name=None)`,  registers a page on the workspace's `Adw.ViewStack`
+- `add_workspace_column(column, name, title)`, adds a `Gtk.ColumnViewColumn` to the Details table after the built-in columns, with an entry in the column chooser (`workspace.add_column` / `remove_column`, `get_extra_columns()`). The plugin system removes it on unload (`PluginColumnRegistry`). The cells are bound from the row's `MiAZItem`; call `workspace.refresh_rows()` to re-bind after the data behind them changes. MiAZOikos uses it for its Amount column
 - `register_document_tab(name, title, factory, icon_name=None, weight=100)` / `unregister_document_tabs()`,  contributes a tab to the single-document rename dialog (see below)
 - `get_source_dir()` → the plugin folder, looked up by `Name` then by `Module`
 - `get_icon_path()` → `<source_dir>/icon.svg` or `icon.png`, or `None`
@@ -858,13 +889,128 @@ activation (with install instructions) when `ocrmypdf` is not on `PATH`.
 - **Filechooser**: `Gtk.FileDialog` (async GTK4 API), not `Gtk.FileChooserDialog`
 
 
+## User help (`help/`)
+
+The user help is a static site built by KB4IT with its `apphelp` theme and
+published to `https://t00m.github.io/MiAZ/` by `.github/workflows/help.yml`.
+`docs/` is unrelated: it is gitignored and holds private notes.
+
+- `help/source/*.md`: one page each, flat (no subfolders). Frontmatter keys
+  `DocType`, `Section`, `Order`, `Summary` (160 characters at most) and
+  `Feature` are required; `Feature` and `Level` values must be in the
+  vocabulary in `help/config/repo.json`. Images go in
+  `help/source/resources/images/`.
+- **Sections are user goals**, in this order, with `Order` ranges:
+
+| Order | Section | For |
+|---|---|---|
+| 1xx | Get started | first use, the naming idea |
+| 2xx | Add and name documents | adding, renaming, Review |
+| 3xx | Find documents | search, filters, views |
+| 4xx | Notes | notes on documents |
+| 5xx | Repositories | repositories, their settings, plugins on and off, backup |
+| 61x-67x | Plugins for documents | one page per plugin (Import, Export, Annotation, ...) |
+| 68x | Plugins for the repository | Health, History, Stats plugins |
+| 69x | Plugins for the window | Interface plugins |
+| 7xx | Reference | shortcuts, settings, command line, FAQ, tips |
+| 9xx | For developers | contributors |
+
+  Each section may hold any `DocType`. A tip or an FAQ answer lives on the page
+  of its topic; `tips.md` and `faq.md` keep a short version and a link.
+- **Every bundled plugin has a page** `plugin-<module>.md` with
+  `HelpId: plugin-<short name>`, and its `Help=` key (`.plugin` and
+  `plugin_info`) is `https://t00m.github.io/MiAZ/go.html?id=<id>`, listed in
+  `contract.txt`. `tests/test_help.py` fails for a plugin without one.
+- **Diátaxis.** Every page is exactly one `DocType`: `Tutorial`,
+  `How-to guide`, `Reference` or `Explanation`, spelled exactly so. The theme
+  leaves out a page without a valid one and fails the build; the old `Kind` key
+  is refused. A page that needs two types becomes two pages linked with
+  `Related` (the MiAZOikos help is the example). `Layout: faq | tips |
+  troubleshooting` changes only the rendering. `help/source/dev-help.md` has
+  the table.
+- `HelpId: id` or `HelpId: id=#anchor` gives a page a stable name. The app opens
+  a topic as `go.html?id=<id>`, which redirects to the page.
+- `help/config/contract.txt` lists the help ids and `page.html#anchor` pairs the
+  application opens. The build fails when one is missing, so add the line in the
+  same commit that makes MiAZ open a new topic, and never rename a heading id
+  (`## Title {#id}`) that the contract names.
+- Link between pages with `[text](page.md#anchor)`; KB4IT rewrites it to `.html`.
+- Build locally: `pip install 'KB4IT>=0.8'` (0.8.0 is the first release with
+  `DocType`), then `kb4it build help/config/repo.json --force` and open
+  `help/target/index.html`.
+- **KB4IT is a build dependency of the help, never a runtime one.** Where it
+  comes from on each route:
+
+  | Route | KB4IT | Help installed |
+  |---|---|---|
+  | git clone + meson | on `PATH`, 0.8+ (`find_program(version: '>= 0.8')`) | built; without it, a hand-built `help/target` or none |
+  | `build_all.sh` / `create_rpm.sh` / `create_deb.sh` | required on `PATH`; `lib/source_export.sh::miaz_build_help` builds it into the export | always (stops otherwise, unless `MIAZ_SKIP_HELP=1`) |
+  | rpm source tarball, distribution rebuild | not needed: the tarball carries `help/target` | always |
+  | AppImage (`build_in_container.sh`) | `KB4IT==0.8.0` in `/opt/kb4it`, `-Dhelp=enabled` | always |
+  | GitHub Pages (`help.yml`) | `KB4IT==0.8.0` | the website |
+
+  `pyproject.toml` declares it as the `help` extra. Keep the 0.8.0 pins in
+  `help.yml` and `build_in_container.sh` equal.
+  `help/target/` and `help/var/` are build output and ignored.
+- CI builds every change under `help/` on main and on `X.Y` branches, and
+  deploys from `main` only. Settings > Pages > Source must be "GitHub Actions".
+- Keep `reference-shortcuts.md` in step with `services/shortcuts.py`;
+  `tests/test_help.py` fails when a shortcut is missing from it.
+- The "Developers" section (`dev-architecture.md`, `dev-setup.md`,
+  `dev-plugins.md`, `dev-help.md`) holds the essentials for contributors.
+- Quote a frontmatter value that contains `: ` (`Summary: "A: b"`). KB4IT drops a
+  page whose frontmatter is not valid YAML and still exits 0;
+  `tests/test_help.py` catches it.
+
+**Opening the help from the application.** `actions.open_help(help_id=None)`
+shows a topic in `MiAZHelpWindow` (`widgets/helpwindow.py`, widget
+`help-window`), a top-level `Adw.Window` with a `WebKit.WebView`. One window
+serves every topic and closing it only hides it. F1 and the main menu Help item
+open `first-steps`; the Keyboard Shortcuts window stays on Ctrl+?.
+
+`backend/help.py` builds the address: `ENV['GPATH']['HELP']/go.html?id=<id>&theme=dark|light`
+when an installed copy exists (`<pkgdatadir>/help`, or `help/target` in a
+checkout), else `https://t00m.github.io/MiAZ/go.html?...`. A malformed id falls
+back to `first-steps`. Navigation outside the help (the "Edit this page" link,
+any external site) is cancelled and opened in the web browser, and the theme
+parameter follows `Adw.StyleManager` when the desktop switches scheme.
+
+The Browser page also lists the help, as the last dropdown entry
+(`HELP_KEY = ':miaz-help'` in `widgets/browserpage.py`, label "MiAZ Help"). It
+loads the landing page from the same place (`help_home_uri`), with the full site
+navigation rather than `?embed=1`, because the Browser header has no topic list
+or search of its own. Links out of the help open in the web browser there too;
+plugin sites keep their old behaviour. Since the help is always listed, the
+Browser tab is always visible.
+
+Meson builds the help with KB4IT and installs it into `<pkgdatadir>/help`,
+through the `help` custom target and `build-aux/meson/build_help.py`. The
+script writes a copy of `help/config/repo.json` into `<builddir>/help-work`
+with absolute paths, so KB4IT reads `help/source/` and writes the site into
+`<builddir>/help`; nothing is written into the source tree. It runs on every
+build (`build_always_stale`, under a second). The `help` option
+(`meson_options.txt`) decides what happens:
+
+| `-Dhelp=` | `kb4it` on PATH | Result |
+|---|---|---|
+| `auto` (default) | yes, build works | built and installed |
+| `auto` | yes, build fails | warning with the KB4IT problems; installs `help/target` if built by hand, else nothing |
+| `auto` | no | installs `help/target` if built by hand, else nothing |
+| `enabled` | required | a failed build fails the build |
+| `disabled` | ignored | nothing installed |
+
+A failure is expected from a KB4IT without the apphelp `DocType` rules (PyPI
+0.7.9 and older). With no help installed the help window opens the published
+site. The deb, rpm and AppImage builds have no KB4IT, so they take the `auto`
+fallback.
+
 ## Build & install
 
 ```bash
 # Developer install (user scope)
 ./scripts/install/local/install_user.sh
 
-# Manual Meson
+# Manual Meson (builds the help too when kb4it is on PATH; see "User help")
 meson setup _build --prefix="$HOME/.local"
 ninja -C _build
 ninja -C _build install
@@ -903,6 +1049,7 @@ PYTHONPATH=. python -m MiAZ.miaz
 | MiAZImportFromZip | Documents / Import | Import documents from a ZIP file |
 | MiAZInsights | Repository / Statistics | Insights into the repository (totals, activity heatmap, rank movers, country map) published to the Browser page |
 | MiAZOCR | Documents / Annotation | Extract text from PDFs with OCR and save it as a note, from the menu or as `miaz ocr`; vetoes activation if `ocrmypdf` is missing |
+| MiAZOikos | Documents / Annotation | Record documents as income or expense (amount + ISO currency, per document in `data/MiAZOikos.json`) and chart the totals of the selection per currency in a workspace view (`add_workspace_view`, Cairo chart); `oikos/money.py`, `ledger.py`, `aggregate.py` have no GTK |
 | MiAZPeriodicity | Organise / Tags | Set document periodicity |
 | MiAZProjectMgt | Organise / Projects | Project management |
 | MiAZWSFont | Interface / Fonts | Modify workspace font name and size |

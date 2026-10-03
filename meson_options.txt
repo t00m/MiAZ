@@ -7,3 +7,10 @@ option(
   ],
   value: 'release'
 )
+
+option(
+  'help',
+  type: 'feature',
+  value: 'auto',
+  description: 'Build and install the user help with KB4IT (help/)'
+)
