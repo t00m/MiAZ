@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-10-04
+
 ### Added
 
 - **A help site, written in the repository and published to GitHub Pages.** `help/` holds the user help as Markdown, built by the KB4IT `apphelp` theme into a static site that works from GitHub Pages, from disk without a network, and inside a web view. It starts with a tutorial, how-to pages for adding and renaming documents, an explanation of the filename convention, tips, a FAQ and the shortcut reference.

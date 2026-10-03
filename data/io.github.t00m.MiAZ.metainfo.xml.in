@@ -67,9 +67,17 @@
     </screenshot>
   </screenshots>
   <releases>
-    <release version="0.5.0" date="2026-10-02" urgency="medium">
+    <release version="0.5.0" date="2026-10-04" urgency="medium">
       <description>
-        <p>See CHANGELOG.md for details.</p>
+        <p>Help built into the application, and a new plugin that records what each document is worth.</p>
+        <ul>
+          <li>F1 opens the help in a window of its own, with a page for every feature and every bundled plugin. It works offline, follows the light or dark style, and is also in the Browser tab and at t00m.github.io/MiAZ</li>
+          <li>The keyboard shortcuts list moved from F1 to Ctrl+?</li>
+          <li>New MiAZOikos plugin: record a document as an income or an expense, with its amount and currency, for one document or many at once</li>
+          <li>MiAZOikos adds up the selected documents, or every document on screen when none is selected, per currency, as cards and a chart grouped by year, month, group, sender or purpose</li>
+          <li>MiAZOikos adds an Amount column to the Details table, expenses negative in red and incomes in green, and a sidebar filter for incomes, expenses and documents still to record</li>
+          <li>Plugins can now add a column to the Details table and a filter to the sidebar</li>
+        </ul>
       </description>
     </release>
     <release version="0.4.0" date="2026-09-30" urgency="medium">
