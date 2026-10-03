@@ -5,6 +5,10 @@
 import os
 import re
 
+# A test dependency (pyproject.toml, extra 'test'), not a MiAZ one: imported at
+# the top so a missing PyYAML fails once, plainly, instead of once per page.
+import yaml
+
 from MiAZ.backend.help import (DEFAULT_TOPIC, HELP_SITE, help_uri,
                                is_help_uri, local_help_dir)
 
@@ -102,7 +106,6 @@ def help_pages():
 
 
 def frontmatter(name):
-    import yaml
     with open(os.path.join(SOURCE, name), encoding='utf-8') as fh:
         text = fh.read()
     assert text.startswith('---\n'), f'{name}: no frontmatter'

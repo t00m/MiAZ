@@ -41,6 +41,9 @@ install. `-Dhelp=enabled` makes a help build failure fail the build;
 
 ## Checks before a commit {#checks}
 
+The test tools are `pytest`, `ruff` and `pyyaml` (the help tests read each
+page's frontmatter with it): `pip install pytest ruff pyyaml`.
+
 | Check | Command | Time |
 |---|---|---|
 | Lint | `ruff check MiAZ tests` | seconds |

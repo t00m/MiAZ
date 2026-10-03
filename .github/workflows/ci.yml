@@ -67,7 +67,7 @@ jobs:
         run: |
           python3 -m venv --system-site-packages .venv
           .venv/bin/pip install --upgrade pip
-          .venv/bin/pip install pytest ruff pytest-cov
+          .venv/bin/pip install pytest ruff pytest-cov pyyaml
 
       - name: Report the toolkit versions
         # Printed before anything runs: when a job fails on a version floor,

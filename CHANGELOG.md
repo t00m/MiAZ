@@ -52,6 +52,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **CI failed on the help tests: PyYAML was not installed.** `tests/test_help.py` reads each help page's frontmatter with PyYAML, which nothing in MiAZ itself needs, so the CI test environment did not have it and every page was reported as unreadable. It is now in the `test` extra of `pyproject.toml` and in the CI install step, and the test imports it at the top, so a missing PyYAML fails once with a plain "No module named 'yaml'" rather than once per page.
+
 - **`workspace.set_query()` ignored an explicit list of documents.** A query with `only_ids` was written into the sidebar and read back, and an explicit list has no sidebar control, so it was dropped: a plugin asking for three documents got the whole repository, with no error and no warning. The workspace now holds the list the way `show_documents()` does, and it shows as a removable tag; `set_query` keeps the current view where `show_documents()` switches to Details. A query without a list drops one shown earlier, since `set_query` replaces the whole query. `ignore_date` and `ignore_active`, which have the same problem outside a list, are now reported as not applied instead of vanishing; a query hook remains the way to lift them.
 
 ## [0.4.0] - 2026-09-30
