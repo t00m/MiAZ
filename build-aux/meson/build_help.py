@@ -27,6 +27,19 @@ import subprocess
 import sys
 
 
+# Files a KB4IT site holds for its web host and not for an installed copy.
+# .nojekyll tells GitHub Pages to skip Jekyll; installed, it is an empty file,
+# which rpmlint rejects.
+HOST_ONLY = ('.nojekyll',)
+
+
+def drop_host_files(site):
+    for name in HOST_ONLY:
+        path = os.path.join(site, name)
+        if os.path.isfile(path):
+            os.remove(path)
+
+
 def warn(message):
     print(f'help: {message}', file=sys.stderr)
 
@@ -51,7 +64,7 @@ def fall_back(help_dir, output, reason):
     prebuilt = os.path.join(help_dir, 'target')
     if os.path.isfile(os.path.join(prebuilt, 'go.html')):
         warn(f'{reason}; installing the copy already built in {prebuilt}')
-        shutil.copytree(prebuilt, output)
+        shutil.copytree(prebuilt, output, ignore=shutil.ignore_patterns(*HOST_ONLY))
     else:
         warn(f'{reason}; no help installed, the help window will open the published site')
         os.makedirs(output, exist_ok=True)
@@ -79,6 +92,7 @@ def main():
                             text=True, check=False)
     built = result.returncode == 0 and os.path.isfile(os.path.join(output, 'go.html'))
     if built:
+        drop_host_files(output)
         print(f'help: built with KB4IT into {output}')
         return 0
 

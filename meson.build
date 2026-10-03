@@ -75,6 +75,7 @@ elif fs.is_dir('help/target')
   message('help: KB4IT 0.8 or newer not found, installing the prebuilt help/target')
   install_subdir('help/target',
                  install_dir: help_install_dir / 'help',
+                 exclude_files: ['.nojekyll'],
                  strip_directory: true)
 else
   message('help: KB4IT 0.8 or newer not found (pip install \'KB4IT>=0.8\'), so no help is installed; the help window will use the published site')
