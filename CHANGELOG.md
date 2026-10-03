@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-10-04
+
 ### Added
 
 - **A help site, written in the repository and published to GitHub Pages.** `help/` holds the user help as Markdown, built by the KB4IT `apphelp` theme into a static site that works from GitHub Pages, from disk without a network, and inside a web view. It starts with a tutorial, how-to pages for adding and renaming documents, an explanation of the filename convention, tips, a FAQ and the shortcut reference.
@@ -53,6 +55,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **F1 no longer opens the keyboard shortcuts.** It did because MiAZ had no manual, and a key advertised in the shortcuts list had to do something. The shortcuts list keeps `Ctrl+?`, and the main menu Help item now opens the help too.
 
 ### Fixed
+
+- **The packages no longer install an empty `.nojekyll` file with the help.** KB4IT writes it for GitHub Pages; installed, it was an empty file under `/usr/share/MiAZ/help`, which rpmlint rejects. The meson help build and its fallback leave it out.
 
 - **CI failed on the help tests: PyYAML was not installed.** `tests/test_help.py` reads each help page's frontmatter with PyYAML, which nothing in MiAZ itself needs, so the CI test environment did not have it and every page was reported as unreadable. It is now in the `test` extra of `pyproject.toml` and in the CI install step, and the test imports it at the top, so a missing PyYAML fails once with a plain "No module named 'yaml'" rather than once per page.
 
