@@ -58,13 +58,22 @@ apt-get install -y -qq --no-install-recommends \
     librsvg2-common adwaita-icon-theme fonts-dejavu-core \
     >/dev/null
 
+# The user help is built by KB4IT during the meson build. It is a build tool
+# only: installed in a venv of its own, kept out of the AppImage.
+log "Installing KB4IT for the user help ..."
+python3 -m venv /opt/kb4it
+/opt/kb4it/bin/pip install --quiet 'KB4IT==0.8.0'
+export PATH="/opt/kb4it/bin:$PATH"
+
 log "Installing MiAZ to /usr ..."
 BUILD="$(mktemp -d)"
 mkdir -p "$BUILD"/src
 tar -C "$SRC" --exclude=.git --exclude=builddir_appimage --exclude=AppDir \
     --exclude='*.AppImage' --exclude=__pycache__ -cf - . | tar -C "$BUILD"/src -xf -
 cd "$BUILD"/src
-meson setup _build --prefix=/usr -Dprofile=release >/dev/null
+# -Dhelp=enabled: an AppImage without its help is a broken build, not a
+# fallback.
+meson setup _build --prefix=/usr -Dprofile=release -Dhelp=enabled >/dev/null
 ninja -C _build >/dev/null
 ninja -C _build install >/dev/null
 VERSION="$(meson introspect --projectinfo _build \

@@ -935,9 +935,22 @@ published to `https://t00m.github.io/MiAZ/` by `.github/workflows/help.yml`.
   same commit that makes MiAZ open a new topic, and never rename a heading id
   (`## Title {#id}`) that the contract names.
 - Link between pages with `[text](page.md#anchor)`; KB4IT rewrites it to `.html`.
-- Build locally: `pip install 'git+https://github.com/t00m/KB4IT@0fd6bb810331376b27f1efbc0f89755c69699b93'`
-  (the first commit with `DocType`; no PyPI release has it yet), then
-  `kb4it build help/config/repo.json --force` and open `help/target/index.html`.
+- Build locally: `pip install 'KB4IT>=0.8'` (0.8.0 is the first release with
+  `DocType`), then `kb4it build help/config/repo.json --force` and open
+  `help/target/index.html`.
+- **KB4IT is a build dependency of the help, never a runtime one.** Where it
+  comes from on each route:
+
+  | Route | KB4IT | Help installed |
+  |---|---|---|
+  | git clone + meson | on `PATH`, 0.8+ (`find_program(version: '>= 0.8')`) | built; without it, a hand-built `help/target` or none |
+  | `build_all.sh` / `create_rpm.sh` / `create_deb.sh` | required on `PATH`; `lib/source_export.sh::miaz_build_help` builds it into the export | always (stops otherwise, unless `MIAZ_SKIP_HELP=1`) |
+  | rpm source tarball, distribution rebuild | not needed: the tarball carries `help/target` | always |
+  | AppImage (`build_in_container.sh`) | `KB4IT==0.8.0` in `/opt/kb4it`, `-Dhelp=enabled` | always |
+  | GitHub Pages (`help.yml`) | `KB4IT==0.8.0` | the website |
+
+  `pyproject.toml` declares it as the `help` extra. Keep the 0.8.0 pins in
+  `help.yml` and `build_in_container.sh` equal.
   `help/target/` and `help/var/` are build output and ignored.
 - CI builds every change under `help/` on main and on `X.Y` branches, and
   deploys from `main` only. Settings > Pages > Source must be "GitHub Actions".

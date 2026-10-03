@@ -34,8 +34,8 @@ meson setup _build --prefix="$HOME/.local"
 ninja -C _build install
 ```
 
-When `kb4it` is on your `PATH`, the build also builds this help and installs
-it, so a change under `help/` reaches the installed MiAZ with the next
+When KB4IT 0.8 or newer is on your `PATH` (`pipx install 'KB4IT>=0.8'`; it
+needs Python 3.11), the build also builds this help and installs it, so a change under `help/` reaches the installed MiAZ with the next
 install. `-Dhelp=enabled` makes a help build failure fail the build;
 `-Dhelp=disabled` skips the help.
 
@@ -53,6 +53,13 @@ page's frontmatter with it): `pip install pytest ruff pyyaml`.
 
 The UI tests drive the real application in a throwaway home folder. Run the
 files that cover what you changed; the full suite runs in CI.
+
+## Build the packages {#packages}
+
+`scripts/packaging/build_all.sh` builds the .rpm, the .deb and the AppImage.
+It needs KB4IT 0.8 or newer on your `PATH`: the help is built into every
+package, and the script stops without it. `MIAZ_SKIP_HELP=1` builds packages
+without help. `RELEASING.md` has the whole release procedure.
 
 ## Logs {#logs}
 

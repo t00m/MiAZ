@@ -114,7 +114,7 @@ so renaming a page or a heading cannot silently break the application.
 ## Build it {#build}
 
 ```bash
-pip install 'git+https://github.com/t00m/KB4IT@0fd6bb810331376b27f1efbc0f89755c69699b93'
+pip install 'KB4IT>=0.8'
 kb4it build help/config/repo.json --force
 xdg-open help/target/index.html
 ```

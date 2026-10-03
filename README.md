@@ -205,6 +205,17 @@ chmod +x ./miaz-*.AppImage
 
 Requirements: Python ≥ 3.9, GTK ≥ 4.10, Libadwaita ≥ 1.7, PyGObject ≥ 3.50, meson, ninja.
 
+To install the built-in help (F1) too, have [KB4IT](https://pypi.org/project/KB4IT/)
+0.8 or newer on your `PATH` before building; it needs Python ≥ 3.11 and is used
+at build time only:
+
+```bash
+pipx install 'KB4IT>=0.8'      # or: pip install --user 'KB4IT>=0.8'
+```
+
+Without it MiAZ still builds and installs; the help window then opens the
+online help instead.
+
 ```bash
 git clone https://github.com/t00m/MiAZ
 cd MiAZ
@@ -293,6 +304,7 @@ and a sidebar switch to show only those. They were a plugin until 0.3.
 | GTK | 4.10 |
 | Libadwaita | 1.7 |
 | PyGObject | 3.50 |
+| KB4IT (build only, for the help) | 0.8 |
 
 Tested on current Ubuntu LTS 26.04, and the current Fedora (v44).
 

@@ -49,7 +49,10 @@ subdir('po')
 fs = import('fs')
 help_option = get_option('help')
 help_install_dir = join_paths(get_option('datadir'), meson.project_name())
-kb4it = find_program('kb4it', required: help_option)
+# 0.8 is the first KB4IT whose apphelp theme has the DocType rules these pages
+# use. An older kb4it counts as not found, so 'auto' falls back cleanly and
+# 'enabled' fails at configure time, before any build.
+kb4it = find_program('kb4it', required: help_option, version: '>= 0.8')
 if kb4it.found()
   custom_target('help',
     output: 'help',
@@ -69,12 +72,12 @@ if kb4it.found()
 elif help_option.disabled()
   message('help: disabled, the help window will use the published site')
 elif fs.is_dir('help/target')
-  message('help: kb4it not found, installing help/target as built by hand')
+  message('help: KB4IT 0.8 or newer not found, installing the prebuilt help/target')
   install_subdir('help/target',
                  install_dir: help_install_dir / 'help',
                  strip_directory: true)
 else
-  message('help: kb4it not found, the help window will use the published site')
+  message('help: KB4IT 0.8 or newer not found (pip install \'KB4IT>=0.8\'), so no help is installed; the help window will use the published site')
 endif
 
 # `meson test` runs the unit suite, alongside the three file validations in
